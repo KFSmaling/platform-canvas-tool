@@ -155,3 +155,76 @@ export async function deleteCoupling(id) {
   const { error } = await call("DELETE", `/api/klanten/pain_point_couplings?id=${encodeURIComponent(id)}`);
   return { data: null, error };
 }
+
+// ── cd_pattern_suggestions (RFC-001 §2.5, stap 11.G fase 3) ────────────────
+
+export async function listPatternSuggestions(canvasId, { includeDone = false } = {}) {
+  if (!canvasId) return { data: null, error: new Error("canvasId is required") };
+  const qs = `canvas_id=${encodeURIComponent(canvasId)}${includeDone ? "&include_done=1" : ""}`;
+  const { data, error } = await call("GET", `/api/klanten/pattern_suggestions?${qs}`);
+  return { data: data?.pattern_suggestions ?? [], error };
+}
+
+/** AI-affordance: cluster / paradox / positionering / overstijgend */
+export async function generatePatternSuggestions({ canvasId, action, parentId, refinementFocus }) {
+  const { data, error } = await call("POST", "/api/klanten/pattern_suggestions_generate", {
+    canvas_id: canvasId,
+    action,
+    parent_id: parentId ?? null,
+    refinement_focus: refinementFocus ?? null,
+  });
+  return { data: data?.pattern_suggestions ?? null, error, meta: data && { ai_model: data.ai_model, prompt_version: data.prompt_version, context_chars: data.context_chars } };
+}
+
+/** Consultant-eigen patroon (geen AI) */
+export async function createPatternSuggestion({ canvasId, patternType, textMd, scope, scopeTargetId, vanuit }) {
+  const { data, error } = await call("POST", "/api/klanten/pattern_suggestions", {
+    canvas_id: canvasId,
+    pattern_type: patternType,
+    text_md: textMd,
+    scope: scope ?? "canvas",
+    scope_target_id: scopeTargetId ?? null,
+    vanuit: vanuit ?? null,
+  });
+  return { data: data?.pattern_suggestion ?? null, error };
+}
+
+export async function updatePatternSuggestion(id, { textMd }) {
+  const { data, error } = await call("PUT", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}`, { text_md: textMd });
+  return { data: data?.pattern_suggestion ?? null, error };
+}
+
+export async function acceptPatternSuggestion(id) {
+  const { data, error } = await call("POST", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}&action=accept`);
+  return { data: data?.pattern_suggestion ?? null, error };
+}
+
+export async function rejectPatternSuggestion(id) {
+  const { data, error } = await call("POST", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}&action=reject`);
+  return { data: data?.pattern_suggestion ?? null, error };
+}
+
+export async function promotePatternSuggestionToIntent(id) {
+  // MVP-fase-3: zet alleen promoted_to_intent_at + INSERT event.
+  // Feitelijke cd_improvement_intents-aanmaak komt 11.H (fase 4).
+  const { data, error } = await call("POST", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}&action=promote_to_intent`);
+  return { data: data?.pattern_suggestion ?? null, error };
+}
+
+export async function deletePatternSuggestion(id) {
+  const { error } = await call("DELETE", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}`);
+  return { data: null, error };
+}
+
+// ── cd_pattern_suggestion_events (read-only audit-trail) ───────────────────
+
+export async function listPatternSuggestionEvents({ suggestionId, canvasId } = {}) {
+  if (!suggestionId && !canvasId) {
+    return { data: null, error: new Error("suggestionId of canvasId is required") };
+  }
+  const qs = suggestionId
+    ? `suggestion_id=${encodeURIComponent(suggestionId)}`
+    : `canvas_id=${encodeURIComponent(canvasId)}`;
+  const { data, error } = await call("GET", `/api/klanten/pattern_suggestion_events?${qs}`);
+  return { data: data?.events ?? [], error };
+}
