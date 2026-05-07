@@ -141,6 +141,28 @@ const LABEL_FALLBACKS = {
   "klanten.dimensie.create.omschrijving.placeholder":"korte tenant-beschrijving van deze dimensie",
   "klanten.dimensie.create.error.naam_leeg":        "Naam is verplicht",
   "klanten.archetype.disabled.tooltip":             "komt in latere sprint",
+  // Stap 11.F — Boy-scout dimensie-edit + Pijnpunten fase 2
+  "klanten.dimensie.edit.titel":                    "Dimensie bewerken",
+  "klanten.dimensie.edit.tooltip":                  "Klik om te bewerken",
+  "klanten.dimensie.edit.archetype.locked":         "(niet wijzigbaar — datamodel-impact)",
+  "klanten.pijnpunt.intro":                         "verzamel waarnemingen en koppel aan items. multi-relationeel — een pijnpunt mag aan meerdere dimensies hangen, of nergens (overstijgend).",
+  "klanten.pijnpunt.lijst.titel":                   "Pijnpunten",
+  "klanten.pijnpunt.lijst.helper":                  "card laat koppelingen zien als chips",
+  "klanten.pijnpunt.lijst.leeg":                    "Nog geen pijnpunten — voeg er één toe.",
+  "klanten.pijnpunt.knop.toevoegen":                "+ pijnpunt",
+  "klanten.pijnpunt.knop.toevoegen.eerste":         "+ Eerste pijnpunt aanmaken",
+  "klanten.pijnpunt.create.titel":                  "Nieuw pijnpunt",
+  "klanten.pijnpunt.edit.titel":                    "Pijnpunt bewerken",
+  "klanten.pijnpunt.create.tekst.label":            "Pijnpunt-tekst",
+  "klanten.pijnpunt.create.tekst.placeholder":      "Beschrijf de waarneming of het pijnpunt — bron mag in de tekst (markdown)",
+  "klanten.pijnpunt.create.koppelingen.label":      "Koppelingen aan items (optioneel)",
+  "klanten.pijnpunt.create.koppelingen.helper":     "Géén selectie = overstijgend pijnpunt (geen specifieke item-koppeling)",
+  "klanten.pijnpunt.create.error.tekst_leeg":       "Tekst is verplicht",
+  "klanten.pijnpunt.create.overstijgend.warning":   "Wordt opgeslagen als overstijgend pijnpunt (geen koppeling)",
+  "klanten.pijnpunt.overstijgend.label":            "geen koppeling — overstijgend",
+  "klanten.rapport.section.pijnpunten":             "Pijnpunten",
+  "klanten.rapport.pijnpunten.leeg":                "Nog geen pijnpunten vastgelegd.",
+  "klanten.pijnpunt.overstijgend.section":          "Overstijgend (geen koppeling)",
 };
 
 const AppConfigContext = createContext(null);

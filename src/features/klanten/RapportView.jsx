@@ -86,7 +86,7 @@ function DimensionGroup({ dimension, items, appLabel }) {
   );
 }
 
-export default function RapportView({ canvasName, dimensions, items, onClose }) {
+export default function RapportView({ canvasName, dimensions, items, painPoints = [], couplings = [], onClose }) {
   const { brandName } = useTheme();
   const { label: appLabel } = useAppConfig();
 
@@ -96,6 +96,33 @@ export default function RapportView({ canvasName, dimensions, items, onClose }) 
 
   const handlePrint = () => window.print();
   const itemsByDim = (dimId) => items.filter(i => i.dimension_id === dimId);
+
+  // Pijnpunten gegroepeerd per dimensie + apart "overstijgend" blok.
+  // Een pijnpunt hoort bij een dimensie als één van zijn couplings naar een
+  // item van die dimensie wijst (of naar de dimensie zelf).
+  const dimIdSet = new Set(dimensions.map(d => d.id));
+  const itemDim  = new Map(items.map(it => [it.id, it.dimension_id]));
+  const painsByDim = new Map();
+  const overstijgendPains = [];
+  for (const pp of painPoints) {
+    const ppCouplings = couplings.filter(c => c.pain_point_id === pp.id);
+    if (ppCouplings.length === 0) {
+      overstijgendPains.push(pp);
+      continue;
+    }
+    const dims = new Set();
+    for (const c of ppCouplings) {
+      if (c.target_table === "cd_dimensions" && dimIdSet.has(c.target_id)) dims.add(c.target_id);
+      if (c.target_table === "cd_items") {
+        const did = itemDim.get(c.target_id);
+        if (did) dims.add(did);
+      }
+    }
+    for (const did of dims) {
+      if (!painsByDim.has(did)) painsByDim.set(did, []);
+      painsByDim.get(did).push(pp);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[55] bg-slate-200 flex flex-col">
@@ -151,8 +178,9 @@ export default function RapportView({ canvasName, dimensions, items, onClose }) 
             <section style={{ marginBottom: "16px" }}>
               <div style={sectionLabelStyle}>{appLabel("klanten.rapport.section.samenvatting", "Samenvatting")}</div>
               <p style={{ fontSize: "10px", color: "#475569", lineHeight: 1.55 }}>
-                {dimensions.length} dimensie{dimensions.length === 1 ? "" : "s"}, {items.length} item{items.length === 1 ? "" : "s"} vastgelegd.
-                Werkblad in inventarisatie-fase. Pijnpunten / analyse / verbeterrichtingen volgen in latere sprints.
+                {dimensions.length} dimensie{dimensions.length === 1 ? "" : "s"}, {items.length} item{items.length === 1 ? "" : "s"},{" "}
+                {painPoints.length} pijnpunt{painPoints.length === 1 ? "" : "en"} ({overstijgendPains.length} overstijgend) vastgelegd.
+                Werkblad in inventarisatie + pijnpunten-fase. Patronen + verbeterrichtingen volgen in latere sprints.
               </p>
             </section>
 
@@ -165,6 +193,49 @@ export default function RapportView({ canvasName, dimensions, items, onClose }) 
               {dimensions.map(dim => (
                 <DimensionGroup key={dim.id} dimension={dim} items={itemsByDim(dim.id)} appLabel={appLabel} />
               ))}
+            </section>
+
+            {/* Pijnpunten — gegroepeerd per dimensie + overstijgend-blok */}
+            <section style={{ marginBottom: "16px" }}>
+              <div style={sectionLabelStyle}>{appLabel("klanten.rapport.section.pijnpunten", "Pijnpunten")}</div>
+              {painPoints.length === 0 && (
+                <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
+                  {appLabel("klanten.rapport.pijnpunten.leeg", "Nog geen pijnpunten vastgelegd.")}
+                </p>
+              )}
+              {dimensions.map(dim => {
+                const dimPains = painsByDim.get(dim.id) || [];
+                if (dimPains.length === 0) return null;
+                return (
+                  <div key={dim.id} style={{ marginBottom: "10px" }}>
+                    <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: C.navy, marginBottom: "3px", opacity: 0.7 }}>
+                      {dim.name} · {dim.archetype}
+                    </div>
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {dimPains.map(pp => (
+                        <li key={pp.id} style={{ marginBottom: "4px", paddingLeft: "8px", borderLeft: `2px solid #fca5a5` }}>
+                          <p style={{ margin: 0, fontSize: "9.5px", color: "#1e293b", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{pp.text_md}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+
+              {overstijgendPains.length > 0 && (
+                <div style={{ marginTop: "10px", paddingTop: "8px", borderTop: `1px dashed #94a3b8` }}>
+                  <div style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#475569", marginBottom: "3px", opacity: 0.7 }}>
+                    {appLabel("klanten.pijnpunt.overstijgend.section", "Overstijgend (geen koppeling)")}
+                  </div>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                    {overstijgendPains.map(pp => (
+                      <li key={pp.id} style={{ marginBottom: "4px", paddingLeft: "8px", borderLeft: `2px dashed #94a3b8` }}>
+                        <p style={{ margin: 0, fontSize: "9.5px", color: "#1e293b", lineHeight: 1.5, whiteSpace: "pre-wrap", fontStyle: "italic" }}>{pp.text_md}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
 
             {/* Patronen — placeholder */}

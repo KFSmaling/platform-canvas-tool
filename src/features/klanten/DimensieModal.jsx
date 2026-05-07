@@ -1,20 +1,22 @@
 /**
- * DimensieCreateModal — nieuwe dimensie aanmaken voor cd_dimensions.
+ * DimensieModal — create + edit voor cd_dimensions.
  *
- * Stap 11.E correctie: zonder deze modal kan een leeg canvas niet gevuld
- * worden (items vereisen een bestaande dimensie als parent).
+ * Mode-prop:
+ *   - "create" → archetype-dropdown actief, naam + omschrijving leeg
+ *   - "edit"   → archetype-dropdown DISABLED (datamodel-impact, zie F3 finding),
+ *                naam + omschrijving prefilled, header-titel "Dimensie bewerken"
+ *
+ * UX-consistency-principe (findings F3): wat via UI-dialoog gemaakt is, moet
+ * ook via UI-dialoog gewijzigd kunnen worden — niet via Admin.
  *
  * Props:
+ *   - mode: "create" | "edit"
+ *   - dimension: bestaand dimension-object (verplicht voor edit)
  *   - onClose()
  *   - onSave({ archetype, name, description }) → async, returnt { error: null|Error }
  *
- * Archetype-dropdown: 3 actief (klantsegment/propositie/kanaal — MVP-scope
- * per RFC-001 §2.2.1) + 6 disabled met tooltip "komt in latere sprint"
- * (regio/behoefte/merk/gedrag/klantreis/anders). Toont expliciet welke
- * archetypes het platform ondersteunt — ADR-003 principe 2.
- *
- * Per CLAUDE.md sectie 4.2: await + error-check + loading-state tot
- * server-bevestiging. Geen optimistic update.
+ * In edit-mode bevat de payload nog steeds archetype (read-only door
+ * disabled-input) zodat de save-handler één signature heeft.
  */
 
 import React, { useState, useMemo } from "react";
@@ -40,11 +42,13 @@ const ARCHETYPE_OPTIONS = [
 const NAME_MAX = 100;
 const DESC_MAX = 500;
 
-export default function DimensieCreateModal({ onClose, onSave }) {
+export default function DimensieModal({ mode = "create", dimension = null, onClose, onSave }) {
   const { label: appLabel } = useAppConfig();
-  const [archetype, setArchetype]     = useState("");
-  const [name, setName]               = useState("");
-  const [description, setDescription] = useState("");
+  const isEdit = mode === "edit";
+
+  const [archetype, setArchetype]     = useState(dimension?.archetype ?? "");
+  const [name, setName]               = useState(dimension?.name ?? "");
+  const [description, setDescription] = useState(dimension?.description ?? "");
   const [saving, setSaving]           = useState(false);
   const [errMsg, setErrMsg]           = useState(null);
 
@@ -78,14 +82,16 @@ export default function DimensieCreateModal({ onClose, onSave }) {
     onClose();
   }
 
+  const headerLabel = isEdit
+    ? appLabel("klanten.dimensie.edit.titel", "Dimensie bewerken")
+    : appLabel("klanten.dimensie.create.titel", "Nieuwe dimensie");
+
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-6">
       <div className="bg-white rounded-md shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h3 className="text-base font-bold text-[var(--color-primary)]">
-            {appLabel("klanten.dimensie.create.titel", "Nieuwe dimensie")}
-          </h3>
+          <h3 className="text-base font-bold text-[var(--color-primary)]">{headerLabel}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700"><X size={18} /></button>
         </div>
 
@@ -97,13 +103,19 @@ export default function DimensieCreateModal({ onClose, onSave }) {
               className="block text-[11px] font-bold text-slate-700 uppercase tracking-widest mb-1"
             >
               {appLabel("klanten.dimensie.create.archetype.label", "Archetype")}
+              {isEdit && (
+                <span className="ml-2 text-[9px] font-normal text-slate-400 italic normal-case">
+                  {appLabel("klanten.dimensie.edit.archetype.locked", "(niet wijzigbaar — datamodel-impact)")}
+                </span>
+              )}
             </label>
             <select
               id="dim-create-archetype"
               value={archetype}
               onChange={e => setArchetype(e.target.value)}
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--color-accent)]"
-              autoFocus
+              disabled={isEdit}
+              className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--color-accent)] disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+              autoFocus={!isEdit}
             >
               <option value="">{appLabel("klanten.dimensie.create.archetype.placeholder", "Kies een archetype…")}</option>
               {ARCHETYPE_OPTIONS.map(opt => (
@@ -134,6 +146,7 @@ export default function DimensieCreateModal({ onClose, onSave }) {
               placeholder={selectedOption?.placeholder || appLabel("klanten.dimensie.create.naam.placeholder", "bijv. Klantsegmenten of Doelgroepen")}
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
               maxLength={NAME_MAX}
+              autoFocus={isEdit}
             />
             {!nameValid && name.length > 0 && (
               <p className="text-[10px] text-red-600 mt-1">{appLabel("klanten.dimensie.create.error.naam_leeg", "Naam is verplicht")}</p>

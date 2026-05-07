@@ -28,15 +28,23 @@ import KlantenWerkblad from "../KlantenWerkblad";
 
 // ── Mock klantenService ──
 jest.mock("../services/klanten.service", () => ({
-  listDimensions:        jest.fn(),
-  listItemsForCanvas:    jest.fn(),
-  listItemsForDimension: jest.fn(),
-  createDimension:       jest.fn(),
-  updateDimension:       jest.fn(),
-  deleteDimension:       jest.fn(),
-  createItem:            jest.fn(),
-  updateItem:            jest.fn(),
-  deleteItem:            jest.fn(),
+  listDimensions:           jest.fn(),
+  listItemsForCanvas:       jest.fn(),
+  listItemsForDimension:    jest.fn(),
+  createDimension:          jest.fn(),
+  updateDimension:          jest.fn(),
+  deleteDimension:          jest.fn(),
+  createItem:               jest.fn(),
+  updateItem:               jest.fn(),
+  deleteItem:               jest.fn(),
+  // Stap 11.F — pijnpunten + couplings (default leeg in deze testfile)
+  listPainPoints:           jest.fn(),
+  listCouplingsForCanvas:   jest.fn(),
+  createPainPoint:          jest.fn(),
+  updatePainPoint:          jest.fn(),
+  deletePainPoint:          jest.fn(),
+  createCoupling:           jest.fn(),
+  deleteCoupling:           jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
 
@@ -67,6 +75,9 @@ beforeEach(() => {
   // Default: leeg canvas
   klantenService.listDimensions.mockResolvedValue({ data: [], error: null });
   klantenService.listItemsForCanvas.mockResolvedValue({ data: [], error: null });
+  // Stap 11.F: pijnpunten ook leeg (usePainPoints wordt sinds 11.F altijd aangeroepen)
+  klantenService.listPainPoints.mockResolvedValue({ data: [], error: null });
+  klantenService.listCouplingsForCanvas.mockResolvedValue({ data: [], error: null });
 });
 
 describe("KlantenWerkblad — lege-canvas flow (stap 11.E correctie)", () => {

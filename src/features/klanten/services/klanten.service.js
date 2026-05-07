@@ -97,3 +97,61 @@ export async function deleteItem(id) {
   const { error } = await call("DELETE", `/api/klanten/items?id=${encodeURIComponent(id)}`);
   return { data: null, error };
 }
+
+// ── cd_pain_points (RFC-001 §2.3) ──────────────────────────────────────────
+
+export async function listPainPoints(canvasId) {
+  if (!canvasId) return { data: null, error: new Error("canvasId is required") };
+  const { data, error } = await call("GET", `/api/klanten/pain_points?canvas_id=${encodeURIComponent(canvasId)}`);
+  return { data: data?.pain_points ?? [], error };
+}
+
+export async function createPainPoint({ canvasId, textMd, sortOrder }) {
+  const { data, error } = await call("POST", "/api/klanten/pain_points", {
+    canvas_id: canvasId,
+    text_md: textMd,
+    sort_order: sortOrder ?? 0,
+  });
+  return { data: data?.pain_point ?? null, error };
+}
+
+export async function updatePainPoint(id, { textMd, sortOrder }) {
+  const patch = {};
+  if (textMd !== undefined)    patch.text_md    = textMd;
+  if (sortOrder !== undefined) patch.sort_order = sortOrder;
+  const { data, error } = await call("PUT", `/api/klanten/pain_points?id=${encodeURIComponent(id)}`, patch);
+  return { data: data?.pain_point ?? null, error };
+}
+
+export async function deletePainPoint(id) {
+  const { error } = await call("DELETE", `/api/klanten/pain_points?id=${encodeURIComponent(id)}`);
+  return { data: null, error };
+}
+
+// ── cd_pain_point_couplings (RFC-001 §2.4) ─────────────────────────────────
+
+export async function listCouplingsForPain(painPointId) {
+  if (!painPointId) return { data: null, error: new Error("painPointId is required") };
+  const { data, error } = await call("GET", `/api/klanten/pain_point_couplings?pain_point_id=${encodeURIComponent(painPointId)}`);
+  return { data: data?.couplings ?? [], error };
+}
+
+export async function listCouplingsForCanvas(canvasId) {
+  if (!canvasId) return { data: null, error: new Error("canvasId is required") };
+  const { data, error } = await call("GET", `/api/klanten/pain_point_couplings?canvas_id=${encodeURIComponent(canvasId)}`);
+  return { data: data?.couplings ?? [], error };
+}
+
+export async function createCoupling({ painPointId, targetTable, targetId }) {
+  const { data, error } = await call("POST", "/api/klanten/pain_point_couplings", {
+    pain_point_id: painPointId,
+    target_table: targetTable,
+    target_id: targetId,
+  });
+  return { data: data?.coupling ?? null, error };
+}
+
+export async function deleteCoupling(id) {
+  const { error } = await call("DELETE", `/api/klanten/pain_point_couplings?id=${encodeURIComponent(id)}`);
+  return { data: null, error };
+}

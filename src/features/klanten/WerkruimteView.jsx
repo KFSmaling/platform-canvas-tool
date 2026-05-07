@@ -14,15 +14,28 @@ import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import DimensieKolom from "./DimensieKolom";
+import PijnpuntenView from "./PijnpuntenView";
 
 const FASE_TABS = [
   { num: 1, key: "label.klanten.fase.1.titel", fallback: "Inventarisatie", enabled: true  },
-  { num: 2, key: "label.klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: false },
+  { num: 2, key: "label.klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: true  },
   { num: 3, key: "label.klanten.fase.3.titel", fallback: "Analyse",        enabled: false },
   { num: 4, key: "label.klanten.fase.4.titel", fallback: "Verbeterrichtingen", enabled: false },
 ];
 
-export default function WerkruimteView({ dimensions, items, onItemClick, onAddItem, onAddDimensie }) {
+export default function WerkruimteView({
+  canvasId,
+  dimensions,
+  items,
+  painPoints,
+  couplings,
+  onItemClick,
+  onAddItem,
+  onAddDimensie,
+  onEditDimensie,
+  onAddPijnpunt,
+  onEditPijnpunt,
+}) {
   const { label: appLabel } = useAppConfig();
   const [activeFase, setActiveFase] = useState(1);
 
@@ -64,8 +77,21 @@ export default function WerkruimteView({ dimensions, items, onItemClick, onAddIt
         </div>
       </div>
 
-      {/* Dimensie-grid (fase 1) */}
+      {/* Fase-content */}
+      {activeFase === 2 ? (
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <PijnpuntenView
+            dimensions={dimensions}
+            items={items}
+            painPoints={painPoints || []}
+            couplings={couplings || []}
+            onAddPijnpunt={onAddPijnpunt}
+            onEditPijnpunt={onEditPijnpunt}
+          />
+        </div>
+      ) : (
       <div className="flex-1 overflow-auto p-8">
+        {/* Fase 1 — Inventarisatie (dimensie-grid) */}
         {dimensions.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-slate-500 italic mb-1">Nog geen dimensies in dit canvas.</p>
@@ -103,12 +129,14 @@ export default function WerkruimteView({ dimensions, items, onItemClick, onAddIt
                   items={itemsByDim(dim.id)}
                   onItemClick={onItemClick}
                   onAddItem={() => onAddItem(dim)}
+                  onEditDimensie={onEditDimensie}
                 />
               ))}
             </div>
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

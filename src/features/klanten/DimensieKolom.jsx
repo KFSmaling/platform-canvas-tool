@@ -15,19 +15,34 @@
  */
 
 import React from "react";
-import { Sparkles, Plus } from "lucide-react";
+import { Sparkles, Plus, Pencil } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 
-export default function DimensieKolom({ dimension, items, onItemClick, onAddItem }) {
+export default function DimensieKolom({ dimension, items, onItemClick, onAddItem, onEditDimensie }) {
   const { label: appLabel } = useAppConfig();
-  const archetypeLabelKey = `label.klanten.dimensie.${dimension.archetype}`;
+
+  // Click op naam-header → edit-modal (UX-consistency-principe F3)
+  const headerClickable = typeof onEditDimensie === "function";
 
   return (
     <div className="bg-white border border-slate-200 rounded-md flex flex-col min-h-[400px]">
-      {/* Header */}
+      {/* Header — klikbaar voor edit-modal */}
       <div className="px-4 py-3 border-b border-slate-100">
         <div className="flex items-baseline justify-between">
-          <h4 className="text-sm font-bold text-[var(--color-primary)]">{dimension.name}</h4>
+          {headerClickable ? (
+            <button
+              type="button"
+              onClick={() => onEditDimensie(dimension)}
+              data-testid={`dimensie-edit-${dimension.id}`}
+              className="group flex items-center gap-1.5 text-left hover:text-[var(--color-accent)] transition-colors"
+              title={appLabel("klanten.dimensie.edit.tooltip", "Klik om te bewerken")}
+            >
+              <h4 className="text-sm font-bold text-[var(--color-primary)] group-hover:text-[var(--color-accent)]">{dimension.name}</h4>
+              <Pencil size={11} className="opacity-0 group-hover:opacity-50 transition-opacity" />
+            </button>
+          ) : (
+            <h4 className="text-sm font-bold text-[var(--color-primary)]">{dimension.name}</h4>
+          )}
           <span className="text-[9px] text-slate-400 uppercase tracking-widest">{dimension.archetype}</span>
         </div>
         {dimension.description && (
