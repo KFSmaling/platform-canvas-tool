@@ -37,6 +37,16 @@ jest.mock("../services/klanten.service", () => ({
   deletePainPoint:          jest.fn(),
   createCoupling:           jest.fn(),
   deleteCoupling:           jest.fn(),
+  // Stap 11.G — pattern suggestions (KlantenWerkblad-niveau hook)
+  listPatternSuggestions:         jest.fn(),
+  generatePatternSuggestions:     jest.fn(),
+  createPatternSuggestion:        jest.fn(),
+  updatePatternSuggestion:        jest.fn(),
+  acceptPatternSuggestion:        jest.fn(),
+  rejectPatternSuggestion:        jest.fn(),
+  promotePatternSuggestionToIntent: jest.fn(),
+  deletePatternSuggestion:        jest.fn(),
+  listPatternSuggestionEvents:    jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
 
@@ -84,6 +94,7 @@ beforeEach(() => {
   klantenService.listItemsForCanvas.mockResolvedValue({ data: [sampleItem], error: null });
   klantenService.listPainPoints.mockResolvedValue({ data: [], error: null });
   klantenService.listCouplingsForCanvas.mockResolvedValue({ data: [], error: null });
+  klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
 });
 
 async function openFase2() {

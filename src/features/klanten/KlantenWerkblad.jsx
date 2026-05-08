@@ -20,6 +20,7 @@ import { X, Layout, FileText } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import { useCanvasDimensions } from "./hooks/useCanvasDimensions";
 import { usePainPoints } from "./hooks/usePainPoints";
+import { usePatternSuggestions } from "./hooks/usePatternSuggestions";
 import * as klantenService from "./services/klanten.service";
 import WerkruimteView from "./WerkruimteView";
 import RapportView from "./RapportView";
@@ -31,6 +32,9 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   const { label: appLabel } = useAppConfig();
   const { loading, error, dimensions, items, reload } = useCanvasDimensions(canvasId);
   const { painPoints, couplings, reload: reloadPains } = usePainPoints(canvasId);
+  // Stap 11.G Vervolg-sessie B: KlantenWerkblad-niveau suggestions-load voor
+  // RapportView. AnalyseView houdt eigen hook-instance (live reload na actions).
+  const { suggestions } = usePatternSuggestions(canvasId);
 
   const [view, setView] = useState("werkruimte"); // "werkruimte" | "rapport"
   const [modalCtx, setModalCtx] = useState(null); // { dimension, item } of null
@@ -245,6 +249,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           items={items}
           painPoints={painPoints || []}
           couplings={couplings || []}
+          suggestions={suggestions || []}
           onClose={() => setView("werkruimte")}
         />
       )}

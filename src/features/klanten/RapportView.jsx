@@ -6,21 +6,30 @@
  * REQUIREMENTS eis #8 — bij P13 wordt dit een gedeelde laag, tot dan
  * exact dezelfde waardes om refactor-werk te vermijden.
  *
- * Leest dezelfde data als WerkruimteView via useCanvasDimensions.
+ * Leest dezelfde data als WerkruimteView via useCanvasDimensions +
+ * usePainPoints + usePatternSuggestions.
  *
- * MVP: drie secties (Samenvatting / Huidige situatie / placeholders).
- * Patronen + Verbeterrichtingen zijn placeholders (pijnpunten/intents
- * zijn buiten MVP-scope per RFC-001 §2 fase 2-4).
+ * Stap 11.G Vervolg-sessie B: AI-sectie actief — toont accepted patterns
+ * (max 6 cards: eerste 2 per type) in 3-koloms grid wanneer
+ * `includeInPrint=true`. TYPE_STYLES via patternTypeStyles.js (PLATFORM_
+ * REQUIREMENTS #8: hergebruik StrategyOnePager-mapping voor cluster/
+ * paradox/positionering, custom-purple/slate voor overstijgend/eigen).
  *
  * AI-print-toggle: button-met-state-pattern (StrategyOnePager regel
- * 540-553), in MVP altijd disabled (analysis = null).
+ * 540-553), enabled wanneer ≥1 accepted pattern.
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Printer, X } from "lucide-react";
 import AiIcon from "../../shared/components/AiIcon";
 import { useTheme } from "../../shared/hooks/useTheme";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
+import {
+  PATTERN_TYPE_STYLES,
+  PATTERN_TYPES,
+  getPatternTypeLabelKey,
+  getPatternTypeLabelFallback,
+} from "./patternTypeStyles";
 
 const C = {
   navy:  "var(--color-primary)",
@@ -86,12 +95,53 @@ function DimensionGroup({ dimension, items, appLabel }) {
   );
 }
 
-export default function RapportView({ canvasName, dimensions, items, painPoints = [], couplings = [], onClose }) {
+export default function RapportView({
+  canvasName,
+  dimensions,
+  items,
+  painPoints = [],
+  couplings = [],
+  suggestions = [],
+  onClose,
+}) {
   const { brandName } = useTheme();
   const { label: appLabel } = useAppConfig();
 
-  // AI-print-toggle button-met-state pattern (analysis altijd null in MVP).
-  const analysis = null;
+  // Geaccepteerde patronen voor AI-sectie (Stap 11.G Vervolg-sessie B).
+  // Per type max 2 cards, 5 types × 2 = max 10, getrimd tot 6 (eerste 2 van
+  // de eerste 3 types die voorkomen) per instructie 11.G akkoord-handoff
+  // sectie 52: "3-koloms grid van max 6 cards (eerste 2 per type)".
+  const acceptedByType = useMemo(() => {
+    const grouped = new Map();
+    for (const t of PATTERN_TYPES) grouped.set(t, []);
+    for (const s of suggestions) {
+      if (s.current_status !== "accepted") continue;
+      const arr = grouped.get(s.pattern_type) || grouped.get("eigen");
+      if (arr.length < 2) arr.push(s);
+    }
+    return grouped;
+  }, [suggestions]);
+
+  const acceptedCount = useMemo(
+    () => suggestions.filter(s => s.current_status === "accepted").length,
+    [suggestions]
+  );
+
+  const acceptedFlat = useMemo(() => {
+    const flat = [];
+    for (const t of PATTERN_TYPES) {
+      for (const s of acceptedByType.get(t) || []) {
+        flat.push(s);
+        if (flat.length >= 6) return flat;
+      }
+    }
+    return flat;
+  }, [acceptedByType]);
+
+  // AI-print-toggle button-met-state pattern (StrategyOnePager regel 540-553).
+  // Enabled wanneer ≥1 accepted pattern; toggle bepaalt of AI-sectie zichtbaar
+  // is in print én preview.
+  const analysisAvailable = acceptedCount > 0;
   const [includeInPrint, setIncludeInPrint] = useState(false);
 
   const handlePrint = () => window.print();
@@ -137,18 +187,28 @@ export default function RapportView({ canvasName, dimensions, items, painPoints 
         <div className="flex items-center gap-3">
           {/* AI-print-toggle (button-met-state, anker StrategyOnePager 540-553) */}
           <button
-            onClick={() => analysis && setIncludeInPrint(v => !v)}
-            disabled={!analysis}
-            title={!analysis ? appLabel("klanten.ai.disabled.tooltip", "AI komt in fase 3") : (includeInPrint ? "Klik om AI-advies uit print te verwijderen" : "Klik om AI-advies toe te voegen aan print")}
+            type="button"
+            onClick={() => analysisAvailable && setIncludeInPrint(v => !v)}
+            disabled={!analysisAvailable}
+            data-testid="rapport-toggle-advies"
+            title={
+              !analysisAvailable
+                ? appLabel("klanten.rapport.toggle.disabled", "Geen geaccepteerde patronen — accepteer er minstens één")
+                : (includeInPrint
+                    ? appLabel("klanten.rapport.toggle.uit", "Klik om AI-advies uit print te verwijderen")
+                    : appLabel("klanten.rapport.toggle.aan", "Klik om AI-advies toe te voegen aan print"))
+            }
             className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md border transition-colors
-              ${!analysis
+              ${!analysisAvailable
                 ? "opacity-30 cursor-not-allowed text-white/40 border-white/20"
                 : includeInPrint
                   ? "bg-[var(--color-accent)]/20 text-[var(--color-accent)] border-[var(--color-accent)]/50 hover:bg-[var(--color-accent)]/30"
                   : "text-white/40 border-white/20 hover:text-white/70 hover:border-white/40"}`}
           >
             <AiIcon variant="generate" size={10} />
-            {includeInPrint ? "Advies in print ✓" : "Advies in print"}
+            {includeInPrint
+              ? appLabel("klanten.rapport.toggle.label.aan", "Advies in print ✓")
+              : appLabel("klanten.rapport.toggle.label.uit", "Advies in print")}
           </button>
           <button
             onClick={handlePrint}
@@ -179,8 +239,11 @@ export default function RapportView({ canvasName, dimensions, items, painPoints 
               <div style={sectionLabelStyle}>{appLabel("klanten.rapport.section.samenvatting", "Samenvatting")}</div>
               <p style={{ fontSize: "10px", color: "#475569", lineHeight: 1.55 }}>
                 {dimensions.length} dimensie{dimensions.length === 1 ? "" : "s"}, {items.length} item{items.length === 1 ? "" : "s"},{" "}
-                {painPoints.length} pijnpunt{painPoints.length === 1 ? "" : "en"} ({overstijgendPains.length} overstijgend) vastgelegd.
-                Werkblad in inventarisatie + pijnpunten-fase. Patronen + verbeterrichtingen volgen in latere sprints.
+                {painPoints.length} pijnpunt{painPoints.length === 1 ? "" : "en"} ({overstijgendPains.length} overstijgend),{" "}
+                {acceptedCount} geaccepteerde patron{acceptedCount === 1 ? "" : "en"} vastgelegd.
+                {acceptedCount === 0
+                  ? " Werkblad in inventarisatie + pijnpunten-fase. Verbeterrichtingen volgen in latere sprints."
+                  : " Werkblad in inventarisatie + pijnpunten + analyse-fase. Verbeterrichtingen volgen in latere sprints."}
               </p>
             </section>
 
@@ -238,10 +301,80 @@ export default function RapportView({ canvasName, dimensions, items, painPoints 
               )}
             </section>
 
-            {/* Patronen — placeholder */}
-            <section style={{ marginBottom: "16px" }}>
-              <div style={sectionLabelStyle}>{appLabel("klanten.rapport.section.patronen", "Patronen")}</div>
-              <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>komt in fase 3 (Analyse)</p>
+            {/* Geaccepteerde patronen (Stap 11.G Vervolg-sessie B) */}
+            <section style={{ marginBottom: "16px" }} data-testid="rapport-section-patronen">
+              <div style={sectionLabelStyle}>
+                {appLabel("klanten.rapport.section.patronen", "Geaccepteerde patronen")}
+              </div>
+              {acceptedCount === 0 ? (
+                <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
+                  {appLabel("klanten.rapport.patronen.leeg", "Nog geen geaccepteerde patronen — accepteer suggesties in fase 3 (Analyse).")}
+                </p>
+              ) : !includeInPrint ? (
+                <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
+                  {appLabel(
+                    "klanten.rapport.patronen.uit",
+                    "AI-advies staat uit voor deze print — klik 'Advies in print' bovenin om te tonen."
+                  )}
+                </p>
+              ) : (
+                <div
+                  data-testid="rapport-patronen-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: "6px",
+                  }}
+                >
+                  {acceptedFlat.map(s => {
+                    const style = PATTERN_TYPE_STYLES[s.pattern_type] || PATTERN_TYPE_STYLES.eigen;
+                    const typeLabel = appLabel(
+                      getPatternTypeLabelKey(s.pattern_type),
+                      getPatternTypeLabelFallback(s.pattern_type)
+                    );
+                    return (
+                      <div
+                        key={s.id}
+                        data-testid={`rapport-pattern-card-${s.id}`}
+                        style={{
+                          background: style.bg,
+                          borderLeft: `3px solid ${style.border}`,
+                          borderRadius: "3px",
+                          padding: "6px 8px",
+                        }}
+                      >
+                        <div style={{
+                          fontSize: "7px",
+                          fontWeight: 800,
+                          letterSpacing: "0.18em",
+                          textTransform: "uppercase",
+                          color: style.label,
+                          marginBottom: "3px",
+                        }}>
+                          <span style={{ marginRight: "4px" }}>{style.icon}</span>{typeLabel}
+                        </div>
+                        <p style={{
+                          margin: 0,
+                          fontSize: "9px",
+                          color: style.text,
+                          lineHeight: 1.45,
+                          whiteSpace: "pre-wrap",
+                        }}>
+                          {s.text_md}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {acceptedCount > acceptedFlat.length && includeInPrint && (
+                <p style={{ fontSize: "8px", color: "#94a3b8", fontStyle: "italic", marginTop: "4px" }}>
+                  {appLabel(
+                    "klanten.rapport.patronen.meer",
+                    `+ ${acceptedCount - acceptedFlat.length} meer geaccepteerd, niet getoond in deze print-samenvatting.`
+                  )}
+                </p>
+              )}
             </section>
 
             {/* Verbeterrichtingen — placeholder */}

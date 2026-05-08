@@ -45,6 +45,17 @@ jest.mock("../services/klanten.service", () => ({
   deletePainPoint:          jest.fn(),
   createCoupling:           jest.fn(),
   deleteCoupling:           jest.fn(),
+  // Stap 11.G — pattern suggestions (KlantenWerkblad gebruikt usePatternSuggestions
+  // sinds Vervolg-sessie B; default leeg, andere niet aangeroepen in deze testfile)
+  listPatternSuggestions:         jest.fn(),
+  generatePatternSuggestions:     jest.fn(),
+  createPatternSuggestion:        jest.fn(),
+  updatePatternSuggestion:        jest.fn(),
+  acceptPatternSuggestion:        jest.fn(),
+  rejectPatternSuggestion:        jest.fn(),
+  promotePatternSuggestionToIntent: jest.fn(),
+  deletePatternSuggestion:        jest.fn(),
+  listPatternSuggestionEvents:    jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
 
@@ -78,6 +89,9 @@ beforeEach(() => {
   // Stap 11.F: pijnpunten ook leeg (usePainPoints wordt sinds 11.F altijd aangeroepen)
   klantenService.listPainPoints.mockResolvedValue({ data: [], error: null });
   klantenService.listCouplingsForCanvas.mockResolvedValue({ data: [], error: null });
+  // Stap 11.G Vervolg-sessie B: pattern suggestions leeg (usePatternSuggestions
+  // wordt nu in KlantenWerkblad geladen voor RapportView)
+  klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
 });
 
 describe("KlantenWerkblad — lege-canvas flow (stap 11.E correctie)", () => {
