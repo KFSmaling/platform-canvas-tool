@@ -211,6 +211,19 @@ export async function promotePatternSuggestionToIntent(id) {
   return { data: data?.pattern_suggestion ?? null, error };
 }
 
+// Stap 11.G.3 F8: un-mark/restore voor collapse-sectie "Terug naar voorraad"
+// + "Herstellen". API zet `current_status='open'` via append-only event
+// (unpromoted resp. unrejected) — datamodel + audit-laag intact.
+export async function unmarkPatternSuggestion(id) {
+  const { data, error } = await call("POST", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}&action=unmark`);
+  return { data: data?.pattern_suggestion ?? null, error };
+}
+
+export async function restorePatternSuggestion(id) {
+  const { data, error } = await call("POST", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}&action=restore`);
+  return { data: data?.pattern_suggestion ?? null, error };
+}
+
 export async function deletePatternSuggestion(id) {
   const { error } = await call("DELETE", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}`);
   return { data: null, error };

@@ -262,7 +262,10 @@ function normalizeVanuit(input) {
 }
 
 async function handleAction({ supabase, res, id, action, tenantId, userRole, userId }) {
-  const ALLOWED_ACTIONS = ["accept", "reject", "promote_to_intent"];
+  // Stap 11.G.3 F8: nieuwe actions `unmark` (un-accept/un-promote → open)
+  // en `restore` (un-reject → open). Beide via append-only event-INSERT —
+  // trigger cd_ps_sync_current_status zet current_status terug naar 'open'.
+  const ALLOWED_ACTIONS = ["accept", "reject", "promote_to_intent", "unmark", "restore"];
   if (!ALLOWED_ACTIONS.includes(action)) {
     return res.status(400).json({ error: `action moet één van: ${ALLOWED_ACTIONS.join(', ')}` });
   }
@@ -288,6 +291,20 @@ async function handleAction({ supabase, res, id, action, tenantId, userRole, use
     }
     eventType = "promoted_to_intent";
     extraUpdate = { promoted_to_intent_at: new Date().toISOString() };
+  } else if (action === "unmark") {
+    if (!["accepted", "promoted"].includes(existing.current_status)) {
+      return res.status(409).json({ error: "alleen geaccepteerde of gepromoveerde suggestions kunnen ge-unmarkt worden" });
+    }
+    eventType = "unpromoted";
+    // Bij promoted: clear promoted_to_intent_at
+    if (existing.current_status === "promoted") {
+      extraUpdate = { promoted_to_intent_at: null };
+    }
+  } else if (action === "restore") {
+    if (existing.current_status !== "rejected") {
+      return res.status(409).json({ error: "alleen verwijderde suggestions kunnen hersteld worden" });
+    }
+    eventType = "unrejected";
   }
 
   // Apply extra update first (alleen voor promote)

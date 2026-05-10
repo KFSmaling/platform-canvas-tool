@@ -19,7 +19,7 @@
  * 540-553), enabled wanneer ≥1 accepted pattern.
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Printer, X } from "lucide-react";
 import AiIcon from "../../shared/components/AiIcon";
 import { useTheme } from "../../shared/hooks/useTheme";
@@ -107,17 +107,16 @@ export default function RapportView({
   const { brandName } = useTheme();
   const { label: appLabel } = useAppConfig();
 
-  // Geaccepteerde patronen voor AI-sectie (Stap 11.G Vervolg-sessie B).
-  // Per type max 2 cards, 5 types × 2 = max 10, getrimd tot 6 (eerste 2 van
-  // de eerste 3 types die voorkomen) per instructie 11.G akkoord-handoff
-  // sectie 52: "3-koloms grid van max 6 cards (eerste 2 per type)".
+  // Geaccepteerde patronen voor AI-sectie. Stap 11.G.3 F7-fix: geen 6-limiet
+  // meer — toon alle accepted patterns gegroepeerd per type. A4-landscape is
+  // ruim genoeg; bij >12 patterns vult het grid flexibel n rijen.
   const acceptedByType = useMemo(() => {
     const grouped = new Map();
     for (const t of PATTERN_TYPES) grouped.set(t, []);
     for (const s of suggestions) {
       if (s.current_status !== "accepted") continue;
       const arr = grouped.get(s.pattern_type) || grouped.get("eigen");
-      if (arr.length < 2) arr.push(s);
+      arr.push(s);
     }
     return grouped;
   }, [suggestions]);
@@ -132,17 +131,28 @@ export default function RapportView({
     for (const t of PATTERN_TYPES) {
       for (const s of acceptedByType.get(t) || []) {
         flat.push(s);
-        if (flat.length >= 6) return flat;
       }
     }
     return flat;
   }, [acceptedByType]);
 
   // AI-print-toggle button-met-state pattern (StrategyOnePager regel 540-553).
-  // Enabled wanneer ≥1 accepted pattern; toggle bepaalt of AI-sectie zichtbaar
-  // is in print én preview.
+  // Enabled wanneer ≥1 accepted pattern. Stap 11.G.3 F7-fix: default `true`
+  // zodra `analysisAvailable=true` zodat consultant niet hoeft te klikken
+  // voor een compleet rapport. Consultant kan toggle handmatig uit zetten;
+  // useState-init evalueert eenmalig dus state-behoud per sessie werkt.
   const analysisAvailable = acceptedCount > 0;
   const [includeInPrint, setIncludeInPrint] = useState(false);
+  // One-shot auto-enable: bij eerste detectie van accepted patterns wordt
+  // toggle automatisch aangezet. Daarna mag consultant 'm vrij toggle —
+  // de ref voorkomt dat useEffect bij elke re-render terug-aanzet.
+  const hasAutoEnabledRef = useRef(false);
+  React.useEffect(() => {
+    if (analysisAvailable && !hasAutoEnabledRef.current) {
+      setIncludeInPrint(true);
+      hasAutoEnabledRef.current = true;
+    }
+  }, [analysisAvailable]);
 
   const handlePrint = () => window.print();
   const itemsByDim = (dimId) => items.filter(i => i.dimension_id === dimId);
@@ -367,14 +377,8 @@ export default function RapportView({
                   })}
                 </div>
               )}
-              {acceptedCount > acceptedFlat.length && includeInPrint && (
-                <p style={{ fontSize: "8px", color: "#94a3b8", fontStyle: "italic", marginTop: "4px" }}>
-                  {appLabel(
-                    "klanten.rapport.patronen.meer",
-                    `+ ${acceptedCount - acceptedFlat.length} meer geaccepteerd, niet getoond in deze print-samenvatting.`
-                  )}
-                </p>
-              )}
+              {/* Stap 11.G.3 F7-fix: footer "+ N meer geaccepteerd" weggehaald
+                  — alle accepted patterns worden nu getoond in het grid. */}
             </section>
 
             {/* Verbeterrichtingen — placeholder */}

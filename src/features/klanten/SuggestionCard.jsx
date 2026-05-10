@@ -143,7 +143,7 @@ export default function SuggestionCard({
             title={appLabel("klanten.analyse.accept.tooltip.fase4", "nog te promoten in fase 4 — komt later")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {appLabel("klanten.analyse.actie.accept", "Accept")}
+            {appLabel("klanten.analyse.actie.accept", "Markeer als richting")}
           </button>
           <button
             type="button"
@@ -152,7 +152,7 @@ export default function SuggestionCard({
             data-testid={`actie-refine-edit-${suggestion.id}`}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 disabled:opacity-50"
           >
-            {appLabel("klanten.analyse.actie.refine.edit", "Verfijn — bewerken")}
+            {appLabel("klanten.analyse.actie.refine.edit", "Bewerk")}
           </button>
           <button
             type="button"
@@ -170,7 +170,7 @@ export default function SuggestionCard({
             data-testid={`actie-reject-${suggestion.id}`}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors text-slate-500 hover:text-red-700 disabled:opacity-50"
           >
-            {appLabel("klanten.analyse.actie.reject", "Wuif weg")}
+            {appLabel("klanten.analyse.actie.reject", "Verwijder")}
           </button>
         </div>
       </div>

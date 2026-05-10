@@ -52,6 +52,9 @@ jest.mock("../services/klanten.service", () => ({
   rejectPatternSuggestion:        jest.fn(),
   promotePatternSuggestionToIntent: jest.fn(),
   deletePatternSuggestion:        jest.fn(),
+  // Stap 11.G.3 F8 — un-mark / restore
+  unmarkPatternSuggestion:        jest.fn(),
+  restorePatternSuggestion:       jest.fn(),
   listPatternSuggestionEvents:    jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
@@ -405,5 +408,86 @@ describe("KlantenWerkblad — fase-3 Analyse flow (stap 11.G Vervolg-sessie B)",
     await waitFor(() => {
       expect(screen.queryByTestId(`suggestion-card-${sampleSuggestionOpen.id}`)).toBeInTheDocument();
     });
+  });
+
+  test("12. F8: gemarkeerde patronen verschijnen in collapse-sectie + 'Terug naar voorraad' werkt", async () => {
+    klantenService.listPainPoints.mockResolvedValue({ data: [samplePain], error: null });
+    // Mix van open + accepted (gemarkeerd) suggesties
+    klantenService.listPatternSuggestions.mockResolvedValue({
+      data: [sampleSuggestionOpen, sampleSuggestionAccepted],
+      error: null,
+    });
+    klantenService.unmarkPatternSuggestion.mockResolvedValue({ data: null, error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    await openFase3();
+
+    // Collapse-sectie zichtbaar met juiste count
+    const markedSection = await screen.findByTestId("marked-section");
+    expect(markedSection).toBeInTheDocument();
+    expect(markedSection).toHaveTextContent(/Gemarkeerd voor verbeterrichtingen.*1/i);
+
+    // Default ingeklapt — kaart niet zichtbaar
+    expect(screen.queryByTestId(`marked-card-${sampleSuggestionAccepted.id}`)).not.toBeInTheDocument();
+
+    // Klik op summary → expand
+    fireEvent.click(screen.getByTestId("marked-toggle"));
+
+    // Kaart + Terug-naar-voorraad-knop zichtbaar
+    expect(await screen.findByTestId(`marked-card-${sampleSuggestionAccepted.id}`)).toBeInTheDocument();
+    const terugBtn = screen.getByTestId(`marked-actie-${sampleSuggestionAccepted.id}`);
+    expect(terugBtn).toHaveTextContent(/Terug naar voorraad/i);
+
+    // Klik knop → unmarkPatternSuggestion called
+    await act(async () => {
+      fireEvent.click(terugBtn);
+    });
+    expect(klantenService.unmarkPatternSuggestion).toHaveBeenCalledWith(sampleSuggestionAccepted.id);
+  });
+
+  test("13. F9: knop-teksten zijn 'Bewerk' / 'Verwijder' / 'Markeer als richting' (rebrand, audit-laag intact)", async () => {
+    klantenService.listPainPoints.mockResolvedValue({ data: [samplePain], error: null });
+    klantenService.listPatternSuggestions.mockResolvedValue({
+      data: [sampleSuggestionOpen],
+      error: null,
+    });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    await openFase3();
+
+    // Drie rebrand-knoppen aanwezig met nieuwe teksten
+    expect(await screen.findByTestId(`actie-accept-${sampleSuggestionOpen.id}`))
+      .toHaveTextContent(/^Markeer als richting$/i);
+    expect(screen.getByTestId(`actie-refine-edit-${sampleSuggestionOpen.id}`))
+      .toHaveTextContent(/^Bewerk$/i);
+    expect(screen.getByTestId(`actie-reject-${sampleSuggestionOpen.id}`))
+      .toHaveTextContent(/^Verwijder$/i);
+
+    // Refine-deeper blijft ongewijzigd (echte AI-actie)
+    expect(screen.getByTestId(`actie-refine-deeper-${sampleSuggestionOpen.id}`))
+      .toHaveTextContent(/Verfijn — graaf dieper/i);
+  });
+
+  test("14. F8: verwijderde patronen → collapse 'Verwijderd' + Herstellen werkt", async () => {
+    klantenService.listPainPoints.mockResolvedValue({ data: [samplePain], error: null });
+    klantenService.listPatternSuggestions.mockResolvedValue({
+      data: [sampleSuggestionRejected],
+      error: null,
+    });
+    klantenService.restorePatternSuggestion.mockResolvedValue({ data: null, error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    await openFase3();
+
+    expect(await screen.findByTestId("deleted-section")).toHaveTextContent(/Verwijderd.*1/i);
+
+    fireEvent.click(screen.getByTestId("deleted-toggle"));
+    const herstelBtn = await screen.findByTestId(`deleted-actie-${sampleSuggestionRejected.id}`);
+    expect(herstelBtn).toHaveTextContent(/Herstellen/i);
+
+    await act(async () => {
+      fireEvent.click(herstelBtn);
+    });
+    expect(klantenService.restorePatternSuggestion).toHaveBeenCalledWith(sampleSuggestionRejected.id);
   });
 });
