@@ -37,7 +37,10 @@ export function usePatternSuggestions(canvasId) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    setSuggestions(null);
+    // Stap 11.G.2 F4-fix: NIET setSuggestions(null) — laatste-bekende-state
+    // behouden tijdens reload zodat AnalyseView geen flash-of-empty toont.
+    // Initial-load: suggestions is al null vanuit useState-default; reload:
+    // bestaande array blijft staan tot nieuwe data binnen is.
 
     (async () => {
       const { data, error: loadErr } = await klantenService.listPatternSuggestions(activeCanvasId, { includeDone: true });

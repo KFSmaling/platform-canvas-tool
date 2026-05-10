@@ -71,16 +71,18 @@ export default function ItemModal({ item, dimension, onClose, onSave }) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-auto px-6 py-5 space-y-4">
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-widest mb-1">Naam</label>
+            <label htmlFor="item-naam" className="block text-[11px] font-bold text-slate-700 uppercase tracking-widest mb-1">Naam</label>
             <input
+              id="item-naam"
               type="text" value={name} onChange={e => setName(e.target.value)}
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
               autoFocus required
             />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-widest mb-1">Korte omschrijving</label>
+            <label htmlFor="item-omschrijving" className="block text-[11px] font-bold text-slate-700 uppercase tracking-widest mb-1">Korte omschrijving</label>
             <input
+              id="item-omschrijving"
               type="text" value={description} onChange={e => setDescription(e.target.value)}
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
               placeholder="optioneel"

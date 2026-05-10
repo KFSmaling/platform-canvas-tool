@@ -188,7 +188,14 @@ export default function AnalyseView({ canvasId, dimensions = [], items = [], pai
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
-  if (loading) {
+  // Stap 11.G.2 F4-fix: onderscheid initial-load (geen state) van reload
+  // (laatste state behouden via usePatternSuggestions). Bij reload tonen we
+  // de UI normaal door + inline-spinner naast AI-knoppen i.p.v. spinner-only
+  // dat alle UI verbergt.
+  const isInitialLoad = loading && suggestions === null;
+  const isReloading   = loading && suggestions !== null;
+
+  if (isInitialLoad) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader2 size={28} className="animate-spin text-[var(--color-accent)]" />
@@ -219,7 +226,7 @@ export default function AnalyseView({ canvasId, dimensions = [], items = [], pai
       {/* Intro + AI-knoppen */}
       <div className="mb-6">
         <p className="text-[11px] text-slate-500 italic mb-4 max-w-3xl">
-          {appLabel("klanten.analyse.intro", "AI doet een eerste pas met patroon-suggesties. Consultant blijft eigenaar — accept, verfijn, of wuif weg.")}
+          {appLabel("klanten.analyse.helper.intro", "AI doet een eerste pas op je pijnpunten. Per suggestie kies je: accepteer, verfijn (eigen tekst), graaf dieper (AI verfijnt), of wuif weg.")}
         </p>
 
         {!hasPainPoints && (
@@ -228,7 +235,7 @@ export default function AnalyseView({ canvasId, dimensions = [], items = [], pai
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {AI_BUTTONS.map(btn => {
             const isLoading = busyAction?.action === btn.action;
             return (
@@ -246,7 +253,39 @@ export default function AnalyseView({ canvasId, dimensions = [], items = [], pai
               />
             );
           })}
+          {/* F4-fix: inline-spinner tijdens reload — UI blijft staan,
+              alleen klein signaal dat vernieuwing loopt. */}
+          {isReloading && (
+            <Loader2
+              size={14}
+              data-testid="analyse-inline-spinner"
+              className="animate-spin text-slate-400 ml-2"
+            />
+          )}
         </div>
+
+        {/* F5: per-type helper-tekst onder de AI-knoppen-rij. Concrete uitleg
+            wat elk type betekent — voorkomt dat consultant moet gokken. */}
+        {hasPainPoints && (
+          <ul className="mt-3 space-y-1 text-[11px] text-slate-500 max-w-3xl">
+            <li>
+              <span className="font-bold text-slate-700">{appLabel("klanten.analyse.type.cluster", "Cluster")}:</span>{" "}
+              {appLabel("klanten.analyse.helper.cluster", "Groep pijnpunten die samen wijzen op een capability- of positionering-vraagstuk")}
+            </li>
+            <li>
+              <span className="font-bold text-slate-700">{appLabel("klanten.analyse.type.paradox", "Paradox")}:</span>{" "}
+              {appLabel("klanten.analyse.helper.paradox", "Pijnpunten die elkaar conceptueel tegenspreken of waar oplossing van A juist B verergert")}
+            </li>
+            <li>
+              <span className="font-bold text-slate-700">{appLabel("klanten.analyse.type.positionering", "Positionering")}:</span>{" "}
+              {appLabel("klanten.analyse.helper.positionering", "Propositie of segment waar pijnpunten wijzen op onduidelijke plek t.o.v. concurrenten")}
+            </li>
+            <li>
+              <span className="font-bold text-slate-700">{appLabel("klanten.analyse.type.overstijgend", "Overstijgend")}:</span>{" "}
+              {appLabel("klanten.analyse.helper.overstijgend", "Pijnpunten zonder specifieke koppeling die het hele werkblad raken")}
+            </li>
+          </ul>
+        )}
       </div>
 
       {/* Counter */}

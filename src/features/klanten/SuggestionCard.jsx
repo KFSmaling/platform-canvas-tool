@@ -44,6 +44,19 @@ export default function SuggestionCard({
     getPatternTypeLabelFallback(suggestion.pattern_type),
   );
 
+  // F5 (Stap 11.G.2): tooltip op type-badge — 1-zin-uitleg per type voor
+  // consultant die in de lijst kijkt en wil weten wat het type betekent.
+  const typeTooltip = appLabel(
+    `klanten.analyse.helper.${suggestion.pattern_type}`,
+    {
+      cluster:       "Groep pijnpunten die samen wijzen op een capability- of positionering-vraagstuk",
+      paradox:       "Pijnpunten die elkaar conceptueel tegenspreken",
+      positionering: "Propositie of segment waar pijnpunten wijzen op een zwakke plek",
+      overstijgend:  "Pijnpunten zonder specifieke koppeling die het hele werkblad raken",
+      eigen:         "Consultant-eigen patroon (geen AI-bron)",
+    }[suggestion.pattern_type] || ""
+  );
+
   const vanuit = Array.isArray(suggestion.vanuit) ? suggestion.vanuit : [];
 
   return (
@@ -70,7 +83,8 @@ export default function SuggestionCard({
         {/* Header: type-badge + verfijnd-badge */}
         <div className="flex items-center gap-2 mb-2">
           <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm"
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm cursor-help"
+            title={typeTooltip}
             style={{
               color: style.label,
               background: "rgba(255,255,255,0.6)",

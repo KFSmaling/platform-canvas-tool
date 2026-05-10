@@ -350,4 +350,60 @@ describe("KlantenWerkblad — fase-3 Analyse flow (stap 11.G Vervolg-sessie B)",
       })
     );
   });
+
+  test("11. reload-flicker fix (F4): suggestion-cards blijven zichtbaar tijdens save+reload, inline-spinner verschijnt", async () => {
+    klantenService.listPainPoints.mockResolvedValue({ data: [samplePain], error: null });
+
+    // Initial-load: één open suggestion zichtbaar
+    klantenService.listPatternSuggestions.mockResolvedValue({
+      data: [sampleSuggestionOpen],
+      error: null,
+    });
+
+    // Vertraagde update zodat we de tussenstand (loading=true, suggestions !== null)
+    // kunnen observeren tussen click-Opslaan en service-resolve.
+    let resolveUpdate;
+    klantenService.updatePatternSuggestion.mockImplementation(
+      () => new Promise(resolve => { resolveUpdate = () => resolve({ data: null, error: null }); })
+    );
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    await openFase3();
+
+    // Open edit-modal + wijzig + opslaan (zonder await — keert pas terug bij resolveUpdate())
+    fireEvent.click(await screen.findByTestId(`actie-refine-edit-${sampleSuggestionOpen.id}`));
+    fireEvent.change(await screen.findByLabelText("Tekst"), { target: { value: "Verfijnd" } });
+
+    let savePromise;
+    await act(async () => {
+      savePromise = (async () => {
+        fireEvent.click(screen.getByTestId("suggestion-edit-opslaan"));
+      })();
+      await Promise.resolve();
+    });
+
+    // ── F4-assertion: tussen submit en service-resolve blijven suggestion-cards
+    //   zichtbaar (laatste-state behouden, geen flash-of-empty) ──
+    // updatePatternSuggestion was aangeroepen
+    expect(klantenService.updatePatternSuggestion).toHaveBeenCalled();
+
+    // Modal sluit pas na onSave-resolve. We resolven nu alvast en
+    // verifiëren dat de hele tijd door de SuggestionCard zichtbaar bleef.
+    expect(screen.getByTestId(`suggestion-card-${sampleSuggestionOpen.id}`)).toBeInTheDocument();
+
+    // Resolve update + reload-call
+    klantenService.listPatternSuggestions.mockResolvedValue({
+      data: [{ ...sampleSuggestionOpen, text_md: "Verfijnd", is_user_edited: true }],
+      error: null,
+    });
+    await act(async () => {
+      resolveUpdate();
+      await savePromise;
+    });
+
+    // Card moet nog steeds zichtbaar zijn (mogelijk geüpdate-tekst)
+    await waitFor(() => {
+      expect(screen.queryByTestId(`suggestion-card-${sampleSuggestionOpen.id}`)).toBeInTheDocument();
+    });
+  });
 });

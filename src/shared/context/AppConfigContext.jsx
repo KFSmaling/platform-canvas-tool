@@ -188,6 +188,12 @@ const LABEL_FALLBACKS = {
   "klanten.analyse.type.positionering":             "Positionering",
   "klanten.analyse.type.overstijgend":              "Overstijgend",
   "klanten.analyse.type.eigen":                     "Eigen",
+  // Stap 11.G.2 F5 — helper-tekst per pattern-type + intro
+  "klanten.analyse.helper.cluster":                 "Groep pijnpunten die samen wijzen op een capability- of positionering-vraagstuk",
+  "klanten.analyse.helper.paradox":                 "Pijnpunten die elkaar conceptueel tegenspreken of waar oplossing van A juist B verergert",
+  "klanten.analyse.helper.positionering":           "Propositie of segment waar pijnpunten wijzen op onduidelijke plek t.o.v. concurrenten",
+  "klanten.analyse.helper.overstijgend":            "Pijnpunten zonder specifieke koppeling die het hele werkblad raken",
+  "klanten.analyse.helper.intro":                   "AI doet een eerste pas op je pijnpunten. Per suggestie kies je: accepteer, verfijn (eigen tekst), graaf dieper (AI verfijnt), of wuif weg.",
   "klanten.analyse.badge.verfijnd":                 "verfijnd",
   "klanten.analyse.actie.accept":                   "Accept",
   "klanten.analyse.actie.refine.edit":              "Verfijn — bewerken",
