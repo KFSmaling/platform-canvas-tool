@@ -477,18 +477,21 @@ feature-root in DeepDiveOverlay (CLAUDE.md §4.1).
 |---|---|---|---|
 | `strategy`   | `src/features/strategie/` | ✅ live | StrategieWerkblad + StrategyOnePager (anker voor rapport-laag-styling) |
 | `principles` | `src/features/richtlijnen/` | ✅ live | RichtlijnenWerkblad |
-| `customers`  | `src/features/klanten/` | ✅ Fase 1+2+3 live (stap 11.D/E/F/G, 2026-05-08) | KlantenWerkblad fase 1 inventarisatie + fase 2 pijnpunten + fase 3 AI-analyse; 7 `cd_*`-tabellen + RLS; 3 archetypes (klantsegment/propositie/kanaal); 4 AI-affordances (cluster/paradox/positionering/overstijgend); rapport-laag Type A met geaccepteerde patronen; fase 4 verbeterrichtingen + klantreis-archetype + sub-items + Type B rapport buiten scope |
+| `customers`  | `src/features/klanten/` | ✅ Fase 1+2+3 + UX-cyclus afgerond (stap 11.D/E/F/G/G.1-G.4, 2026-05-08 t/m 2026-05-10) | Zie blok onder de tabel voor volledige UX-cyclus-stand; buiten scope (volgende subs): fase 4 verbeterrichtingen + Roadmap-handover (11.H), klantreis-archetype (11.I), Type B visueel rapport (11.J post-MVP), dossier-driven AI-input (11.K na RFC-002), platform-pattern voor cross-werkblad-AI (F10) |
 | `processes` / `people` / `technology` / `portfolio` | — | placeholder | DeepDiveOverlay valt terug op `GenericPlaceholder`-component |
 
-**Klanten-werkblad-architectuur (stap 11.D-G):**
-- Datamodel: 7 `cd_*`-tabellen (RFC-001 §2) + 1 audit-tabel; alle RLS-enabled met canvas-eigenaar + tenant-isolatie-pattern (anker `canvases`-policy)
+**Klanten-werkblad-architectuur (stap 11.D-G + G.1-G.4):**
+- Datamodel: 7 `cd_*`-tabellen (RFC-001 §2) + 1 audit-tabel; alle RLS-enabled met canvas-eigenaar + tenant-isolatie-pattern (anker `canvases`-policy); event-CHECK uitgebreid met `unrejected` (stap 11.G.3)
 - API fase 1+2: `api/klanten/dimensions.js` + `items.js` + `pain_points.js` + `pain_point_couplings.js` via Path-2 `userScopedClient` uit `_template.js`; gedeelde archetype-schema-validatie in `_archetypes.js`
-- API fase 3: `api/klanten/pattern_suggestions.js` + `pattern_suggestions_generate.js` (Anthropic-call met cluster/paradox/positionering/overstijgend prompts, pure JSON-array parser, append-only events) + `pattern_suggestion_events.js` (audit-trail)
-- Frontend fase 1+2: `KlantenWerkblad` (root) → `WerkruimteView` (fase-tabs) → `DimensieKolom` + `ItemModal` (fase 1) + `PijnpuntenView` + `PijnpuntCard` + `PijnpuntModal` (fase 2)
-- Frontend fase 3: `AnalyseView` (4 AI-knoppen + counter + suggestion-list) + `SuggestionCard` (TYPE_STYLES uit `patternTypeStyles.js` — letterlijk uit StrategyOnePager voor cluster/paradox/positionering per PLATFORM_REQUIREMENTS #8) + `SuggestionEditModal` + `RefineDeeperModal` + `EigenPatroonModal`
-- Frontend rapport-laag: `RapportView` (A4-landscape) leest dimensies/items/pijnpunten + geaccepteerde patronen via `useCanvasDimensions` + `usePainPoints` + `usePatternSuggestions`-hooks (race-guarded). AI-sectie: 3-koloms grid max 6 cards (eerste 2 per type), `includeInPrint`-toggle deblokkeerd bij ≥1 accepted
+- API fase 3: `api/klanten/pattern_suggestions.js` (+ `unmark` / `restore`-actions stap 11.G.3) + `pattern_suggestions_generate.js` (Anthropic-call met cluster/paradox/positionering/overstijgend prompts, pure JSON-array parser, append-only events) + `pattern_suggestion_events.js` (audit-trail). 3 endpoints via Vercel rewrites geconsolideerd (Hobby 12-limiet)
+- Frontend fase 1+2: `KlantenWerkblad` (root, hosting van `usePatternSuggestions` single source of truth) → `WerkruimteView` (fase-tabs, pass-through van suggestions-props) → `DimensieKolom` + `ItemModal` (fase 1) + `PijnpuntenView` + `PijnpuntCard` + `PijnpuntModal` (fase 2)
+- Frontend fase 3: `AnalyseView` (4 AI-knoppen + counter + suggestion-list, `isInitialLoad`/`isReloading` distinctie + inline-spinner — stap 11.G.2) + `SuggestionCard` (TYPE_STYLES uit `patternTypeStyles.js`; Bewerk/Verwijder/Markeer als richting-rebrand — stap 11.G.3) + `SuggestionEditModal` + `RefineDeeperModal` + `EigenPatroonModal` + `CollapseSection` voor Gemarkeerd/Verwijderd-secties met restore-acties (stap 11.G.3)
+- Frontend rapport-laag: `RapportView` (A4-landscape) krijgt suggestions via props van KlantenWerkblad (stap 11.G.4 — geen eigen hook-instance meer). AI-sectie: 3-koloms grid van **alle** accepted patterns (geen 6-limiet meer per stap 11.G.3), `includeInPrint`-toggle deblokkeerd + one-shot auto-enabled bij ≥1 accepted via `hasAutoEnabledRef`
+- E2E-infra: Playwright + `playwright.config.js` + `global-setup.js` storageState + `helpers/test-canvas.js` Path-2-creds; test-account `keessmaling+test@gmail.com` (KF tenant_admin); `.env.test` gitignored; J1-blueprint PASS 13-step in 5.4s tegen productie (stap 11.G.1)
 - 4 prompts (`prompt.klanten.{cluster,paradox,positionering,overstijgend}`) zijn `tenant_overridable=true` per ADR-002 niveau 1+3 — branche/methode-positionering kan legitiem per consultancy-tenant verschillen
 - RLS-tests: `tests/rls/cd_klanten_werkblad.sql` (9 tests, RFC-001 §7); cd_pattern_suggestions cross-tenant geverifieerd in stap 11.G sprint-afsluit
+- RTL: 24/24 PASS over KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow (mocks op service-laag, refactor-veilig)
+- Label-corpus: 140 totaal `label.klanten.*`-keys (incl. 6 nieuwe `klanten.analyse.helper.*` stap 11.G.2 + 6 nieuwe collapse-keys stap 11.G.3)
 
 ---
 
@@ -567,19 +570,68 @@ Gedetailleerde lijst staat in `TECH_DEBT.md`. Korte versie:
   `api/improve.js` werkt wél met tokens), i18n-mismatch op werkbladen 
   (`appLabel` is monolinguaal-by-design — F-18, P11), en TLB-branding-
   finetune (P12). Zie `TECH_DEBT.md`.
-- Klanten & Dienstverlening werkblad — ✅ Fase 1+2+3 live per 2026-05-08
-  (master `30b16ae`). Sectie 5.1 + 7 `cd_*`-tabellen + 9 RLS-tests groen.
-  Stap 11.D MVP fase 1 inventarisatie (master `43ac1bb`); stap 11.E
-  correctie + dimensie-edit (`9dcfd22`); stap 11.F fase 2 pijnpunten met
-  multi-relationele koppelingen + boy-scout dimensie-edit (`a6f838e`);
-  stap 11.G fase 3 AI-analyse (`30b16ae`) — 4 AI-affordances cluster/
-  paradox/positionering/overstijgend, suggestion-tree met refine-edit/
-  refine-deeper/+ eigen-patroon, geaccepteerde patronen in rapport-laag.
-  Open subitems: twee-traps-summarisation voor grote canvas (>8K chars
-  context-payload — fallback nu één-traps-call), parse-fout-pad bij
-  malformed AI-output (logged server-side, geen audit-trail-suggestion
-  rij), `PROMPT_VERSION="11G-v1"` als string-literal i.p.v. DB-veld voor
-  versie-tracking. Zie `TECH_DEBT.md`.
-  Vervolg-sprints (vooruitkijk, niet acuut): fase 4 verbeterrichtingen +
-  Roadmap-handover + Klantreis-archetype + sub-items-UI + Type B visueel
-  rapport + P13 rapport-architectuur als platform-laag.
+- Klanten & Dienstverlening werkblad — ✅ Fase 1+2+3 + UX-cyclus afgerond
+  per 2026-05-10. Master-merge-keten: `30b16ae` (11.G fase 3 AI-analyse) +
+  `a89be72` (Vercel Hobby 12-limit deploy-blocker fix via 3 rewrites) +
+  `ea94327` (11.G.1 E2E-Playwright-infra) + `777b9e8` (11.G.2 F4 reload-
+  flicker + F5 helper-tekst + B3 ItemModal a11y) + `8567545` (11.G.3 F7
+  rapport-volledigheid + F8 collapse marked/deleted + F9 rebrand
+  Bewerk/Verwijder/Markeer als richting) + `ded1959` (11.G.4 F11 RapportView-
+  sync via single source of truth). Laatste deploy: `dpl_DCu3c9H7shR5ZHe4FxKe1ND9jBRR`
+  op `kingfisher-btcprod.vercel.app`. Sectie 5.1 + 7 `cd_*`-tabellen + 9
+  RLS-tests + cross-tenant cd_pattern_suggestions groen + RTL 24/24 PASS.
+  Open subitems (3 P3 uit 11.G, blijven open): twee-traps-summarisation
+  voor grote canvas (>8K chars context-payload — fallback nu één-traps-
+  call), parse-fout-pad bij malformed AI-output (logged server-side, geen
+  audit-trail-suggestion rij), `PROMPT_VERSION="11G-v1"` als string-
+  literal i.p.v. DB-veld voor versie-tracking. 2 P3 uit 11.G.1:
+  wachtwoord-rotatie + test-tenant-isolatie zodra eerste echte klant
+  onboardt. Zie `tech_debt.md`.
+- Klanten-werkblad **fase 4 (stap 11.H)** — instructie volgt zodra
+  reviewer 'm schrijft. Scope: verbeterrichtingen + Roadmap-handover stub.
+  `cd_improvement_intents`-tabel staat klaar uit RFC-001.
+- **Stap 11.G.5 J2+J3 Playwright-specs** — dedicated mini-sprint. Drie
+  keer boy-scout overgeslagen (G.1, G.2, G.3) — patroon is duidelijk,
+  eigen sessie nodig. Niet acuut.
+- **RFC-002 dossier-driven AI-input** — architect-opdracht ligt in
+  `platform/handoff/to-architect/`. Niet bouwer-werk tot RFC akkoord-
+  bevonden + 11.K-instructie geschreven.
+- Vervolg-sprints (vooruitkijk, niet acuut): klantreis-archetype (11.I),
+  Type B visueel rapport (11.J post-MVP), platform-pattern voor cross-
+  werkblad-AI (F10), P13 rapport-architectuur als platform-laag.
+
+---
+
+## 11. VERSE-SESSIE-STARTROUTINE
+
+Bij een verse Claude Code-sessie (nieuwe instance, geen context):
+
+1. Lees **CLAUDE.md** (deze file) — actuele werkblad-status in §5.1, open
+   punten in §10
+2. Lees **WORKFLOW.md** — sprint-rituelen, instruction/result-handoff-
+   pattern, Type 1-9 review-disciplines
+3. Lees **tech_debt.md** — open P3/P4-items + done-log (recente sprint-
+   afsluitingen)
+4. Check **`handoff/to-builder/`** — pending instructies (oudste eerst);
+   `archive/` is afgehandeld
+5. Bij twijfel over scope: question-file naar reviewer in
+   `handoff/to-reviewer/` (niet meteen code schrijven)
+
+### Huidige hoofd-state (per einde 2026-05-10)
+
+| Aspect | Waarde |
+|---|---|
+| Laatste deploy | `dpl_DCu3c9H7shR5ZHe4FxKe1ND9jBRR` (10 mei) op `kingfisher-btcprod.vercel.app` |
+| Master HEAD | `ded1959` — Stap 11.G.4 F11 RapportView-sync |
+| Test-credentials | `keessmaling+test@gmail.com` / staat in `.env.test` (gitignored) — KF tenant_admin |
+| E2E-suite | `npm run test:e2e` — J1-blueprint live, J2/J3 nog niet (mini-sprint 11.G.5) |
+| RTL | 24/24 PASS over 3 klanten-suites |
+| Endpoint-budget Vercel | 12/12 (Hobby), 3 endpoints geconsolideerd via rewrites |
+
+### Verwachte volgende stappen
+
+- **Stap 11.H** — Klanten-fase 4 verbeterrichtingen + Roadmap-handover
+  (instructie volgt van reviewer)
+- **Stap 11.G.5** — J2+J3 Playwright-specs als mini-sprint (niet acuut)
+- **Stap 11.K** — Dossier-driven AI-input, wacht op RFC-002 akkoord
+  (architect-werk parallel)
