@@ -2,7 +2,7 @@
 
 > Levend document. Update de status zodra iets gefixt is.  
 > Gekoppeld aan `CLAUDE.md` sectie 4.6 en 10.  
-> Laatste update: 2026-05-08
+> Laatste update: 2026-05-10
 
 ---
 
@@ -265,6 +265,30 @@ SVG-render faalt op donkere achtergrond.
 
 ---
 
+## P3 — E2E-test-account: zwak wachtwoord + KF-tenant-shared
+
+Stap 11.G.1 zette E2E-Playwright-infra op met test-account
+`keessmaling+test@gmail.com` (UUID `67c74142-d08f-41cc-a21a-7d6cfc7b5d97`).
+Twee dev-fase-keuzes die bij eerste echte klant moeten worden geadresseerd:
+
+1. **Wachtwoord `test123`** — bewust zwak voor dev-fase-snelheid (in `.env.test`,
+   gitignored). Roteer naar sterk wachtwoord (Supabase Dashboard → Authentication
+   → Users → reset password).
+
+2. **Test-account zit in KF-productie-tenant** (`00000000-0000-0000-0000-000000000002`)
+   met `tenant_admin`-rol — kan dus alle KF-canvases zien én bewerken (RLS toelaat).
+   Voor dev OK; productie-risico zodra echte KF-data binnenstroomt. **Fix:** maak
+   aparte test-tenant (slug `test-e2e`) + verplaats user-profile-rij + update
+   `.env.test` `PLAYWRIGHT_TEST_KF_TENANT_ID` naar nieuwe tenant.
+
+**Drempel:** zodra eerste echte (non-Kees, non-Platform-admin) klant onboardt op
+KF-tenant. Niet acuut zolang Kees enige user is op KF.
+
+**Effort:** ~1 uur (wachtwoord-rotatie + test-tenant-aanmaak + .env.test-update +
+J1-test-rerun verifiëren).
+
+---
+
 ## P3 — Klanten fase-3 AI: twee-traps-summarisation voor grote canvas
 
 `api/klanten/pattern_suggestions_generate.js` heeft een `CONTEXT_TOKEN_WARN_THRESHOLD = 8000` (ruwe char-count) maar bij overschrijding nu alleen een server-side log-warning + één-traps-fallback. Bij grote consultancy-canvases (veel dimensies × items × pijnpunten met couplings) kan de context-payload ruim boven die drempel uitkomen, met:
@@ -350,6 +374,7 @@ toont generieke "Canvas" i.p.v. specifieke naam ("Aegis Verzekering — ...").
 - 2026-04-26 — P4 Label-discipline tooling — ESLint `react/jsx-no-literals` op warn-level in `package.json` met allow-list. 220 legacy-violations gedetecteerd → sweep-item is nu uitvoerbaar. Commit: `245b562`
 - 2026-05-05 — Stap 7 Tenant-content-laag (ADR-002 niveau 1). 19 commits + 11 migraties + 21 files (+659/-46). Template-engine `api/_template.js`; `tenants.tenant_content jsonb` per-tenant tokens; `app_config(tenant_id, key)` met UNIQUE NULLS NOT DISTINCT; 2 RPC-functies voor DISTINCT ON / NULLS LAST tenant-lookup; alle 5 endpoints geïntegreerd; 22 prompts BTC/KF/Novius-vrij; KF-tenant 1-op-1 ge-templated zonder regressie; TLB enterprise-tenant + cross-tenant RLS-isolatie bewezen. Master-merge `92ccb24`, production-deploy `dpl_98g5xKetKXMp3hPJ5oZRVPfB6NFe`.
 - 2026-05-07 — Stap 11.D — MVP Klanten & Dienstverlening werkblad. 7 commits + 3 migraties + 17 files (+2455/-1). Datamodel uit RFC-001 §2-§3 (7 `cd_*`-tabellen + audit-tabel + 5 trigger-functies); 9 RLS-tests groen (RFC-001 §7); 3 archetypes functioneel (klantsegment/propositie/kanaal) via `api/klanten/{dimensions,items}.js` + 8 frontend-files in `src/features/klanten/`; A4-rapport met StrategyOnePager-ankers; Aegis-fictie test-canvas in KF-tenant. Master-merge `43ac1bb`, production-deploy `dpl_6o2R2UHoUDkAq4WvUUPWQvQDr2Cb`.
+- 2026-05-10 — Stap 11.G.1 — E2E-test-infrastructuur (Playwright). Test-account `keessmaling+test@gmail.com` (UUID `67c74142...`, KF tenant_admin) live; `.env.test` (gitignored) + `playwright.config.js` met globalSetup login-helper + `tests/e2e/global-setup.js` storageState-pattern (`playwright/.auth/test-user.json`); `helpers/test-canvas.js` create+delete via Supabase JS Path-2 (geen service-role); `tests/e2e/journeys/J1-leeg-canvas-vullen.spec.js` PASS in 5.4s tegen productie (`kingfisher-btcprod.vercel.app`); cleanup-bewijs 0 e2e-canvases over. `package.json` scripts `test:e2e`, `test:e2e:ui`, `test:e2e:headed`. 2 nieuwe P3-items voor wachtwoord-rotatie + test-tenant-isolatie. J2/J3/J4 niet meegenomen — komen in latere sprints.
 - 2026-05-08 — Stap 11.G — Fase 3 Analyse + AI (Klanten-werkblad). 4 commits + 3 migraties + ~25 files. 4 AI-affordances (cluster/paradox/positionering/overstijgend) via `api/klanten/pattern_suggestions_generate.js` met Anthropic-call + pure JSON-array parser + append-only events; suggestion-tree (refine-edit / refine-deeper / + eigen patroon); fase-3-tab geactiveerd; RapportView AI-sectie 3-koloms grid max 6 cards (eerste 2 per type); 4 prompts `tenant_overridable=true`; 56 nieuwe label-keys → 129 totaal `label.klanten.*`; geen schema-wijziging (cd_pattern_suggestions + _events uit 11.D). RTL-tests 20/20 PASS over 3 suites (KlantenWerkblad/Pijnpunten/AnalyseView). Master-merge `30b16ae`, production-deploy `dpl_J7eHF3mYD1xj9GvpgQnjfJGDFtBw`. Drie nieuwe P3-items toegevoegd (twee-traps-summarisation, parse-fout-audit-pad, PROMPT_VERSION als string-literal).
 
 ---
