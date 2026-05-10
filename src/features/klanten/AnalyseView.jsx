@@ -34,9 +34,12 @@ import SuggestionCard from "./SuggestionCard";
 import SuggestionEditModal from "./SuggestionEditModal";
 import RefineDeeperModal from "./RefineDeeperModal";
 import EigenPatroonModal from "./EigenPatroonModal";
+import CollapseSection from "./CollapseSection";
 import { AI_ACTION_TYPES } from "./patternTypeStyles";
 
-const OPEN_STATUSES = new Set(["open", "edited", "refined"]);
+const OPEN_STATUSES    = new Set(["open", "edited", "refined"]);
+const MARKED_STATUSES  = new Set(["accepted", "promoted"]);
+const DELETED_STATUSES = new Set(["rejected"]);
 
 const AI_BUTTONS = [
   { action: "cluster",       labelKey: "klanten.analyse.knop.cluster",       labelFallback: "Cluster zoeken",       helperKey: "klanten.analyse.knop.cluster.helper",       helperFallback: "Groepen pijnpunten met gemeenschappelijke oorzaak" },
@@ -64,13 +67,21 @@ export default function AnalyseView({ canvasId, dimensions = [], items = [], pai
 
   const hasPainPoints = (painPoints || []).length > 0;
 
-  // Filtering: open/edited/refined zichtbaar in lijst; accepted/rejected → counter
-  const { openList, acceptedCount, rejectedCount } = useMemo(() => {
+  // Stap 11.G.3 F8: drie buckets — open (in lijst), gemarkeerd (collapse),
+  // verwijderd (collapse). Counter blijft tonen totaal accepted + rejected
+  // voor backwards-compat met bestaande UI-tekst.
+  const { openList, markedList, deletedList, acceptedCount, rejectedCount } = useMemo(() => {
     const list = suggestions || [];
-    const open = list.filter(s => OPEN_STATUSES.has(s.current_status));
-    const accepted = list.filter(s => s.current_status === "accepted").length;
-    const rejected = list.filter(s => s.current_status === "rejected").length;
-    return { openList: open, acceptedCount: accepted, rejectedCount: rejected };
+    const open    = list.filter(s => OPEN_STATUSES.has(s.current_status));
+    const marked  = list.filter(s => MARKED_STATUSES.has(s.current_status));
+    const deleted = list.filter(s => DELETED_STATUSES.has(s.current_status));
+    return {
+      openList:      open,
+      markedList:    marked,
+      deletedList:   deleted,
+      acceptedCount: marked.length,
+      rejectedCount: deleted.length,
+    };
   }, [suggestions]);
 
   // Sorteer suggestions: parents eerst, kinderen direct erna onder hun parent.
@@ -126,6 +137,27 @@ export default function AnalyseView({ canvasId, dimensions = [], items = [], pai
     setBusyAction({ action: "reject", id: suggestion.id });
     setGlobalError(null);
     const { error: actErr } = await klantenService.rejectPatternSuggestion(suggestion.id);
+    setBusyAction(null);
+    if (actErr) { setGlobalError(actErr); return; }
+    reload();
+  }
+
+  // Stap 11.G.3 F8: un-mark / restore — collapse-sectie-acties.
+  async function handleUnMark(suggestion) {
+    if (busyAction) return;
+    setBusyAction({ action: "unmark", id: suggestion.id });
+    setGlobalError(null);
+    const { error: actErr } = await klantenService.unmarkPatternSuggestion(suggestion.id);
+    setBusyAction(null);
+    if (actErr) { setGlobalError(actErr); return; }
+    reload();
+  }
+
+  async function handleRestore(suggestion) {
+    if (busyAction) return;
+    setBusyAction({ action: "restore", id: suggestion.id });
+    setGlobalError(null);
+    const { error: actErr } = await klantenService.restorePatternSuggestion(suggestion.id);
     setBusyAction(null);
     if (actErr) { setGlobalError(actErr); return; }
     reload();
@@ -337,6 +369,35 @@ export default function AnalyseView({ canvasId, dimensions = [], items = [], pai
           </div>
         )}
       </div>
+
+      {/* Stap 11.G.3 F8: collapse-secties voor gemarkeerde + verwijderde
+          patronen. Geeft consultant zicht op eigen werk + restore-pad. */}
+      {(markedList.length > 0 || deletedList.length > 0) && (
+        <div className="mb-6">
+          {markedList.length > 0 && (
+            <CollapseSection
+              title={`${appLabel("klanten.analyse.gemarkeerd.titel", "Gemarkeerd voor verbeterrichtingen")} (${markedList.length})`}
+              items={markedList}
+              emptyMessage={appLabel("klanten.analyse.gemarkeerd.leeg", "Nog niets gemarkeerd")}
+              actionLabel={appLabel("klanten.analyse.gemarkeerd.terug", "Terug naar voorraad")}
+              onAction={handleUnMark}
+              testIdPrefix="marked"
+              busyId={busyAction?.action === "unmark" ? busyAction.id : null}
+            />
+          )}
+          {deletedList.length > 0 && (
+            <CollapseSection
+              title={`${appLabel("klanten.analyse.verwijderd.titel", "Verwijderd")} (${deletedList.length})`}
+              items={deletedList}
+              emptyMessage={appLabel("klanten.analyse.verwijderd.leeg", "Niets verwijderd")}
+              actionLabel={appLabel("klanten.analyse.verwijderd.herstel", "Herstellen")}
+              onAction={handleRestore}
+              testIdPrefix="deleted"
+              busyId={busyAction?.action === "restore" ? busyAction.id : null}
+            />
+          )}
+        </div>
+      )}
 
       {/* Eigen-patroon CTA */}
       <div className="flex justify-end">

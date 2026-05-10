@@ -55,6 +55,8 @@ jest.mock("../services/klanten.service", () => ({
   rejectPatternSuggestion:        jest.fn(),
   promotePatternSuggestionToIntent: jest.fn(),
   deletePatternSuggestion:        jest.fn(),
+  unmarkPatternSuggestion:        jest.fn(),
+  restorePatternSuggestion:       jest.fn(),
   listPatternSuggestionEvents:    jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
