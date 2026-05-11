@@ -12,11 +12,22 @@
  */
 
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { X, Sparkles, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import { getSchemaFor } from "./archetypeSchemas";
 
-export default function ItemModal({ item, dimension, onClose, onSave }) {
+export default function ItemModal({
+  item,
+  dimension,
+  onClose,
+  onSave,
+  // Stap 11.K — A2 dossier-extract velden-invuller. Optionele callback +
+  // upload-status uit useCanvasUploads (KlantenWerkblad-niveau).
+  onFillFieldsFromDossier,
+  hasIndexedChunks = false,
+  hasUploads = false,
+  uploadsProcessing = false,
+}) {
   const { label: appLabel } = useAppConfig();
   const isEdit = !!item;
   const schema = getSchemaFor(dimension?.archetype);
@@ -26,10 +37,47 @@ export default function ItemModal({ item, dimension, onClose, onSave }) {
   const [archetypeData, setArchetypeData] = useState(item?.archetype_data ?? {});
   const [saving, setSaving]   = useState(false);
   const [errMsg, setErrMsg]   = useState(null);
+  const [filling, setFilling] = useState(false);
+  const [fillNote, setFillNote] = useState(null);
 
   function setField(key, value) {
     setArchetypeData(d => ({ ...d, [key]: value }));
   }
+
+  // A2: vul archetype-velden via AI uit dossier. Server merge't proposed_fields
+  // in archetype_data + zet is_draft=true wanneer item canonical was; daarna
+  // syncen we lokaal de form-state met de updated item.
+  async function handleFillFromDossier() {
+    if (!onFillFieldsFromDossier || !item?.id || filling) return;
+    setFilling(true);
+    setFillNote(null);
+    setErrMsg(null);
+    const { data: updatedItem, meta, error } = await onFillFieldsFromDossier(item.id);
+    setFilling(false);
+    if (error) {
+      setErrMsg(error.message || "Velden invullen mislukt");
+      return;
+    }
+    if (updatedItem?.archetype_data) {
+      setArchetypeData(updatedItem.archetype_data);
+    }
+    const proposed = meta?.proposed_fields || {};
+    const count = Object.keys(proposed).length;
+    if (count === 0) {
+      setFillNote(meta?.note || "Geen onderbouwing gevonden voor lege velden");
+    } else {
+      setFillNote(`${count} veld${count === 1 ? "" : "en"} ingevuld vanuit dossier`);
+    }
+  }
+
+  const a2Disabled = !item?.id || !hasIndexedChunks || uploadsProcessing || filling;
+  const a2Tooltip = !item?.id
+    ? "Bewaar eerst het item — A2 vult velden voor een bestaand item"
+    : !hasUploads
+      ? appLabel("klanten.dossier.disabled_no_uploads", "Upload eerst documenten")
+      : uploadsProcessing
+        ? appLabel("klanten.dossier.disabled_processing", "Documenten worden nog verwerkt")
+        : null;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -90,7 +138,29 @@ export default function ItemModal({ item, dimension, onClose, onSave }) {
           </div>
 
           <div className="border-t border-slate-100 pt-4 space-y-3">
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest">Archetype-velden</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest">Archetype-velden</p>
+              {onFillFieldsFromDossier && (
+                <button
+                  type="button"
+                  onClick={handleFillFromDossier}
+                  disabled={a2Disabled}
+                  data-testid="dossier-fields-fill"
+                  title={a2Tooltip || undefined}
+                  className={`flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors ${
+                    a2Disabled
+                      ? "text-slate-400 cursor-not-allowed opacity-60"
+                      : "text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+                  }`}
+                >
+                  {filling ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                  {appLabel("klanten.dossier.fields_fill", "Velden invullen vanuit dossier")}
+                </button>
+              )}
+            </div>
+            {fillNote && (
+              <p className="text-[10px] text-blue-700 italic" data-testid="dossier-fields-fill-note">{fillNote}</p>
+            )}
             {schema.length === 0 && (
               <p className="text-xs text-slate-500 italic">Geen velden gedefinieerd voor archetype "{dimension?.archetype}"</p>
             )}

@@ -9,6 +9,7 @@
  */
 
 import { apiFetch } from "../../../shared/services/apiClient";
+import { supabase } from "../../../shared/services/supabase.client";
 
 async function call(method, url, body) {
   try {
@@ -96,6 +97,100 @@ export async function updateItem(id, patch) {
 export async function deleteItem(id) {
   const { error } = await call("DELETE", `/api/klanten/items?id=${encodeURIComponent(id)}`);
   return { data: null, error };
+}
+
+// ── Stap 11.K — Dossier-driven AI-affordances + draft-acties ──────────────
+
+export async function extractItemsFromDossier(canvasId, dimensionId) {
+  if (!canvasId || !dimensionId) return { data: null, error: new Error("canvasId + dimensionId required") };
+  const { data, error } = await call(
+    "POST",
+    "/api/klanten/items?_subpath=dossier_extract",
+    { canvas_id: canvasId, dimension_id: dimensionId },
+  );
+  return {
+    data: data?.items ?? null,
+    error,
+    meta: data && { ai_model: data.ai_model, prompt_version: data.prompt_version, chunk_count: data.chunk_count, note: data.note },
+  };
+}
+
+export async function fillFieldsFromDossier(itemId) {
+  if (!itemId) return { data: null, error: new Error("itemId required") };
+  const { data, error } = await call(
+    "POST",
+    `/api/klanten/items?_subpath=dossier_fill_fields&id=${encodeURIComponent(itemId)}`,
+  );
+  return {
+    data: data?.item ?? null,
+    error,
+    meta: data && { proposed_fields: data.proposed_fields, ai_model: data.ai_model, prompt_version: data.prompt_version, note: data.note },
+  };
+}
+
+export async function extractPainPointsFromDossier(canvasId) {
+  if (!canvasId) return { data: null, error: new Error("canvasId required") };
+  const { data, error } = await call(
+    "POST",
+    "/api/klanten/pain_points?_subpath=dossier_extract",
+    { canvas_id: canvasId },
+  );
+  return {
+    data: data?.pain_points ?? null,
+    error,
+    meta: data && { ai_model: data.ai_model, prompt_version: data.prompt_version, chunk_count: data.chunk_count, note: data.note },
+  };
+}
+
+export async function acceptDraftItem(id) {
+  const { data, error } = await call("POST", `/api/klanten/items?_subpath=accept_draft&id=${encodeURIComponent(id)}`);
+  return { data: data?.item ?? null, error };
+}
+export async function rejectDraftItem(id) {
+  const { error } = await call("POST", `/api/klanten/items?_subpath=reject_draft&id=${encodeURIComponent(id)}`);
+  return { data: null, error };
+}
+export async function editDraftItem(id, fields) {
+  const { data, error } = await call("PUT", `/api/klanten/items?_subpath=edit_draft&id=${encodeURIComponent(id)}`, fields);
+  return { data: data?.item ?? null, error };
+}
+
+export async function acceptDraftPainPoint(id) {
+  const { data, error } = await call("POST", `/api/klanten/pain_points?_subpath=accept_draft&id=${encodeURIComponent(id)}`);
+  return {
+    data: data?.pain_point ?? null,
+    error,
+    meta: data && { created_couplings: data.created_couplings, skipped_couplings: data.skipped_couplings },
+  };
+}
+export async function rejectDraftPainPoint(id) {
+  const { error } = await call("POST", `/api/klanten/pain_points?_subpath=reject_draft&id=${encodeURIComponent(id)}`);
+  return { data: null, error };
+}
+export async function editDraftPainPoint(id, fields) {
+  const { data, error } = await call("PUT", `/api/klanten/pain_points?_subpath=edit_draft&id=${encodeURIComponent(id)}`, fields);
+  return { data: data?.pain_point ?? null, error };
+}
+
+/** useCanvasUploads-helper: snel canvas-upload-status ophalen voor disabled-flow */
+export async function fetchUploadsStatus(canvasId) {
+  if (!canvasId) return { data: null, error: new Error("canvasId required") };
+  if (!supabase) return { data: { hasUploads: false, hasIndexedChunks: false, uploadCount: 0, indexedChunkCount: 0 }, error: null };
+  const [uploadsRes, chunksRes] = await Promise.all([
+    supabase.from("canvas_uploads").select("id", { count: "exact", head: true }).eq("canvas_id", canvasId),
+    supabase.from("document_chunks").select("id", { count: "exact", head: true }).eq("canvas_id", canvasId).eq("chunk_type", "child").not("embedding", "is", null),
+  ]);
+  if (uploadsRes.error) return { data: null, error: uploadsRes.error };
+  if (chunksRes.error)  return { data: null, error: chunksRes.error };
+  return {
+    data: {
+      uploadCount: uploadsRes.count ?? 0,
+      indexedChunkCount: chunksRes.count ?? 0,
+      hasUploads: (uploadsRes.count ?? 0) > 0,
+      hasIndexedChunks: (chunksRes.count ?? 0) > 0,
+    },
+    error: null,
+  };
 }
 
 // ── cd_pain_points (RFC-001 §2.3) ──────────────────────────────────────────

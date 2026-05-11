@@ -16,7 +16,7 @@
  */
 
 import React from "react";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import PijnpuntCard from "./PijnpuntCard";
 
@@ -68,6 +68,14 @@ export default function PijnpuntenView({
   couplings = [],
   onAddPijnpunt,
   onEditPijnpunt,
+  // Stap 11.K — A3 dossier-extract + draft-acties
+  onExtractFromDossier,
+  onAcceptDraftPain,
+  onRejectDraftPain,
+  hasIndexedChunks = false,
+  hasUploads = false,
+  uploadsProcessing = false,
+  busyAction = null,
 }) {
   const { label: appLabel } = useAppConfig();
   const couplingCounts = couplingCountByItem(couplings);
@@ -76,6 +84,22 @@ export default function PijnpuntenView({
     if (!couplingsByPain.has(c.pain_point_id)) couplingsByPain.set(c.pain_point_id, []);
     couplingsByPain.get(c.pain_point_id).push(c);
   }
+
+  const canonicalItemCount = items.filter(it => !it.is_draft).length;
+  const a3HasCallback = typeof onExtractFromDossier === "function";
+  const a3Busy = busyAction?.action === "dossier_extract_pains";
+  const a3Disabled = !hasIndexedChunks || canonicalItemCount === 0 || uploadsProcessing;
+  const a3Tooltip = canonicalItemCount === 0
+    ? appLabel("klanten.dossier.disabled_no_items", "Voeg eerst items toe")
+    : !hasUploads
+      ? appLabel("klanten.dossier.disabled_no_uploads", "Upload eerst documenten")
+      : uploadsProcessing
+        ? appLabel("klanten.dossier.disabled_processing", "Documenten worden nog verwerkt")
+        : null;
+
+  // Splits canonical en draft pijnpunten — render draft als aparte card-stijl
+  const canonicalPains = painPoints.filter(pp => !pp.is_draft);
+  const draftPains     = painPoints.filter(pp =>  pp.is_draft);
 
   return (
     <div className="px-8 py-6 overflow-auto">
@@ -102,10 +126,46 @@ export default function PijnpuntenView({
         <div className="font-medium text-sm text-[var(--color-primary)]">
           {appLabel("klanten.pijnpunt.lijst.titel", "Pijnpunten")}
         </div>
-        <div className="text-[10px] text-slate-400">
-          {painPoints.length} · {appLabel("klanten.pijnpunt.lijst.helper", "card laat koppelingen zien als chips")}
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] text-slate-400">
+            {painPoints.length} · {appLabel("klanten.pijnpunt.lijst.helper", "card laat koppelingen zien als chips")}
+          </div>
+          {a3HasCallback && (
+            <button
+              type="button"
+              onClick={onExtractFromDossier}
+              disabled={a3Disabled || a3Busy}
+              data-testid="dossier-pain-points-extract"
+              title={a3Tooltip || undefined}
+              className={`flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors ${
+                a3Disabled
+                  ? "text-slate-400 cursor-not-allowed opacity-60"
+                  : "text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+              }`}
+            >
+              {a3Busy ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+              {appLabel("klanten.dossier.pain_points_extract", "Pijnpunten extraheren vanuit dossier")}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Draft-pijnpunten (uit dossier-extract A3) */}
+      {draftPains.length > 0 && (
+        <div className="mb-4 space-y-2" data-testid="draft-pains-section">
+          {draftPains.map(pp => (
+            <DraftPainCard
+              key={pp.id}
+              painPoint={pp}
+              onClick={() => onEditPijnpunt && onEditPijnpunt(pp)}
+              onAccept={() => onAcceptDraftPain && onAcceptDraftPain(pp)}
+              onReject={() => onRejectDraftPain && onRejectDraftPain(pp)}
+              busy={busyAction?.id === pp.id}
+              appLabel={appLabel}
+            />
+          ))}
+        </div>
+      )}
 
       {painPoints.length === 0 ? (
         <div className="text-center py-8 border border-dashed border-slate-300 rounded">
@@ -125,7 +185,7 @@ export default function PijnpuntenView({
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            {painPoints.map(pp => (
+            {canonicalPains.map(pp => (
               <PijnpuntCard
                 key={pp.id}
                 painPoint={pp}
@@ -149,6 +209,61 @@ export default function PijnpuntenView({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Stap 11.K — Draft-pijnpunt-card met opacity + badge + Markeer/Bewerk/Verwijder
+function DraftPainCard({ painPoint, onClick, onAccept, onReject, busy, appLabel }) {
+  return (
+    <div
+      data-testid={`draft-pain-${painPoint.id}`}
+      data-is-draft="true"
+      className="border border-dashed border-blue-300 rounded px-3 py-2.5 bg-blue-50/40"
+    >
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-blue-700">
+          {appLabel("klanten.dossier.draft_badge", "dossier-suggestie")}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full text-left"
+      >
+        <p className="text-[12.5px] text-slate-800 whitespace-pre-wrap leading-relaxed">
+          {painPoint.text_md}
+        </p>
+      </button>
+      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-blue-200/60">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onAccept}
+          data-testid={`draft-pain-accept-${painPoint.id}`}
+          className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50"
+        >
+          {appLabel("klanten.dossier.actie.markeer", "Markeer als richting")}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onClick}
+          data-testid={`draft-pain-edit-${painPoint.id}`}
+          className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-300 text-slate-600 hover:border-slate-500 disabled:opacity-50"
+        >
+          {appLabel("klanten.dossier.actie.bewerk", "Bewerk")}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onReject}
+          data-testid={`draft-pain-reject-${painPoint.id}`}
+          className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded transition-colors text-slate-500 hover:text-red-700 disabled:opacity-50"
+        >
+          {appLabel("klanten.dossier.actie.verwijder", "Verwijder")}
+        </button>
+      </div>
     </div>
   );
 }

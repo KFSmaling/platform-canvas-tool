@@ -21,6 +21,10 @@
 const { requireAuth } = require("../_auth");
 const { userScopedClient } = require("../_template");
 const { validateArchetypeData } = require("./_archetypes");
+const {
+  extractItemsFromDossier, fillFieldsFromDossier,
+  acceptDraftItem, rejectDraftItem, editDraftItem,
+} = require("./_dossier_extract");
 
 module.exports = async function handler(req, res) {
   const user = await requireAuth(req, res);
@@ -29,6 +33,15 @@ module.exports = async function handler(req, res) {
   const supabase = userScopedClient(req);
   if (!supabase) {
     return res.status(500).json({ error: "Supabase niet geconfigureerd" });
+  }
+
+  // Stap 11.K: subpath-dispatch voor dossier-affordances + draft-acties.
+  // Endpoint-budget=12 — geen nieuwe top-level files.
+  const subpath = req.query?._subpath;
+  if (subpath === "dossier_extract" || subpath === "dossier_fill_fields" ||
+      subpath === "accept_draft"    || subpath === "reject_draft" ||
+      subpath === "edit_draft") {
+    return handleDossierSubpath(req, res, { subpath, supabase, user });
   }
 
   try {
@@ -141,3 +154,82 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: err.message || "interne fout" });
   }
 };
+
+// ── Stap 11.K — Dossier-driven AI-affordances + draft-acties ───────────────
+
+async function handleDossierSubpath(req, res, { subpath, supabase, user }) {
+  try {
+    // Common context: tenant + role
+    const { data: tenantRow } = await supabase.from("tenants").select("id").maybeSingle();
+    if (!tenantRow) return res.status(403).json({ error: "Tenant niet gevonden voor deze user" });
+    const { data: profileRow } = await supabase.from("user_profiles").select("role").maybeSingle();
+    const ctx = {
+      supabase, req,
+      userId: user.id,
+      userRole: profileRow?.role || null,
+      tenantId: tenantRow.id,
+    };
+
+    if (subpath === "dossier_extract") {
+      // A1: bulk-create draft items per dimensie. Body: { canvas_id, dimension_id }
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const { canvas_id, dimension_id } = req.body || {};
+      const result = await extractItemsFromDossier({ ...ctx, canvasId: canvas_id, dimensionId: dimension_id });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "dossier_fill_fields") {
+      // A2: vul archetype-velden voor één item. Query: ?id=...
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: "id is verplicht" });
+      const result = await fillFieldsFromDossier({ ...ctx, itemId: id });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "accept_draft") {
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: "id is verplicht" });
+      const result = await acceptDraftItem({ ...ctx, itemId: id });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "reject_draft") {
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: "id is verplicht" });
+      const result = await rejectDraftItem({ ...ctx, itemId: id });
+      if (result.status === 204) return res.status(204).end();
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "edit_draft") {
+      if (req.method !== "PUT") {
+        res.setHeader("Allow", "PUT");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: "id is verplicht" });
+      const result = await editDraftItem({ ...ctx, itemId: id, fields: req.body || {} });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    return res.status(400).json({ error: `Onbekende subpath: ${subpath}` });
+  } catch (err) {
+    console.error("[api/klanten/items dossier-subpath] onverwachte fout:", err);
+    return res.status(500).json({ error: err.message || "interne fout" });
+  }
+}

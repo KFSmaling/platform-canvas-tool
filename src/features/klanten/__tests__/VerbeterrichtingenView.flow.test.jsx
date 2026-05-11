@@ -60,6 +60,17 @@ jest.mock("../services/klanten.service", () => ({
   deleteIntent:                    jest.fn(),
   handoverIntentToRoadmap:         jest.fn(),
   unsendIntent:                    jest.fn(),
+  // Stap 11.K — dossier
+  fetchUploadsStatus:              jest.fn(),
+  extractItemsFromDossier:         jest.fn(),
+  fillFieldsFromDossier:           jest.fn(),
+  extractPainPointsFromDossier:    jest.fn(),
+  acceptDraftItem:                 jest.fn(),
+  rejectDraftItem:                 jest.fn(),
+  editDraftItem:                   jest.fn(),
+  acceptDraftPainPoint:            jest.fn(),
+  rejectDraftPainPoint:            jest.fn(),
+  editDraftPainPoint:              jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
 
@@ -133,6 +144,7 @@ beforeEach(() => {
   klantenService.listCouplingsForCanvas.mockResolvedValue({ data: [], error: null });
   klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
   klantenService.listIntents.mockResolvedValue({ data: [], error: null });
+  klantenService.fetchUploadsStatus.mockResolvedValue({ data: { hasUploads: false, hasIndexedChunks: false, uploadCount: 0, indexedChunkCount: 0 }, error: null });
 });
 
 async function openFase4() {

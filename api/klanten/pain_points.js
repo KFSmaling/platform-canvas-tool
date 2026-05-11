@@ -18,8 +18,13 @@
 const { requireAuth } = require("../_auth");
 const { userScopedClient } = require("../_template");
 const { handleCouplings } = require("./_pain_couplings");
+const {
+  extractPainPointsFromDossier,
+  acceptDraftPainPoint, rejectDraftPainPoint, editDraftPainPoint,
+} = require("./_dossier_extract");
 
 const TEXT_MAX = 5000; // ruim genoeg voor markdown-pijnpunt-tekst
+const DOSSIER_SUBPATHS = new Set(["dossier_extract", "accept_draft", "reject_draft", "edit_draft"]);
 
 module.exports = async function handler(req, res) {
   // Subpath-dispatch — /api/klanten/pain_point_couplings wordt via Vercel
@@ -33,6 +38,11 @@ module.exports = async function handler(req, res) {
   const supabase = userScopedClient(req);
   if (!supabase) {
     return res.status(500).json({ error: "Supabase niet geconfigureerd" });
+  }
+
+  // Stap 11.K dossier-subpath-dispatch: A3 + draft-acties.
+  if (DOSSIER_SUBPATHS.has(req.query?._subpath)) {
+    return handleDossierSubpath(req, res, { subpath: req.query._subpath, supabase, user });
   }
 
   // tenant_id afleiden via RLS-zichtbare tenants-rij
@@ -123,3 +133,68 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: err.message || "interne fout" });
   }
 };
+
+// ── Stap 11.K — A3 dossier-extract + draft-acties pijnpunten ───────────────
+
+async function handleDossierSubpath(req, res, { subpath, supabase, user }) {
+  try {
+    const { data: tenantRow } = await supabase.from("tenants").select("id").maybeSingle();
+    if (!tenantRow) return res.status(403).json({ error: "Tenant niet gevonden voor deze user" });
+    const { data: profileRow } = await supabase.from("user_profiles").select("role").maybeSingle();
+    const ctx = {
+      supabase, req,
+      userId: user.id,
+      userRole: profileRow?.role || null,
+      tenantId: tenantRow.id,
+    };
+
+    if (subpath === "dossier_extract") {
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const { canvas_id } = req.body || {};
+      const result = await extractPainPointsFromDossier({ ...ctx, canvasId: canvas_id });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "accept_draft") {
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: "id is verplicht" });
+      const result = await acceptDraftPainPoint({ ...ctx, painId: id });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "reject_draft") {
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: "id is verplicht" });
+      const result = await rejectDraftPainPoint({ ...ctx, painId: id });
+      if (result.status === 204) return res.status(204).end();
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "edit_draft") {
+      if (req.method !== "PUT") {
+        res.setHeader("Allow", "PUT");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const id = req.query.id;
+      if (!id) return res.status(400).json({ error: "id is verplicht" });
+      const result = await editDraftPainPoint({ ...ctx, painId: id, fields: req.body || {} });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    return res.status(400).json({ error: `Onbekende subpath: ${subpath}` });
+  } catch (err) {
+    console.error("[api/klanten/pain_points dossier-subpath] onverwachte fout:", err);
+    return res.status(500).json({ error: err.message || "interne fout" });
+  }
+}

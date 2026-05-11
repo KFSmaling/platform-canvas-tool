@@ -43,6 +43,17 @@ export default function WerkruimteView({
   intentsLoading,
   intentsError,
   reloadIntents,
+  // Stap 11.K: dossier-affordance-context (single source of truth via useCanvasUploads)
+  hasUploads,
+  hasIndexedChunks,
+  uploadsProcessing,
+  dossierBusy,
+  onExtractItemsFromDossier,
+  onExtractPainsFromDossier,
+  onAcceptDraftItem,
+  onRejectDraftItem,
+  onAcceptDraftPain,
+  onRejectDraftPain,
   onItemClick,
   onAddItem,
   onAddDimensie,
@@ -128,6 +139,13 @@ export default function WerkruimteView({
             couplings={couplings || []}
             onAddPijnpunt={onAddPijnpunt}
             onEditPijnpunt={onEditPijnpunt}
+            onExtractFromDossier={onExtractPainsFromDossier}
+            onAcceptDraftPain={onAcceptDraftPain}
+            onRejectDraftPain={onRejectDraftPain}
+            hasUploads={hasUploads}
+            hasIndexedChunks={hasIndexedChunks}
+            uploadsProcessing={uploadsProcessing}
+            busyAction={dossierBusy}
           />
         </div>
       ) : (
@@ -171,6 +189,13 @@ export default function WerkruimteView({
                   onItemClick={onItemClick}
                   onAddItem={() => onAddItem(dim)}
                   onEditDimensie={onEditDimensie}
+                  onExtractFromDossier={onExtractItemsFromDossier}
+                  onAcceptDraft={onAcceptDraftItem}
+                  onRejectDraft={onRejectDraftItem}
+                  hasUploads={hasUploads}
+                  hasIndexedChunks={hasIndexedChunks}
+                  uploadsProcessing={uploadsProcessing}
+                  busyAction={dossierBusy}
                 />
               ))}
             </div>

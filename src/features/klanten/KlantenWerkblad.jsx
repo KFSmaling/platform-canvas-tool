@@ -22,6 +22,7 @@ import { useCanvasDimensions } from "./hooks/useCanvasDimensions";
 import { usePainPoints } from "./hooks/usePainPoints";
 import { usePatternSuggestions } from "./hooks/usePatternSuggestions";
 import { useIntents } from "./hooks/useIntents";
+import { useCanvasUploads } from "./hooks/useCanvasUploads";
 import * as klantenService from "./services/klanten.service";
 import WerkruimteView from "./WerkruimteView";
 import RapportView from "./RapportView";
@@ -52,6 +53,15 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     error:   intentsError,
     reload:  reloadIntents,
   } = useIntents(canvasId);
+  // Stap 11.K: useCanvasUploads — single source of truth voor dossier-affordance-
+  // activering (hasUploads / hasIndexedChunks / uploadsProcessing) over DimensieKolom
+  // + ItemModal + PijnpuntenView. Lift-state-up-pattern uit 11.G.4 / 11.H.
+  const {
+    hasUploads,
+    hasIndexedChunks,
+    uploadsProcessing,
+    reload: reloadUploads,
+  } = useCanvasUploads(canvasId);
 
   const [view, setView] = useState("werkruimte"); // "werkruimte" | "rapport"
   const [modalCtx, setModalCtx] = useState(null); // { dimension, item } of null
@@ -63,6 +73,9 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   // sectie van gemarkeerde patterns). Bij opslaan creëert server de intent-
   // rij; we reloaden intents + suggestions zodat beide views syncen.
   const [promoteSuggestion, setPromoteSuggestion] = useState(null);
+  // Stap 11.K: busyAction voor dossier-affordance-knoppen (A1/A2/A3 + draft-acties)
+  const [dossierBusy, setDossierBusy] = useState(null);
+  const [dossierError, setDossierError] = useState(null);
 
   function openCreateItem(dimension) {
     setModalCtx({ dimension, item: null });
@@ -110,6 +123,77 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     reloadIntents();
     reloadSuggestions();
     return { error: null };
+  }
+
+  // ── Stap 11.K — Dossier-driven AI-affordances + draft-acties ──────────────
+
+  async function handleExtractItemsFromDossier(dimension) {
+    if (dossierBusy) return;
+    setDossierBusy({ action: "dossier_extract_items", dimensionId: dimension.id });
+    setDossierError(null);
+    const { error } = await klantenService.extractItemsFromDossier(canvasId, dimension.id);
+    setDossierBusy(null);
+    if (error) { setDossierError(error); return; }
+    reload();
+  }
+
+  async function handleExtractPainsFromDossier() {
+    if (dossierBusy) return;
+    setDossierBusy({ action: "dossier_extract_pains" });
+    setDossierError(null);
+    const { error } = await klantenService.extractPainPointsFromDossier(canvasId);
+    setDossierBusy(null);
+    if (error) { setDossierError(error); return; }
+    reloadPains();
+  }
+
+  async function handleFillFieldsFromDossier(itemId) {
+    // Wordt aangeroepen vanuit ItemModal — direct retourneren zodat de modal
+    // de updated item + meta kan tonen. Trigger achteraf reload zodat parent-
+    // lijst ook is_draft=true ziet.
+    const result = await klantenService.fillFieldsFromDossier(itemId);
+    if (!result.error) reload();
+    return result;
+  }
+
+  async function handleAcceptDraftItem(item) {
+    if (dossierBusy) return;
+    setDossierBusy({ action: "accept_item", id: item.id });
+    setDossierError(null);
+    const { error } = await klantenService.acceptDraftItem(item.id);
+    setDossierBusy(null);
+    if (error) { setDossierError(error); return; }
+    reload();
+  }
+
+  async function handleRejectDraftItem(item) {
+    if (dossierBusy) return;
+    setDossierBusy({ action: "reject_item", id: item.id });
+    setDossierError(null);
+    const { error } = await klantenService.rejectDraftItem(item.id);
+    setDossierBusy(null);
+    if (error) { setDossierError(error); return; }
+    reload();
+  }
+
+  async function handleAcceptDraftPain(pp) {
+    if (dossierBusy) return;
+    setDossierBusy({ action: "accept_pain", id: pp.id });
+    setDossierError(null);
+    const { error } = await klantenService.acceptDraftPainPoint(pp.id);
+    setDossierBusy(null);
+    if (error) { setDossierError(error); return; }
+    reloadPains();
+  }
+
+  async function handleRejectDraftPain(pp) {
+    if (dossierBusy) return;
+    setDossierBusy({ action: "reject_pain", id: pp.id });
+    setDossierError(null);
+    const { error } = await klantenService.rejectDraftPainPoint(pp.id);
+    setDossierBusy(null);
+    if (error) { setDossierError(error); return; }
+    reloadPains();
   }
 
   // Save-handler doorgegeven aan PijnpuntModal — { error } contract.
@@ -266,6 +350,20 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
         </div>
       </div>
 
+      {/* Stap 11.K dossier-actie-error-banner */}
+      {dossierError && (
+        <div className="bg-red-50 border-b border-red-200 text-red-700 text-xs px-6 py-2 flex items-center justify-between">
+          <span>{dossierError.message || "Dossier-actie mislukt"}</span>
+          <button
+            type="button"
+            onClick={() => setDossierError(null)}
+            className="text-[10px] font-bold uppercase tracking-widest text-red-700 hover:text-red-900 ml-3"
+          >
+            Sluiten
+          </button>
+        </div>
+      )}
+
       {/* Body */}
       {view === "werkruimte" ? (
         <WerkruimteView
@@ -282,6 +380,16 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           intentsLoading={intentsLoading}
           intentsError={intentsError}
           reloadIntents={reloadIntents}
+          hasUploads={hasUploads}
+          hasIndexedChunks={hasIndexedChunks}
+          uploadsProcessing={uploadsProcessing}
+          dossierBusy={dossierBusy}
+          onExtractItemsFromDossier={handleExtractItemsFromDossier}
+          onExtractPainsFromDossier={handleExtractPainsFromDossier}
+          onAcceptDraftItem={handleAcceptDraftItem}
+          onRejectDraftItem={handleRejectDraftItem}
+          onAcceptDraftPain={handleAcceptDraftPain}
+          onRejectDraftPain={handleRejectDraftPain}
           onItemClick={openEditItem}
           onAddItem={openCreateItem}
           onAddDimensie={openCreateDimensie}
@@ -310,6 +418,10 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           dimension={modalCtx.dimension}
           onClose={closeModal}
           onSave={handleSaveItem}
+          onFillFieldsFromDossier={handleFillFieldsFromDossier}
+          hasUploads={hasUploads}
+          hasIndexedChunks={hasIndexedChunks}
+          uploadsProcessing={uploadsProcessing}
         />
       )}
 

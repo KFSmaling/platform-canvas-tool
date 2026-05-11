@@ -241,9 +241,23 @@ const LABEL_FALLBACKS = {
   // heen. Deprecatie van `klanten.analyse.actie.*` blijft achter.
   "klanten.actie.bewerk":                            "Bewerk",
   "klanten.actie.verwijder":                         "Verwijder",
-  "klanten.actie.markeer":                           "Markeer als verstuurd",
-  "klanten.actie.terugtrekken":                      "Terugtrekken",
   "klanten.actie.promote":                           "Promote naar verbeterrichting",
+  // Stap 11.K F13 — werkblad-onderdeel-prefix voor context-specifieke acties.
+  // `klanten.actie.markeer/.terugtrekken` zijn 11 mei gerenamed naar
+  // `verbeterrichting.actie.*` (intent-context). Nieuwe `dossier.actie.*` voor
+  // draft-acceptance. Generieke bewerk/verwijder blijven context-onafhankelijk.
+  "klanten.verbeterrichting.actie.markeer":          "Markeer als verstuurd",
+  "klanten.verbeterrichting.actie.terugtrekken":     "Terugtrekken",
+  "klanten.dossier.actie.markeer":                   "Markeer als richting",
+  "klanten.dossier.actie.bewerk":                    "Bewerk",
+  "klanten.dossier.actie.verwijder":                 "Verwijder",
+  "klanten.dossier.items_extract":                   "Items vanuit dossier",
+  "klanten.dossier.fields_fill":                     "Velden invullen vanuit dossier",
+  "klanten.dossier.pain_points_extract":             "Pijnpunten extraheren vanuit dossier",
+  "klanten.dossier.draft_badge":                     "dossier-suggestie",
+  "klanten.dossier.disabled_no_uploads":             "Upload eerst documenten",
+  "klanten.dossier.disabled_no_items":               "Voeg eerst items toe",
+  "klanten.dossier.disabled_processing":             "Documenten worden nog verwerkt",
   "klanten.verbeterrichting.titel":                  "Verbeterrichtingen",
   "klanten.verbeterrichting.intro":                  "Verscherp geaccepteerde patronen tot intent. Verstuur naar Roadmap voor concrete acties, eigenaars en planning.",
   "klanten.verbeterrichting.counter.concept":        "concept",

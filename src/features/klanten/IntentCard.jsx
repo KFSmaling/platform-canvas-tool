@@ -135,7 +135,7 @@ export default function IntentCard({
             data-testid={`intent-actie-terugtrekken-${intent.id}`}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-400 text-slate-700 hover:border-slate-600 disabled:opacity-50"
           >
-            {appLabel("klanten.actie.terugtrekken", "Terugtrekken")}
+            {appLabel("klanten.verbeterrichting.actie.terugtrekken", "Terugtrekken")}
           </button>
         ) : (
           <button
@@ -146,7 +146,7 @@ export default function IntentCard({
             title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {appLabel("klanten.actie.markeer", "Markeer als verstuurd")}
+            {appLabel("klanten.verbeterrichting.actie.markeer", "Markeer als verstuurd")}
           </button>
         )}
       </div>

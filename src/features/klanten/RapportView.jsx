@@ -98,8 +98,8 @@ function DimensionGroup({ dimension, items, appLabel }) {
 export default function RapportView({
   canvasName,
   dimensions,
-  items,
-  painPoints = [],
+  items: itemsAll,
+  painPoints: painPointsAll = [],
   couplings = [],
   suggestions = [],
   intents = [],
@@ -107,6 +107,11 @@ export default function RapportView({
 }) {
   const { brandName } = useTheme();
   const { label: appLabel } = useAppConfig();
+
+  // Stap 11.K — drafts horen niet in klantvriendelijk rapport (RFC-002 §10 #7).
+  // Canonical items + pijnpunten alleen; drafts blijven werkruimte-only.
+  const items      = (itemsAll      || []).filter(it => !it.is_draft);
+  const painPoints = (painPointsAll || []).filter(pp => !pp.is_draft);
 
   // Geaccepteerde patronen voor AI-sectie. Stap 11.G.3 F7-fix: geen 6-limiet
   // meer — toon alle accepted patterns gegroepeerd per type. A4-landscape is
