@@ -355,6 +355,50 @@ toont generieke "Canvas" i.p.v. specifieke naam ("Aegis Verzekering — ...").
 
 **Effort:** 15 min (pad 1, voorkeurspad).
 
+---
+
+## P3 — Klanten 11.K: magic-staff end-to-end-test pending op productie
+
+Stap 11.K landde live op `kingfisher-btcprod.vercel.app` (master `8ccaa5c`,
+deploy `dpl_4P452zG6cC1n2PFCxqM3p8P8Mi8G`) met code-laag + DB-laag + RTL +
+RLS-tests groen. De **magic-staff-call zelf** (RAG → OpenAI embedding →
+match_document_chunks RPC → Claude haiku-4-5 → JSON-parse → draft-INSERT
++ audit-event) is **niet end-to-end gevalideerd** in de sprint — vereist
+canvas met geïndexeerde chunks + authenticated user-context die in CI niet
+beschikbaar is.
+
+**Drie open validaties tot Kees-handmatige-test groen is:**
+1. AI-output-kwaliteit van de drie nieuwe prompts (drafts conform RFC-002
+   §6.2 skelet — Kees verfijnt iteratief via Admin-UI groep "Klanten &
+   Dienstverlening")
+2. Coupling-materialisatie bij A3 accept-draft-pain (skip stale targets +
+   `metadata.skipped_couplings` werkt zoals bedoeld)
+3. RapportView filter `is_draft=false` daadwerkelijk drafts uit klant-rapport
+
+**Test-pad** (zie reviewer-akkoord 2026-05-11-1900 sectie "Voor Kees"):
+1. Upload PDF naar canvas, wacht tot indexing klaar is
+2. A1 op dimensie zonder canonical items → draft-items renderen → 1
+   markeren / 1 bewerken / 1 verwijderen
+3. A2 op canonical item → archetype-velden gevuld met is_draft=true
+4. A3 fase 2 → draft-pijnpunten met couplings-suggesties → markeren →
+   couplings gecreëerd
+5. Rapport-tab → drafts NIET zichtbaar
+6. Fase 4 → F13-rebrand verifiëren (`Markeer als verstuurd`/`Terugtrekken`)
+
+**Bij issues**: prompts tunen via Admin-UI (tenant_overridable=true, geen
+redeploy nodig). Code-issues → bug-fix-sprint.
+
+**Bron:** result-file `2026-05-11-1800-result-stap-11K-...` open subitem 1;
+reviewer-akkoord `2026-05-11-1900-result-akkoord-stap-11K-...` "Voor Kees"-
+sectie.
+
+**Urgentie:** hoog tot succesvol getest; daarna afgehandeld. Geen blocker
+voor andere sprints — 11.K-affordances zijn afgeschermd door
+`hasIndexedChunks`-disabled-state, dus geen risico voor canvas-data zonder
+documenten.
+
+**Effort:** ~30 min Kees-handmatige-test + eventuele prompt-tuning post-test.
+
 ## Done log
 
 - 2026-04-22 — P1 Lifecycle — `key={canvasId}` toegevoegd aan `<Werkblad>` (DeepDiveOverlay) en `<MasterImporterPanel>` (App.js). Commit: `78911c9`
@@ -381,6 +425,8 @@ toont generieke "Canvas" i.p.v. specifieke naam ("Aegis Verzekering — ...").
 - 2026-05-10 — Stap 11.G.4 — F11 RapportView-sync via single source of truth (lift-state-up). `usePatternSuggestions`-hook gelift van AnalyseView naar KlantenWerkblad; `suggestions`/`loading`/`error`/`reload` als props doorgereikt via `WerkruimteView`-pass-through; AnalyseView heeft geen eigen hook-instance meer; RapportView krijgt automatisch fresh data na elke edit/markeer/verwijder/restore-actie zonder eigen reload. Geen schema/API-wijziging — 3 files, 39 insertions / 7 deletions. Master-merge `ded1959`, production-deploy `dpl_DCu3c9H7shR5ZHe4FxKe1ND9jBRR`. RTL 24/24 ongewijzigd PASS (mocks via service-laag, refactor-veilig). Sprint-afsluit-administratie + branch-cleanup G.2/G.3/G.4 in dezelfde commit.
 - 2026-05-11 — Stap 11.H — Fase 4 Verbeterrichtingen + Roadmap-handover-stub. API via dispatcher (Pad B): `_improvement_intents.js`-helper + `?_subpath=intents` route op pattern_suggestions.js, endpoint-budget=12 behouden. Frontend: VerbeterrichtingenView + IntentCard + IntentModal + PromoteToIntentModal + useIntents-hook met single source of truth pattern (anker 11.G.4). 34 nieuwe label-keys (5 algemene actie + 27 verbeterrichting + 2 rapport, totaal 174 klanten.*). Cross-tenant RLS-test PASS. RTL 34/34 PASS. Master-merge `48ed620`, deploy `dpl_8znp8xLEtNTiBDJG5imioaFowXN8`.
 - 2026-05-11 — Workflow-noise-fix — `Supabase Migrations`-workflow naar `workflow_dispatch`-only. Auto-trigger op push gaf GitHub-fail-mails bij elke commit met migration-files (migraties al via Supabase-MCP applied → `supabase db push` faalt op "already applied"). Workflow blijft beschikbaar als handmatig fall-back. Past bij review-discipline.md Type 6 vermelding (3 mei) — die workflow faalde al sinds 26 april op missende secret; secret is sinds stap 7 P7 wel gezet, maar root-cause was niet de secret maar de applied-by-MCP-conflict.
+- 2026-05-11 — Stap 11.H.1 — Admin-UI groepering Klanten (F14). 3 wijzigingen in `src/features/admin/AdminPage.jsx`: nieuwe label-groep "Werkblad Klanten" vóór Overig-fallback (matcht `label.klanten.*` → 174 keys uit Overig), nieuwe prompt-groep "Klanten & Dienstverlening" na guideline (matcht `prompt.klanten.*` → 4 fase-3-prompts admin-bewerkbaar), boy-scout prompts-Overig-fallback (vóór deze fix zouden onverwachte prompt-keys onzichtbaar zijn). Bijgevolg vangt deze matcher post-11.K automatisch de 3 nieuwe `prompt.klanten.dossier.*`-keys op — geen extra UI-werk nodig. Master-commit `16a1b9b`, deploy `dpl_6frXqbJS9iqmCErHsy9v5iagceHW`. Geen RTL (admin heeft geen test-suite — Kees-visueel-check).
+- 2026-05-11 — Stap 11.K — Dossier-driven AI-input + F13 key-rename. RFC-002 Accepted-keuzes geïmplementeerd: drie shared prompts met archetype-token (Optie 1), `is_draft`-flag-storage op `cd_items` (bestond) + `cd_pain_points` (nieuw, Optie A), aparte `cd_input_suggestion_events`-tabel met polymorphic target (Optie Y). Drie affordances: A1 items_from_dossier (DimensieKolom-header) + A2 fields_from_dossier (ItemModal) + A3 pain_points_from_dossier (PijnpuntenView-header). 3 migraties (schema + 3 prompts + 10 labels) via Supabase-MCP applied. Helper `api/klanten/_dossier_extract.js` ~600 regels met 9 sub-functies (RAG via OpenAI text-embedding-3-small + Supabase match_document_chunks RPC; Claude haiku-4-5; pure JSON-parser; audit-event-INSERT met metadata.ai_model + prompt_version="11K-v1"). Sub-routes via dispatcher (Pad B) op items.js + pain_points.js — endpoint-budget=12 behouden. Polymorphic-validatie-trigger met rejected-uitzondering voor verwijderde target (audit-preservatie RFC-002 §5.4). Append-only via RLS afgedwongen (alleen SELECT + INSERT policies). Frontend: `useCanvasUploads`-hook single source of truth (anker 11.G.4) + DraftItemCard + DraftPainCard met opacity + dossier-suggestie-badge + dossier.actie.*-knoppen (Markeer als richting / Bewerk / Verwijder). RapportView filtert is_draft=false (RFC-002 §10 #7). F13 key-rename: `klanten.actie.markeer`/`.terugtrekken` → `klanten.verbeterrichting.actie.*` + nieuwe `klanten.dossier.actie.markeer="Markeer als richting"`. 10 nieuwe labels → 184 totaal klanten.*. RTL 42/42 PASS over 5 suites (8 nieuwe DossierAffordances-cases). 5 RLS-tests via MCP DO-blokken pass: structuur + cross-canvas-blokkade + cross-tenant-blokkade + append-only-bewijs + rejected-uitzondering. Master-merge `8ccaa5c` (feature-commit `a066f4d`), deploy `dpl_4P452zG6cC1n2PFCxqM3p8P8Mi8G`. Kees-handmatige-test van magic-staff-flow op productie pending (zie nieuwe P3 hieronder).
 
 ---
 

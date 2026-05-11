@@ -477,24 +477,28 @@ feature-root in DeepDiveOverlay (CLAUDE.md §4.1).
 |---|---|---|---|
 | `strategy`   | `src/features/strategie/` | ✅ live | StrategieWerkblad + StrategyOnePager (anker voor rapport-laag-styling) |
 | `principles` | `src/features/richtlijnen/` | ✅ live | RichtlijnenWerkblad |
-| `customers`  | `src/features/klanten/` | ✅ Fase 1+2+3+4 + UX-cyclus live (stap 11.D-H, 2026-05-08 t/m 2026-05-11) | Zie blok onder de tabel voor volledige stand; buiten scope (volgende subs): klantreis-archetype (11.I), Type B visueel rapport (11.J post-MVP), dossier-driven AI-input (11.K na RFC-002), J2+J3+J5 Playwright (11.G.5), platform-pattern voor cross-werkblad-AI (F10) |
+| `customers`  | `src/features/klanten/` | ✅ Fase 1+2+3+4 + dossier-driven AI live (stap 11.D-K, 2026-05-08 t/m 2026-05-11; Kees-handmatige-test van AI-flow pending) | Zie blok onder de tabel voor volledige stand; buiten scope (volgende subs): klantreis-archetype (11.I), Type B visueel rapport (11.J post-MVP), J2+J3+J5+J6 Playwright (11.G.5), F12 canvas-tegel-feedback (na 11.K-test), platform-pattern voor cross-werkblad-AI (F10) |
 | `processes` / `people` / `technology` / `portfolio` | — | placeholder | DeepDiveOverlay valt terug op `GenericPlaceholder`-component |
 
-**Klanten-werkblad-architectuur (stap 11.D-H):**
+**Klanten-werkblad-architectuur (stap 11.D-K):**
 - Datamodel: 7 `cd_*`-tabellen (RFC-001 §2) + 1 audit-tabel; alle RLS-enabled met canvas-eigenaar + tenant-isolatie-pattern (anker `canvases`-policy); event-CHECK uitgebreid met `unrejected` (stap 11.G.3); `cd_improvement_intents` actief in productie sinds 11.H met cross-tenant RLS-test PASS
 - API fase 1+2: `api/klanten/dimensions.js` + `items.js` + `pain_points.js` + `pain_point_couplings.js` via Path-2 `userScopedClient` uit `_template.js`; gedeelde archetype-schema-validatie in `_archetypes.js`
 - API fase 3: `api/klanten/pattern_suggestions.js` (+ `unmark` / `restore`-actions stap 11.G.3) + `pattern_suggestions_generate.js` (Anthropic-call met cluster/paradox/positionering/overstijgend prompts, pure JSON-array parser, append-only events) + `pattern_suggestion_events.js` (audit-trail). 3 endpoints via Vercel rewrites geconsolideerd (Hobby 12-limiet)
 - API fase 4: `api/klanten/_improvement_intents.js`-helper via `pattern_suggestions.js?_subpath=intents` (Pad B uit 11.H — endpoint-budget=12 behouden). CRUD + `handover_to_roadmap` / `unsend`-actions met state-machine 409-validatie. `promote_to_intent`-action uitgebreid met body `{ title, intent_md }` zodat dezelfde call de `cd_improvement_intents`-rij creëert + audit-event `metadata.intent_id` zet (1:1-relatie via `source_suggestion_id` partial-unique)
+- API dossier-driven (stap 11.K): `api/klanten/_dossier_extract.js`-helper (~600 regels) gedeeld over 3 affordances. Sub-routes op bestaande `items.js` + `pain_points.js` (Pad B — endpoint-budget=12 behouden). RAG via OpenAI `text-embedding-3-small` + Supabase `match_document_chunks` RPC; Claude haiku-4-5; pure JSON parse met markdown-fence-strip; per ai_generated-event `metadata.ai_model` + `metadata.prompt_version="11K-v1"` + `metadata.sources` + `metadata.chunk_count`. Sub-routes: A1 `items?_subpath=dossier_extract` (bulk-create draft items per dimensie), A2 `items?_subpath=dossier_fill_fields` (vul archetype-velden + zet is_draft=true), A3 `pain_points?_subpath=dossier_extract` (bulk-create draft pains + `metadata.proposed_couplings`). Draft-acties: `accept_draft` / `reject_draft` / `edit_draft` per id. Accept-draft-pain materialiseert proposed_couplings met stale-target-skip + `metadata.skipped_couplings`
 - Frontend fase 1+2: `KlantenWerkblad` (root, hosting van `usePatternSuggestions` + `useIntents` single source of truth) → `WerkruimteView` (fase-tabs, pass-through van suggestions+intents-props) → `DimensieKolom` + `ItemModal` (fase 1) + `PijnpuntenView` + `PijnpuntCard` + `PijnpuntModal` (fase 2)
 - Frontend fase 3: `AnalyseView` (4 AI-knoppen + counter + suggestion-list, `isInitialLoad`/`isReloading` distinctie + inline-spinner — stap 11.G.2) + `SuggestionCard` (TYPE_STYLES uit `patternTypeStyles.js`; Bewerk/Verwijder/Markeer als richting-rebrand — stap 11.G.3) + `SuggestionEditModal` + `RefineDeeperModal` + `EigenPatroonModal` + `CollapseSection` voor Gemarkeerd/Verwijderd-secties met restore-acties (stap 11.G.3). Stap 11.H: `secondaryActionLabel`-prop op CollapseSection rendert "Promote naar verbeterrichting"-knop voor gemarkeerde patterns die nog geen intent hebben (filter via `promotedSuggestionIds`-derivation)
 - Frontend fase 4 (stap 11.H): `VerbeterrichtingenView` (root: counter `X concept · Y verstuurd`, concept-lijst, Verstuurd-collapse, CTA) + `IntentCard` (concept/verstuurd status-badge + Bewerk/Verwijder/Markeer-Terugtrekken — F9-consistent) + `IntentModal` (create + edit; titel 1-100, intent_md 50-2000) + `PromoteToIntentModal` (pre-vulling via `deriveTitle` 60 chars + volledige suggestion-tekst). Handover blijft stub: zet `status='verstuurd'` + `handover_to_roadmap_at=now()` + `window.confirm`-dialoog ("Roadmap-werkblad is nog niet beschikbaar — actie wordt vastgelegd"). Roadmap-werkblad bestaat nog niet.
+- Frontend dossier-driven (stap 11.K): drie nieuwe AI-knoppen + draft-row-rendering. `DimensieKolom` (A1 in footer + `DraftItemCard`-sub-component met opacity + dossier-suggestie-badge + Markeer/Bewerk/Verwijder), `ItemModal` (A2-knop in archetype-velden-header met fillNote-feedback; disabled bij create-mode), `PijnpuntenView` (A3-knop naast counter + `DraftPainCard` voor draft-pijnpunten; disabled zonder canonical items). Acties via `dossier.actie.*`-label-keys (`Markeer als richting` voor draft→canonical). RapportView filtert `is_draft=false` op items+painPoints (RFC-002 §10 #7) zodat drafts niet in klantvriendelijk rapport landen
+- `useCanvasUploads`-hook (stap 11.K) — race-guarded (cancelled-flag + canvasIdRef per CLAUDE.md §4.3+4.4); bepaalt `hasUploads`/`hasIndexedChunks`/`uploadsProcessing` via canvas_uploads-count + document_chunks-embedding-count. Single source of truth in KlantenWerkblad — pass-through naar DimensieKolom + ItemModal + PijnpuntenView. Anker 11.G.4 lift-state-up
+- Audit-tabel `cd_input_suggestion_events` (RFC-002 §5.2) — polymorphic target via `(target_table, target_id)` met CHECK IN ('cd_items', 'cd_pain_points'); 4 event-types (ai_generated, edited, accepted, rejected); polymorphic-validatie-trigger `validate_cd_ise_target` met cross-canvas/cross-tenant blokkade + rejected-event-uitzondering voor verwijderde target (audit-preservatie RFC-002 §5.4). Append-only via afwezigheid UPDATE/DELETE-policies — alleen SELECT + INSERT
 - `useIntents`-hook met race-guards + cancelled-flag + canvasIdRef (CLAUDE.md §4.3+4.4); zelfde anker als `usePatternSuggestions`. Single source of truth in KlantenWerkblad — VerbeterrichtingenView en RapportView krijgen beide dezelfde data via props (anker 11.G.4 F11-fix)
 - Frontend rapport-laag: `RapportView` (A4-landscape) krijgt suggestions + intents via props van KlantenWerkblad (single source of truth, stap 11.G.4 + 11.H). AI-sectie: 3-koloms grid van **alle** accepted patterns; `includeInPrint`-toggle deblokkeerd + one-shot auto-enabled bij ≥1 accepted. Verbeterrichtingen-sectie tussen patronen en footer met responsive 1/2/3-koloms grid en concept/verstuurd-status-badges
 - E2E-infra: Playwright + `playwright.config.js` + `global-setup.js` storageState + `helpers/test-canvas.js` Path-2-creds; test-account `keessmaling+test@gmail.com` (KF tenant_admin); `.env.test` gitignored; J1-blueprint PASS 13-step in 5.4s tegen productie (stap 11.G.1). J2+J3+J5 niet uitgevoerd — eigen mini-sprint 11.G.5
-- 4 prompts (`prompt.klanten.{cluster,paradox,positionering,overstijgend}`) zijn `tenant_overridable=true` per ADR-002 niveau 1+3 — branche/methode-positionering kan legitiem per consultancy-tenant verschillen. Geen AI-prompts voor fase 4 (intent-content is volledig consultant-eigen)
-- RLS-tests: `tests/rls/cd_klanten_werkblad.sql` (9 tests, RFC-001 §7); `cd_pattern_suggestions` + `cd_improvement_intents` cross-tenant geverifieerd via Supabase-MCP in stap 11.G + 11.H sprint-afsluit
-- RTL: 34/34 PASS over 4 suites — KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow (mocks op service-laag, refactor-veilig)
-- Label-corpus: 174 totaal `label.klanten.*`-keys (140 vóór 11.H + 34 nieuw: 5 algemene `klanten.actie.*` set, 27 `klanten.verbeterrichting.*`, 2 `klanten.rapport.verbeterrichtingen.*`). Algemene `klanten.actie.*`-set is Optie 2 uit RFC-002 RP1 open vraag #11 — herbruikbaar over werkbladen heen. Aandachtspunt **F13**: `klanten.actie.markeer`-fallback is `"Markeer als verstuurd"` (intent-context), maar de key wordt ook gebruikt op SuggestionCard waar context anders is — rename of duplicatie volgt in 11.K cleanup-pas
+- 7 prompts totaal `tenant_overridable=true` per ADR-002 niveau 1+3: 4 fase-3-analyse (`prompt.klanten.{cluster,paradox,positionering,overstijgend}`) + 3 dossier-driven (`prompt.klanten.dossier.{items_extract,fields_fill,pain_points_extract}` — stap 11.K). Branche/methode-positionering per consultancy-tenant kan legitiem verschillen. Geen AI-prompts voor fase 4 (intent-content is volledig consultant-eigen)
+- RLS-tests: `tests/rls/cd_klanten_werkblad.sql` (9 tests, RFC-001 §7); `cd_pattern_suggestions` + `cd_improvement_intents` cross-tenant geverifieerd via Supabase-MCP in stap 11.G + 11.H sprint-afsluit; `cd_input_suggestion_events` 5 RLS-tests pass via MCP DO-blokken in stap 11.K (structuur + cross-canvas-blokkade + cross-tenant-blokkade + append-only-bewijs + rejected-uitzondering voor verwijderde target)
+- RTL: 42/42 PASS over 5 suites — KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow + DossierAffordances.flow (mocks op service-laag, refactor-veilig)
+- Label-corpus: **184 totaal** `label.klanten.*`-keys (174 vóór 11.K + 10 nieuw, F13-rename netto 0). 11.K nieuwe keys: 3 affordance-knoppen + 4 draft-state-UX + 3 dossier-context-actie-keys. **F13 ✅ afgerond per 2026-05-11**: werkblad-onderdeel-prefix toegepast — `klanten.actie.markeer`/`.terugtrekken` (intent-context) gerenamed naar `klanten.verbeterrichting.actie.markeer`/`.terugtrekken`; nieuwe `klanten.dossier.actie.markeer="Markeer als richting"` voor draft-acceptance. Algemene `klanten.actie.bewerk`/`.verwijder`/`.promote` blijven context-onafhankelijk
 
 ---
 
@@ -573,7 +577,9 @@ Gedetailleerde lijst staat in `TECH_DEBT.md`. Korte versie:
   `api/improve.js` werkt wél met tokens), i18n-mismatch op werkbladen 
   (`appLabel` is monolinguaal-by-design — F-18, P11), en TLB-branding-
   finetune (P12). Zie `TECH_DEBT.md`.
-- Klanten & Dienstverlening werkblad — ✅ Fase 1+2+3+4 live per 2026-05-11.
+- Klanten & Dienstverlening werkblad — ✅ Fase 1+2+3+4 + dossier-driven AI
+  live per 2026-05-11; **Kees-handmatige-test van magic-staff-AI-flow
+  pending** (vereist canvas met geïndexeerde chunks + auth-context).
   Master-merge-keten: `30b16ae` (11.G fase 3 AI-analyse) +
   `a89be72` (Vercel Hobby 12-limit deploy-blocker fix via 3 rewrites) +
   `ea94327` (11.G.1 E2E-Playwright-infra) + `777b9e8` (11.G.2 F4 reload-
@@ -581,31 +587,35 @@ Gedetailleerde lijst staat in `TECH_DEBT.md`. Korte versie:
   rapport-volledigheid + F8 collapse marked/deleted + F9 rebrand
   Bewerk/Verwijder/Markeer als richting) + `ded1959` (11.G.4 F11 RapportView-
   sync via single source of truth) + `48ed620` (11.H Fase 4 Verbeter-
-  richtingen + Roadmap-handover-stub). Laatste deploy:
-  `dpl_8znp8xLEtNTiBDJG5imioaFowXN8` op `kingfisher-btcprod.vercel.app`.
-  Sectie 5.1 + 7 `cd_*`-tabellen (incl. `cd_improvement_intents` actief) +
-  9 RLS-tests + cross-tenant `cd_pattern_suggestions` + `cd_improvement_intents`
-  groen + RTL 34/34 PASS over 4 suites. Open subitems (3 P3 uit 11.G, blijven
-  open): twee-traps-summarisation voor grote canvas (>8K chars context-payload),
-  parse-fout-pad bij malformed AI-output, `PROMPT_VERSION` als string-literal.
-  2 P3 uit 11.G.1: wachtwoord-rotatie + test-tenant-isolatie zodra eerste
-  echte klant onboardt. Zie `tech_debt.md`.
-- **Stap 11.G.5 J2+J3+J5 Playwright-specs** — dedicated mini-sprint. Vier
-  keer boy-scout overgeslagen (G.1, G.2, G.3, H) — patroon is duidelijk,
-  eigen sessie nodig. Niet acuut.
+  richtingen + Roadmap-handover-stub) + `16a1b9b` (11.H.1 admin-UI
+  groepering klanten-labels + klanten-prompts + prompts-Overig-fallback) +
+  `8ccaa5c` (11.K Dossier-driven AI-input + F13 key-rename). Laatste
+  deploy: `dpl_4P452zG6cC1n2PFCxqM3p8P8Mi8G` op `kingfisher-btcprod.vercel.app`.
+  Sectie 5.1 + 7 `cd_*`-tabellen (incl. `cd_improvement_intents` +
+  `cd_input_suggestion_events` actief) + 14 RLS-tests groen (9 RFC-001 §7
+  + 5 RFC-002 §8.1 via MCP) + cross-tenant `cd_pattern_suggestions` +
+  `cd_improvement_intents` + `cd_input_suggestion_events` groen + RTL
+  42/42 PASS over 5 suites. Open subitems: 3 P3 uit 11.G (twee-traps-
+  summarisation, parse-fout-pad, PROMPT_VERSION-literal), 2 P3 uit 11.G.1
+  (wachtwoord-rotatie + test-tenant-isolatie zodra eerste echte klant
+  onboardt), **nieuw P3 uit 11.K**: magic-staff end-to-end-test pending
+  (afhankelijk van Kees-handmatige-test). Zie `tech_debt.md`.
+- **Stap 11.G.5 J2+J3+J5+J6 Playwright-specs** — dedicated mini-sprint.
+  Vijf keer boy-scout overgeslagen (G.1, G.2, G.3, H, K) — patroon is
+  duidelijk, eigen sessie nodig. Niet acuut.
 - **Stap 11.I klantreis-archetype** — vijfde dimensie-archetype (geordend).
-  Niet acuut; volgt na 11.K.
+  Niet acuut.
 - **Stap 11.J Type B visueel rapport** — post-MVP. Vier-kwadranten +
   veranderacties-pinnetjes. Gamma/PPTX/PDF-route nog te kiezen.
-- **F12 canvas-tegel-feedback** — TECH_DEBT P3-kandidaat: canvas-overzicht-
-  tegel toont fase-status (fase 1/2/3/4 counts) zodat consultants in één
-  oogopslag zien waar elk canvas in z'n levenscyclus zit.
-- **F13 `klanten.actie.markeer`-key-rename in 11.K** — algemene key wordt
-  ook gebruikt op SuggestionCard waar fallback "Markeer als verstuurd" niet
-  past. In 11.K cleanup-pas splitsen of contextuele override toevoegen.
-- **RFC-002 dossier-driven AI-input** — architect-opdracht ligt in
-  `platform/handoff/to-architect/`. Niet bouwer-werk tot RFC akkoord-
-  bevonden + 11.K-instructie geschreven.
+- **F12 canvas-tegel-feedback** — TECH_DEBT P3: canvas-overzicht-tegel
+  toont fase-status (fase 1/2/3/4 counts) zodat consultants in één
+  oogopslag zien waar elk canvas in z'n levenscyclus zit. Wacht op
+  succesvolle Kees-handmatige-test van 11.K voordat we deze sprint
+  opnemen.
+- **F13 ✅ afgerond per 2026-05-11 in 11.K** — werkblad-onderdeel-prefix
+  toegepast (`klanten.actie.markeer/.terugtrekken` →
+  `klanten.verbeterrichting.actie.*`) + nieuwe `klanten.dossier.actie.markeer`.
+- **F15 prompt-naming-cleanup** — open voor post-MVP cleanup-sprint.
 - Vervolg-sprints (vooruitkijk, niet acuut): klantreis-archetype (11.I),
   Type B visueel rapport (11.J post-MVP), platform-pattern voor cross-
   werkblad-AI (F10), P13 rapport-architectuur als platform-laag.
@@ -631,19 +641,28 @@ Bij een verse Claude Code-sessie (nieuwe instance, geen context):
 
 | Aspect | Waarde |
 |---|---|
-| Laatste deploy | `dpl_8znp8xLEtNTiBDJG5imioaFowXN8` (11 mei) op `kingfisher-btcprod.vercel.app` |
-| Master HEAD | `48ed620` — Stap 11.H Fase 4 Verbeterrichtingen + Roadmap-handover-stub |
+| Laatste deploy | `dpl_4P452zG6cC1n2PFCxqM3p8P8Mi8G` (11 mei) op `kingfisher-btcprod.vercel.app` |
+| Master HEAD | `8ccaa5c` — Stap 11.K Dossier-driven AI-input (Kees-handmatige-test pending) |
 | Test-credentials | `keessmaling+test@gmail.com` / staat in `.env.test` (gitignored) — KF tenant_admin |
-| E2E-suite | `npm run test:e2e` — J1-blueprint live, J2/J3/J5 nog niet (mini-sprint 11.G.5) |
-| RTL | 34/34 PASS over 4 klanten-suites (incl. VerbeterrichtingenView.flow) |
-| Endpoint-budget Vercel | 12/12 (Hobby), 4 endpoints geconsolideerd via rewrites (incl. `improvement_intents`) |
-| Klanten-labels | 174 totaal `label.klanten.*` |
+| E2E-suite | `npm run test:e2e` — J1-blueprint live, J2/J3/J5/J6 nog niet (mini-sprint 11.G.5) |
+| RTL | 42/42 PASS over 5 klanten-suites (incl. DossierAffordances.flow) |
+| Endpoint-budget Vercel | 12/12 (Hobby), 4 rewrites + sub-route-dispatchers (incl. dossier_extract op items.js + pain_points.js) |
+| Klanten-labels | 184 totaal `label.klanten.*` (incl. 10 dossier + F13-rename) |
+| Klanten-prompts | 7 totaal `prompt.klanten.*` (4 analyse + 3 dossier, allen `tenant_overridable=true`) |
+| Audit-tabellen | `cd_pattern_suggestion_events` + `cd_input_suggestion_events` (beide append-only via RLS-policies SELECT+INSERT) |
 | Supabase-migrations CI | `workflow_dispatch`-only sinds 2026-05-11 (auto-trigger uitgeschakeld; migraties via Supabase-MCP applied tijdens sprints) |
 
 ### Verwachte volgende stappen
 
-- **Stap 11.K** — Dossier-driven AI-input, wacht op RFC-002 akkoord
-  (architect-werk parallel). Bevat ook F13 `klanten.actie.markeer`-key-cleanup.
-- **Stap 11.G.5** — J2+J3+J5 Playwright-specs als mini-sprint (niet acuut)
+- **Kees-handmatige-test 11.K** — magic-staff-AI-flow end-to-end testen
+  op `kingfisher-btcprod.vercel.app`: upload PDF naar canvas → A1+A2+A3
+  affordances draaien → verifieer draft-rendering + accept/reject-flow
+  + RapportView-filter (geen drafts) + F13-rebrand op fase 4. Bij AI-
+  output-kwaliteit-issues: prompts tunen via Admin-UI (groep "Klanten &
+  Dienstverlening").
+- **Stap 11.G.5** — J2+J3+J5+J6 Playwright-specs als mini-sprint (niet
+  acuut)
+- **F12 canvas-tegel-feedback** — wacht op succesvolle Kees-test van 11.K
 - **Stap 11.I** — Klantreis-archetype (geordend dimensie-type)
 - **Stap 11.J** — Type B visueel rapport (post-MVP)
+- **F15 prompt-naming-cleanup** — post-MVP cleanup-sprint
