@@ -477,10 +477,10 @@ feature-root in DeepDiveOverlay (CLAUDE.md §4.1).
 |---|---|---|---|
 | `strategy`   | `src/features/strategie/` | ✅ live | StrategieWerkblad + StrategyOnePager (anker voor rapport-laag-styling) |
 | `principles` | `src/features/richtlijnen/` | ✅ live | RichtlijnenWerkblad |
-| `customers`  | `src/features/klanten/` | ✅ Fase 1+2+3+4 + dossier-driven AI live (stap 11.D-K, 2026-05-08 t/m 2026-05-11; Kees-handmatige-test van AI-flow pending) | Zie blok onder de tabel voor volledige stand; buiten scope (volgende subs): klantreis-archetype (11.I), Type B visueel rapport (11.J post-MVP), J2+J3+J5+J6 Playwright (11.G.5), F12 canvas-tegel-feedback (na 11.K-test), platform-pattern voor cross-werkblad-AI (F10) |
+| `customers`  | `src/features/klanten/` | ✅ Fase 1+2+3+4 + dossier-driven AI + canonical-delete + UX-banner + in-roadmap-rebrand live (stap 11.D-K.2, 2026-05-08 t/m 2026-05-11; Kees-handmatige-test van AI-flow pending) | Zie blok onder de tabel voor volledige stand; buiten scope (volgende subs): klantreis-archetype (11.I), Type B visueel rapport (11.J post-MVP), J2+J3+J5+J6 Playwright (11.G.5), F12 canvas-tegel-feedback (na 11.K-test), F15 prompt-naming-cleanup post-MVP, status-enum DB-rename via ADR-004/RFC-003, platform-pattern voor cross-werkblad-AI (F10) |
 | `processes` / `people` / `technology` / `portfolio` | — | placeholder | DeepDiveOverlay valt terug op `GenericPlaceholder`-component |
 
-**Klanten-werkblad-architectuur (stap 11.D-K):**
+**Klanten-werkblad-architectuur (stap 11.D-K.2):**
 - Datamodel: 7 `cd_*`-tabellen (RFC-001 §2) + 1 audit-tabel; alle RLS-enabled met canvas-eigenaar + tenant-isolatie-pattern (anker `canvases`-policy); event-CHECK uitgebreid met `unrejected` (stap 11.G.3); `cd_improvement_intents` actief in productie sinds 11.H met cross-tenant RLS-test PASS
 - API fase 1+2: `api/klanten/dimensions.js` + `items.js` + `pain_points.js` + `pain_point_couplings.js` via Path-2 `userScopedClient` uit `_template.js`; gedeelde archetype-schema-validatie in `_archetypes.js`
 - API fase 3: `api/klanten/pattern_suggestions.js` (+ `unmark` / `restore`-actions stap 11.G.3) + `pattern_suggestions_generate.js` (Anthropic-call met cluster/paradox/positionering/overstijgend prompts, pure JSON-array parser, append-only events) + `pattern_suggestion_events.js` (audit-trail). 3 endpoints via Vercel rewrites geconsolideerd (Hobby 12-limiet)
@@ -497,8 +497,10 @@ feature-root in DeepDiveOverlay (CLAUDE.md §4.1).
 - E2E-infra: Playwright + `playwright.config.js` + `global-setup.js` storageState + `helpers/test-canvas.js` Path-2-creds; test-account `keessmaling+test@gmail.com` (KF tenant_admin); `.env.test` gitignored; J1-blueprint PASS 13-step in 5.4s tegen productie (stap 11.G.1). J2+J3+J5 niet uitgevoerd — eigen mini-sprint 11.G.5
 - 7 prompts totaal `tenant_overridable=true` per ADR-002 niveau 1+3: 4 fase-3-analyse (`prompt.klanten.{cluster,paradox,positionering,overstijgend}`) + 3 dossier-driven (`prompt.klanten.dossier.{items_extract,fields_fill,pain_points_extract}` — stap 11.K). Branche/methode-positionering per consultancy-tenant kan legitiem verschillen. Geen AI-prompts voor fase 4 (intent-content is volledig consultant-eigen)
 - RLS-tests: `tests/rls/cd_klanten_werkblad.sql` (9 tests, RFC-001 §7); `cd_pattern_suggestions` + `cd_improvement_intents` cross-tenant geverifieerd via Supabase-MCP in stap 11.G + 11.H sprint-afsluit; `cd_input_suggestion_events` 5 RLS-tests pass via MCP DO-blokken in stap 11.K (structuur + cross-canvas-blokkade + cross-tenant-blokkade + append-only-bewijs + rejected-uitzondering voor verwijderde target)
-- RTL: 42/42 PASS over 5 suites — KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow + DossierAffordances.flow (mocks op service-laag, refactor-veilig)
-- Label-corpus: **184 totaal** `label.klanten.*`-keys (174 vóór 11.K + 10 nieuw, F13-rename netto 0). 11.K nieuwe keys: 3 affordance-knoppen + 4 draft-state-UX + 3 dossier-context-actie-keys. **F13 ✅ afgerond per 2026-05-11**: werkblad-onderdeel-prefix toegepast — `klanten.actie.markeer`/`.terugtrekken` (intent-context) gerenamed naar `klanten.verbeterrichting.actie.markeer`/`.terugtrekken`; nieuwe `klanten.dossier.actie.markeer="Markeer als richting"` voor draft-acceptance. Algemene `klanten.actie.bewerk`/`.verwijder`/`.promote` blijven context-onafhankelijk
+- RTL: 50/50 PASS over 6 suites — KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow + DossierAffordances.flow + ItemModal.flow (mocks op service-laag, refactor-veilig). 11.K.2-uitbreiding: 3 F16-cases in KlantenWerkblad.flow + 3 F17-cases in nieuwe ItemModal.flow + 2 F18-cases in VerbeterrichtingenView.flow
+- Label-corpus: **190 totaal** `label.klanten.*`-keys (184 vóór 11.K.2 + 6 nieuw F16). 11.K nieuwe keys: 3 affordance-knoppen + 4 draft-state-UX + 3 dossier-context-actie-keys. 11.K.2 F16: 6 nieuwe keys voor canonical-delete (2 verwijder-knop + 4 inline-confirm). **F13 ✅ afgerond in 11.K**: werkblad-onderdeel-prefix toegepast — `klanten.actie.markeer`/`.terugtrekken` (intent-context) gerenamed naar `klanten.verbeterrichting.actie.markeer`/`.terugtrekken`; nieuwe `klanten.dossier.actie.markeer="Markeer als richting"` voor draft-acceptance. **F18 ✅ afgerond in 11.K.2**: UI-rebrand 'verstuurd' → 'in roadmap' (Optie A — DB-enum `cd_improvement_intents.status='verstuurd'` blijft tot RFC-003/11.L Roadmap-werkblad). Algemene `klanten.actie.bewerk`/`.verwijder`/`.promote` blijven context-onafhankelijk
+- Frontend canonical-delete (stap 11.K.2 F16): ItemModal + PijnpuntModal hebben in edit-mode een Verwijder-knop links in footer (`mr-auto`) met inline-bevestigingsdialog (rode strook met titel/tekst + Annuleer/Verwijder definitief). Hard-delete via bestaande `deleteItem`/`deletePainPoint`-services — items/pijnpunten zijn consultant-eigendom (geen AI-output), dus geen audit-event. KlantenWerkblad handelt `handleDeleteItem`/`handleDeletePijnpunt` af + reload na succes.
+- A2-feedback-banner (stap 11.K.2 F17): ItemModal toont na A2-call een banner-stijl feedback i.p.v. subtiele klein-tekst. `fillNote`-state shape `{ type: "success" | "empty", text }` — groene banner met CheckCircle2 bij gevulde proposed_fields, amber banner met AlertCircle bij lege server-note. Sluitbaar via X-icon.
 
 ---
 
@@ -589,17 +591,19 @@ Gedetailleerde lijst staat in `TECH_DEBT.md`. Korte versie:
   sync via single source of truth) + `48ed620` (11.H Fase 4 Verbeter-
   richtingen + Roadmap-handover-stub) + `16a1b9b` (11.H.1 admin-UI
   groepering klanten-labels + klanten-prompts + prompts-Overig-fallback) +
-  `8ccaa5c` (11.K Dossier-driven AI-input + F13 key-rename). Laatste
-  deploy: `dpl_4P452zG6cC1n2PFCxqM3p8P8Mi8G` op `kingfisher-btcprod.vercel.app`.
-  Sectie 5.1 + 7 `cd_*`-tabellen (incl. `cd_improvement_intents` +
-  `cd_input_suggestion_events` actief) + 14 RLS-tests groen (9 RFC-001 §7
-  + 5 RFC-002 §8.1 via MCP) + cross-tenant `cd_pattern_suggestions` +
-  `cd_improvement_intents` + `cd_input_suggestion_events` groen + RTL
-  42/42 PASS over 5 suites. Open subitems: 3 P3 uit 11.G (twee-traps-
-  summarisation, parse-fout-pad, PROMPT_VERSION-literal), 2 P3 uit 11.G.1
-  (wachtwoord-rotatie + test-tenant-isolatie zodra eerste echte klant
-  onboardt), **nieuw P3 uit 11.K**: magic-staff end-to-end-test pending
-  (afhankelijk van Kees-handmatige-test). Zie `tech_debt.md`.
+  `8ccaa5c` (11.K Dossier-driven AI-input + F13 key-rename) +
+  `f6cc467` (11.K.2 cleanup F16 canonical-delete + F17 A2-banner + F18
+  in-roadmap-rebrand). Laatste deploy: `dpl_42GdeFacaDw9eZr7oPg5SAAAU9eL`
+  op `kingfisher-btcprod.vercel.app`. Sectie 5.1 + 7 `cd_*`-tabellen
+  (incl. `cd_improvement_intents` + `cd_input_suggestion_events` actief)
+  + 14 RLS-tests groen (9 RFC-001 §7 + 5 RFC-002 §8.1 via MCP) + cross-
+  tenant `cd_pattern_suggestions` + `cd_improvement_intents` +
+  `cd_input_suggestion_events` groen + RTL 50/50 PASS over 6 suites.
+  Open subitems: 3 P3 uit 11.G (twee-traps-summarisation, parse-fout-pad,
+  PROMPT_VERSION-literal), 2 P3 uit 11.G.1 (wachtwoord-rotatie + test-
+  tenant-isolatie zodra eerste echte klant onboardt), **P3 uit 11.K**:
+  magic-staff end-to-end-test pending (afhankelijk van Kees-handmatige-
+  test). Zie `tech_debt.md`.
 - **Stap 11.G.5 J2+J3+J5+J6 Playwright-specs** — dedicated mini-sprint.
   Vijf keer boy-scout overgeslagen (G.1, G.2, G.3, H, K) — patroon is
   duidelijk, eigen sessie nodig. Niet acuut.
@@ -615,7 +619,15 @@ Gedetailleerde lijst staat in `TECH_DEBT.md`. Korte versie:
 - **F13 ✅ afgerond per 2026-05-11 in 11.K** — werkblad-onderdeel-prefix
   toegepast (`klanten.actie.markeer/.terugtrekken` →
   `klanten.verbeterrichting.actie.*`) + nieuwe `klanten.dossier.actie.markeer`.
+- **F16 ✅ afgerond per 2026-05-11 in 11.K.2** — canonical-delete in
+  ItemModal + PijnpuntModal met inline-bevestigingsdialog.
+- **F17 ✅ afgerond per 2026-05-11 in 11.K.2** — A2-feedback-banner
+  (groen/amber met icoon) ipv subtiele klein-tekst.
+- **F18 ✅ afgerond per 2026-05-11 in 11.K.2** — UI-rebrand 'verstuurd' →
+  'in roadmap' (Optie A: DB-enum blijft, alleen labels gewijzigd).
 - **F15 prompt-naming-cleanup** — open voor post-MVP cleanup-sprint.
+- **DB-enum-rename `status='verstuurd'`** — open voor RFC-003 / 11.L
+  Roadmap-werkblad. Bundeling met andere status-vocabulair-wijzigingen.
 - Vervolg-sprints (vooruitkijk, niet acuut): klantreis-archetype (11.I),
   Type B visueel rapport (11.J post-MVP), platform-pattern voor cross-
   werkblad-AI (F10), P13 rapport-architectuur als platform-laag.
@@ -641,13 +653,13 @@ Bij een verse Claude Code-sessie (nieuwe instance, geen context):
 
 | Aspect | Waarde |
 |---|---|
-| Laatste deploy | `dpl_4P452zG6cC1n2PFCxqM3p8P8Mi8G` (11 mei) op `kingfisher-btcprod.vercel.app` |
-| Master HEAD | `8ccaa5c` — Stap 11.K Dossier-driven AI-input (Kees-handmatige-test pending) |
+| Laatste deploy | `dpl_42GdeFacaDw9eZr7oPg5SAAAU9eL` (11 mei) op `kingfisher-btcprod.vercel.app` |
+| Master HEAD | `f6cc467` — Stap 11.K.2 cleanup F16 + F17 + F18 (Kees-handmatige-test 11.K AI-flow nog steeds pending) |
 | Test-credentials | `keessmaling+test@gmail.com` / staat in `.env.test` (gitignored) — KF tenant_admin |
 | E2E-suite | `npm run test:e2e` — J1-blueprint live, J2/J3/J5/J6 nog niet (mini-sprint 11.G.5) |
-| RTL | 42/42 PASS over 5 klanten-suites (incl. DossierAffordances.flow) |
+| RTL | 50/50 PASS over 6 klanten-suites (incl. ItemModal.flow voor F17) |
 | Endpoint-budget Vercel | 12/12 (Hobby), 4 rewrites + sub-route-dispatchers (incl. dossier_extract op items.js + pain_points.js) |
-| Klanten-labels | 184 totaal `label.klanten.*` (incl. 10 dossier + F13-rename) |
+| Klanten-labels | 190 totaal `label.klanten.*` (incl. 10 dossier + 6 F16-delete + F18-rebrand netto 0) |
 | Klanten-prompts | 7 totaal `prompt.klanten.*` (4 analyse + 3 dossier, allen `tenant_overridable=true`) |
 | Audit-tabellen | `cd_pattern_suggestion_events` + `cd_input_suggestion_events` (beide append-only via RLS-policies SELECT+INSERT) |
 | Supabase-migrations CI | `workflow_dispatch`-only sinds 2026-05-11 (auto-trigger uitgeschakeld; migraties via Supabase-MCP applied tijdens sprints) |
