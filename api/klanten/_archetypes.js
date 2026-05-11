@@ -23,7 +23,16 @@ const ARCHETYPE_FIELDS = {
   behoefte:      ['job_to_be_done', 'context', 'bestaande_oplossingen', 'frustraties'],
   merk:          ['positionering', 'belofte', 'doelgroep', 'relatie_tot_andere_merken'],
   gedragspatroon:['intensiteit', 'loyaliteit', 'koopgedrag', 'digitale_volwassenheid'],
-  klantreis:     ['stap_type', 'klant_actie', 'aanbieder_actie', 'friction_indicators'],
+  // Stap 11.I.2 — klantreis volledig uitgewerkt (Scope A). Vervangt
+  // RFC-001-preliminary-velden (klant_actie/aanbieder_actie/friction_indicators)
+  // door de 12-veld-lijst uit Kees-input §8.4 + 80/20-denkdwang.
+  // Server-side validatie alleen op key-allow-list; type-coercion blijft aan
+  // jsonb over (MVP-keuze, zie instructie discipline-noten).
+  klantreis:     [
+    'stap_type', 'customer_goal', 'emotions', 'touchpoints', 'kpis',
+    'is_moment_of_truth', 'is_silent_period', 'weight_multiplier',
+    'silent_period_risk', 'regulatoire_context', 'insight', 'dmu',
+  ],
   anders:        ['vrije_velden'], // jsonb met max 4 keys (RFC §2.2.1)
 };
 

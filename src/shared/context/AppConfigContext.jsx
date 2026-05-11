@@ -369,11 +369,29 @@ export function AppConfigProvider({ children }) {
     return defaultVal;
   }, [config]);
 
+  /**
+   * Stap 11.I.2 — enum("klanten.klantreis.stap_type") → array van string-opties
+   * uit jsonb-value. Tenant-overridable (DB-row met tenant_id wint via RPC).
+   * Geeft lege array terug als key niet gevonden of value niet parseable —
+   * dropdown-render valt dan terug op lege selectbox (consultant kan vrije
+   * tekst niet, want field.type=dropdown rendert geen text-input).
+   */
+  const enumValue = useCallback((key, defaultVal = []) => {
+    const row = config[`enum.${key}`];
+    if (!row?.value) return defaultVal;
+    try {
+      const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+      return Array.isArray(parsed) ? parsed : defaultVal;
+    } catch {
+      return defaultVal;
+    }
+  }, [config]);
+
   // Alle rijen als array (voor admin UI)
   const allRows = Object.values(config);
 
   return (
-    <AppConfigContext.Provider value={{ label, prompt, setting, allRows, loading, refresh: loadConfig }}>
+    <AppConfigContext.Provider value={{ label, prompt, setting, enum: enumValue, allRows, loading, refresh: loadConfig }}>
       {children}
     </AppConfigContext.Provider>
   );

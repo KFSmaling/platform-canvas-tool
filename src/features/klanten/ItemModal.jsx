@@ -12,10 +12,20 @@
  */
 
 import React, { useState } from "react";
-import { X, Sparkles, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Sparkles, Loader2, CheckCircle2, AlertCircle, Zap, MoonStar } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import { getSchemaFor } from "./archetypeSchemas";
 import CustomPairsField from "./CustomPairsField";
+
+/** Stap 11.I.2 — tag_list helpers: array ↔ comma-separated string */
+function tagsToText(arr) {
+  if (!Array.isArray(arr)) return "";
+  return arr.join(", ");
+}
+function textToTags(text) {
+  if (typeof text !== "string") return [];
+  return text.split(",").map(s => s.trim()).filter(Boolean);
+}
 
 export default function ItemModal({
   item,
@@ -32,7 +42,7 @@ export default function ItemModal({
   // inline-bevestiging vóór hard-delete. KlantenWerkblad handelt de service-call af.
   onDelete,
 }) {
-  const { label: appLabel } = useAppConfig();
+  const { label: appLabel, enum: appEnum } = useAppConfig();
   const isEdit = !!item;
   const schema = getSchemaFor(dimension?.archetype);
 
@@ -217,47 +227,7 @@ export default function ItemModal({
             {schema.length === 0 && (
               <p className="text-xs text-slate-500 italic">Geen velden gedefinieerd voor archetype "{dimension?.archetype}"</p>
             )}
-            {schema.map(field => {
-              // Stap 11.I.1: custom_pairs-type voor anders.vrije_velden (max 4 keys).
-              // Server-side validatie via _archetypes.js — UI rendert 4 paren-formulier.
-              if (field.type === "custom_pairs") {
-                return (
-                  <CustomPairsField
-                    key={field.key}
-                    fieldKey={field.key}
-                    value={archetypeData[field.key] ?? {}}
-                    onChange={next => setField(field.key, next)}
-                    labelKey={field.labelKey}
-                    fallback={field.fallback}
-                    helperKey="klanten.veld.anders.helper"
-                    helperFallback="Definieer maximaal 4 eigen sleutels en waarden voor deze dimensie."
-                    appLabel={appLabel}
-                  />
-                );
-              }
-              return (
-                <div key={field.key}>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                    {appLabel(field.labelKey, field.fallback)}
-                  </label>
-                  {field.type === "textarea" ? (
-                    <textarea
-                      rows={2}
-                      value={archetypeData[field.key] ?? ""}
-                      onChange={e => setField(field.key, e.target.value)}
-                      className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={archetypeData[field.key] ?? ""}
-                      onChange={e => setField(field.key, e.target.value)}
-                      className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-                    />
-                  )}
-                </div>
-              );
-            })}
+            {renderSchema({ schema, archetypeData, setField, appLabel, appEnum })}
           </div>
 
           {errMsg && (
@@ -333,6 +303,249 @@ export default function ItemModal({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Stap 11.I.2 — schema-aware veld-renderer ─────────────────────────────────
+//
+// Itereert door schema en rendert per veld op basis van field.type. Speciale
+// gevallen:
+//  - custom_pairs (11.I.1)  → CustomPairsField-component (anders.vrije_velden)
+//  - boolean met group="strategische_weging" → eigen blok "Strategische weging"
+//    met visual emphasis (80/20-denkdwang asymmetrie, klantreis MoT/Silent/weight)
+//  - conditionalOn: alleen renderen wanneer archetypeData[conditionalOn] truthy
+//
+// 80/20-denkdwang-principe (zie inputs/2026-05-12-design-principle-80-20-denkdwang.md):
+// MoT + Silent Period + weight_multiplier zijn DE strategische functie van
+// klantreis-archetype. Niet ondergeschikt aan andere velden, dus eigen blok
+// met prominent visual styling (amber MoT-toggle, slate Silent-toggle, weight-numeric).
+function renderSchema({ schema, archetypeData, setField, appLabel, appEnum }) {
+  const groupRendered = new Set();
+  return schema.map(field => {
+    if (field.group && groupRendered.has(field.group)) return null;
+    if (field.group === "strategische_weging") {
+      groupRendered.add(field.group);
+      const groupFields = schema.filter(f => f.group === "strategische_weging");
+      return (
+        <StrategischeWegingBlok
+          key="strategische_weging"
+          fields={groupFields}
+          archetypeData={archetypeData}
+          setField={setField}
+          appLabel={appLabel}
+        />
+      );
+    }
+    if (field.conditionalOn && !archetypeData?.[field.conditionalOn]) {
+      return null;
+    }
+    return (
+      <FieldRenderer
+        key={field.key}
+        field={field}
+        archetypeData={archetypeData}
+        setField={setField}
+        appLabel={appLabel}
+        appEnum={appEnum}
+      />
+    );
+  });
+}
+
+function FieldRenderer({ field, archetypeData, setField, appLabel, appEnum }) {
+  // custom_pairs (11.I.1)
+  if (field.type === "custom_pairs") {
+    return (
+      <CustomPairsField
+        fieldKey={field.key}
+        value={archetypeData[field.key] ?? {}}
+        onChange={next => setField(field.key, next)}
+        labelKey={field.labelKey}
+        fallback={field.fallback}
+        helperKey={field.helperKey || "klanten.veld.anders.helper"}
+        helperFallback="Definieer maximaal 4 eigen sleutels en waarden voor deze dimensie."
+        appLabel={appLabel}
+      />
+    );
+  }
+  const labelEl = (
+    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+      {appLabel(field.labelKey, field.fallback)}
+    </label>
+  );
+  const helperEl = field.helperKey ? (
+    <p className="text-[10px] text-slate-500 italic mb-1.5">
+      {appLabel(field.helperKey, "")}
+    </p>
+  ) : null;
+
+  if (field.type === "dropdown") {
+    const opts = appEnum ? appEnum(field.enumKey, []) : [];
+    return (
+      <div data-testid={`field-${field.key}`}>
+        {labelEl}
+        {helperEl}
+        <select
+          value={archetypeData[field.key] ?? ""}
+          onChange={e => setField(field.key, e.target.value)}
+          className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)] bg-white"
+        >
+          <option value="">— kies —</option>
+          {opts.map(opt => (
+            <option key={opt} value={opt}>
+              {appLabel(`${field.enumLabelPrefix || ""}${opt}`, opt)}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  if (field.type === "tag_list") {
+    return (
+      <div data-testid={`field-${field.key}`}>
+        {labelEl}
+        {helperEl}
+        <input
+          type="text"
+          value={tagsToText(archetypeData[field.key])}
+          onChange={e => setField(field.key, textToTags(e.target.value))}
+          placeholder="comma-separated"
+          className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+        />
+      </div>
+    );
+  }
+
+  if (field.type === "textarea") {
+    return (
+      <div data-testid={`field-${field.key}`}>
+        {labelEl}
+        {helperEl}
+        <textarea
+          rows={2}
+          value={archetypeData[field.key] ?? ""}
+          onChange={e => setField(field.key, e.target.value)}
+          className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+        />
+      </div>
+    );
+  }
+
+  // Default: text
+  return (
+    <div data-testid={`field-${field.key}`}>
+      {labelEl}
+      {helperEl}
+      <input
+        type="text"
+        value={archetypeData[field.key] ?? ""}
+        onChange={e => setField(field.key, e.target.value)}
+        className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+      />
+    </div>
+  );
+}
+
+/**
+ * StrategischeWegingBlok — eigen visueel blok voor MoT + Silent Period +
+ * weight_multiplier. 80/20-denkdwang in categorie "asymmetrie-erkenning"
+ * (inputs/2026-05-12-design-principle-80-20-denkdwang.md). Bewuste keuze
+ * om deze drie velden niet ondergeschikt te maken aan andere veld-input.
+ *
+ * Visual emphasis: toggle-buttons met kleur-accent (amber voor MoT,
+ * slate voor Silent Period) i.p.v. standaard-checkboxes. Numeric weight
+ * met sensible defaults via helper-tekst (1.0 normaal, 3.0 claim-niveau).
+ */
+function StrategischeWegingBlok({ fields, archetypeData, setField, appLabel }) {
+  const motField    = fields.find(f => f.key === "is_moment_of_truth");
+  const silentField = fields.find(f => f.key === "is_silent_period");
+  const weightField = fields.find(f => f.key === "weight_multiplier");
+
+  const isMoT    = archetypeData?.is_moment_of_truth === true;
+  const isSilent = archetypeData?.is_silent_period === true;
+  const weight   = archetypeData?.weight_multiplier;
+  const weightDisplay = weight == null || weight === "" ? (weightField?.defaultValue ?? 1.0) : weight;
+
+  return (
+    <div
+      data-testid="strategische-weging-blok"
+      data-denkdwang="asymmetrie"
+      className="rounded-md border border-amber-200/70 bg-amber-50/30 p-3"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-[11px] font-bold uppercase tracking-widest text-amber-800">
+          {appLabel("klanten.veld.klantreis.strategische_weging_titel", "Strategische weging")}
+        </h4>
+        <span className="text-[9px] text-amber-700/70 italic">
+          {appLabel("klanten.veld.klantreis.strategische_weging.helper", "80/20-denkdwang — asymmetrie-erkenning")}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+        {/* MoT toggle */}
+        {motField && (
+          <button
+            type="button"
+            onClick={() => setField("is_moment_of_truth", !isMoT)}
+            data-testid="toggle-is_moment_of_truth"
+            data-active={isMoT ? "true" : "false"}
+            className={`flex items-center gap-2 px-3 py-2 rounded border text-xs font-semibold transition-colors ${
+              isMoT
+                ? "bg-amber-500 border-amber-600 text-white"
+                : "bg-white border-slate-300 text-slate-600 hover:border-amber-400"
+            }`}
+          >
+            <Zap size={14} className={isMoT ? "text-white" : "text-amber-500"} />
+            <span>{appLabel(motField.labelKey, motField.fallback)}</span>
+          </button>
+        )}
+
+        {/* Silent Period toggle */}
+        {silentField && (
+          <button
+            type="button"
+            onClick={() => setField("is_silent_period", !isSilent)}
+            data-testid="toggle-is_silent_period"
+            data-active={isSilent ? "true" : "false"}
+            className={`flex items-center gap-2 px-3 py-2 rounded border text-xs font-semibold transition-colors ${
+              isSilent
+                ? "bg-slate-600 border-slate-700 text-white"
+                : "bg-white border-slate-300 text-slate-600 hover:border-slate-500"
+            }`}
+          >
+            <MoonStar size={14} className={isSilent ? "text-white" : "text-slate-500"} />
+            <span>{appLabel(silentField.labelKey, silentField.fallback)}</span>
+          </button>
+        )}
+      </div>
+
+      {/* Weight multiplier */}
+      {weightField && (
+        <div data-testid="field-weight_multiplier">
+          <label className="block text-[10px] font-medium text-amber-800 mb-1">
+            {appLabel(weightField.labelKey, weightField.fallback)}
+          </label>
+          {weightField.helperKey && (
+            <p className="text-[10px] text-amber-700/80 italic mb-1.5">
+              {appLabel(weightField.helperKey, "")}
+            </p>
+          )}
+          <input
+            type="number"
+            step={weightField.step || 0.1}
+            min={weightField.min || 0}
+            max={weightField.max || 10}
+            value={weightDisplay}
+            onChange={e => {
+              const v = parseFloat(e.target.value);
+              setField("weight_multiplier", isNaN(v) ? weightField.defaultValue ?? 1.0 : v);
+            }}
+            className="w-32 border border-amber-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-amber-500 bg-white"
+          />
+        </div>
+      )}
     </div>
   );
 }
