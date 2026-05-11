@@ -61,6 +61,10 @@ export default function AnalyseView({
   loading,
   error,
   reload,
+  // Stap 11.H: intents alleen-lezen om gepromote suggestions te detecteren
+  // + promote-callback naar parent (modal-state in KlantenWerkblad).
+  intents = [],
+  onPromoteSuggestion,
 }) {
   const { label: appLabel } = useAppConfig();
 
@@ -95,6 +99,14 @@ export default function AnalyseView({
       rejectedCount: deleted.length,
     };
   }, [suggestions]);
+
+  // Stap 11.H: set van suggestion-ids die al gepromoot zijn naar een intent
+  // (1:1-relatie via source_suggestion_id). Gebruikt om "Promote"-knop te
+  // verbergen op suggestions die al een intent hebben.
+  const promotedSuggestionIds = useMemo(
+    () => new Set((intents || []).map(i => i.source_suggestion_id).filter(Boolean)),
+    [intents]
+  );
 
   // Sorteer suggestions: parents eerst, kinderen direct erna onder hun parent.
   const sortedOpenList = useMemo(() => {
@@ -383,16 +395,22 @@ export default function AnalyseView({
       </div>
 
       {/* Stap 11.G.3 F8: collapse-secties voor gemarkeerde + verwijderde
-          patronen. Geeft consultant zicht op eigen werk + restore-pad. */}
+          patronen. Geeft consultant zicht op eigen werk + restore-pad.
+          Stap 11.H: gemarkeerde patterns krijgen "Promote naar verbeterrichting"-
+          knop wanneer ze nog niet gepromoot zijn (geen 1:1-intent bestaat). */}
       {(markedList.length > 0 || deletedList.length > 0) && (
         <div className="mb-6">
           {markedList.length > 0 && (
             <CollapseSection
               title={`${appLabel("klanten.analyse.gemarkeerd.titel", "Gemarkeerd voor verbeterrichtingen")} (${markedList.length})`}
-              items={markedList}
+              items={markedList.filter(s => !promotedSuggestionIds.has(s.id))}
               emptyMessage={appLabel("klanten.analyse.gemarkeerd.leeg", "Nog niets gemarkeerd")}
               actionLabel={appLabel("klanten.analyse.gemarkeerd.terug", "Terug naar voorraad")}
               onAction={handleUnMark}
+              secondaryActionLabel={onPromoteSuggestion
+                ? appLabel("klanten.actie.promote", "Promote naar verbeterrichting")
+                : null}
+              onSecondaryAction={onPromoteSuggestion || null}
               testIdPrefix="marked"
               busyId={busyAction?.action === "unmark" ? busyAction.id : null}
             />

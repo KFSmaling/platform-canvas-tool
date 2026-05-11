@@ -204,11 +204,18 @@ export async function rejectPatternSuggestion(id) {
   return { data: data?.pattern_suggestion ?? null, error };
 }
 
-export async function promotePatternSuggestionToIntent(id) {
-  // MVP-fase-3: zet alleen promoted_to_intent_at + INSERT event.
-  // Feitelijke cd_improvement_intents-aanmaak komt 11.H (fase 4).
-  const { data, error } = await call("POST", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}&action=promote_to_intent`);
-  return { data: data?.pattern_suggestion ?? null, error };
+export async function promotePatternSuggestionToIntent(id, { title, intentMd } = {}) {
+  // Stap 11.H: bij meegegeven title+intentMd creëert de server tegelijk een
+  // cd_improvement_intents-rij (source_suggestion_id=id) en zet het audit-event
+  // metadata.intent_id. Zonder title+intentMd: backwards-compat — alleen
+  // promoted_to_intent_at + placeholder-event.
+  const body = (title && intentMd) ? { title, intent_md: intentMd } : undefined;
+  const { data, error } = await call("POST", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}&action=promote_to_intent`, body);
+  return {
+    data: data?.pattern_suggestion ?? null,
+    intent: data?.intent ?? null,
+    error,
+  };
 }
 
 // Stap 11.G.3 F8: un-mark/restore voor collapse-sectie "Terug naar voorraad"
@@ -227,6 +234,50 @@ export async function restorePatternSuggestion(id) {
 export async function deletePatternSuggestion(id) {
   const { error } = await call("DELETE", `/api/klanten/pattern_suggestions?id=${encodeURIComponent(id)}`);
   return { data: null, error };
+}
+
+// ── cd_improvement_intents (RFC-001 §2.7, stap 11.H fase 4) ────────────────
+
+export async function listIntents(canvasId) {
+  if (!canvasId) return { data: null, error: new Error("canvasId is required") };
+  const { data, error } = await call("GET", `/api/klanten/improvement_intents?canvas_id=${encodeURIComponent(canvasId)}`);
+  return { data: data?.intents ?? [], error };
+}
+
+export async function createIntent({ canvasId, title, intentMd, vanuit, sourceSuggestionId, sortOrder }) {
+  const { data, error } = await call("POST", "/api/klanten/improvement_intents", {
+    canvas_id: canvasId,
+    title,
+    intent_md: intentMd,
+    vanuit: vanuit ?? null,
+    source_suggestion_id: sourceSuggestionId ?? null,
+    sort_order: sortOrder ?? 0,
+  });
+  return { data: data?.intent ?? null, error };
+}
+
+export async function updateIntent(id, { title, intentMd, sortOrder }) {
+  const patch = {};
+  if (title !== undefined)     patch.title     = title;
+  if (intentMd !== undefined)  patch.intent_md = intentMd;
+  if (sortOrder !== undefined) patch.sort_order = sortOrder;
+  const { data, error } = await call("PUT", `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}`, patch);
+  return { data: data?.intent ?? null, error };
+}
+
+export async function deleteIntent(id) {
+  const { error } = await call("DELETE", `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}`);
+  return { data: null, error };
+}
+
+export async function handoverIntentToRoadmap(id) {
+  const { data, error } = await call("POST", `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}&action=handover_to_roadmap`);
+  return { data: data?.intent ?? null, error };
+}
+
+export async function unsendIntent(id) {
+  const { data, error } = await call("POST", `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}&action=unsend`);
+  return { data: data?.intent ?? null, error };
 }
 
 // ── cd_pattern_suggestion_events (read-only audit-trail) ───────────────────

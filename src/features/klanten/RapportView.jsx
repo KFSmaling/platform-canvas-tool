@@ -102,6 +102,7 @@ export default function RapportView({
   painPoints = [],
   couplings = [],
   suggestions = [],
+  intents = [],
   onClose,
 }) {
   const { brandName } = useTheme();
@@ -250,10 +251,13 @@ export default function RapportView({
               <p style={{ fontSize: "10px", color: "#475569", lineHeight: 1.55 }}>
                 {dimensions.length} dimensie{dimensions.length === 1 ? "" : "s"}, {items.length} item{items.length === 1 ? "" : "s"},{" "}
                 {painPoints.length} pijnpunt{painPoints.length === 1 ? "" : "en"} ({overstijgendPains.length} overstijgend),{" "}
-                {acceptedCount} geaccepteerde patron{acceptedCount === 1 ? "" : "en"} vastgelegd.
-                {acceptedCount === 0
-                  ? " Werkblad in inventarisatie + pijnpunten-fase. Verbeterrichtingen volgen in latere sprints."
-                  : " Werkblad in inventarisatie + pijnpunten + analyse-fase. Verbeterrichtingen volgen in latere sprints."}
+                {acceptedCount} geaccepteerde patron{acceptedCount === 1 ? "" : "en"},{" "}
+                {intents.length} verbeterrichting{intents.length === 1 ? "" : "en"} vastgelegd.
+                {intents.length === 0 && acceptedCount === 0
+                  ? " Werkblad in inventarisatie + pijnpunten-fase."
+                  : intents.length === 0
+                    ? " Werkblad in inventarisatie + pijnpunten + analyse-fase."
+                    : " Werkblad in volledige fase-keten — verbeterrichtingen vastgelegd."}
               </p>
             </section>
 
@@ -381,10 +385,79 @@ export default function RapportView({
                   — alle accepted patterns worden nu getoond in het grid. */}
             </section>
 
-            {/* Verbeterrichtingen — placeholder */}
-            <section>
-              <div style={sectionLabelStyle}>{appLabel("klanten.rapport.section.richtingen", "Verbeterrichtingen")}</div>
-              <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>komt in fase 4 (Verbeterrichtingen)</p>
+            {/* Verbeterrichtingen — stap 11.H. Toont alle intents (concept +
+                verstuurd) met status-badge. 3-koloms grid bij ≥3, 2-koloms
+                bij 2, 1-koloms bij 1. Single source of truth via KlantenWerkblad-
+                hook zodat fase-4-edits onmiddellijk doorslaan naar rapport. */}
+            <section data-testid="rapport-section-verbeterrichtingen">
+              <div style={sectionLabelStyle}>
+                {appLabel("klanten.rapport.section.verbeterrichtingen", "Verbeterrichtingen")}
+              </div>
+              {intents.length === 0 ? (
+                <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
+                  {appLabel(
+                    "klanten.rapport.verbeterrichtingen.leeg",
+                    "Nog geen verbeterrichtingen vastgelegd — werkblad zit nog in inventarisatie/analyse-fase."
+                  )}
+                </p>
+              ) : (
+                <div
+                  data-testid="rapport-verbeterrichtingen-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: intents.length === 1
+                      ? "1fr"
+                      : intents.length === 2 ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
+                    gap: "6px",
+                  }}
+                >
+                  {intents.map(it => {
+                    const isVerstuurd = it.status === "verstuurd";
+                    return (
+                      <div
+                        key={it.id}
+                        data-testid={`rapport-intent-card-${it.id}`}
+                        style={{
+                          background: isVerstuurd ? "rgba(15,23,42,0.04)" : "#f8fafc",
+                          borderLeft: `3px solid ${isVerstuurd ? C.navy : "#94a3b8"}`,
+                          borderRadius: "3px",
+                          padding: "6px 8px",
+                        }}
+                      >
+                        <div style={{
+                          fontSize: "7px",
+                          fontWeight: 800,
+                          letterSpacing: "0.18em",
+                          textTransform: "uppercase",
+                          color: isVerstuurd ? C.navy : "#64748b",
+                          marginBottom: "3px",
+                        }}>
+                          {isVerstuurd
+                            ? appLabel("klanten.verbeterrichting.status.verstuurd", "verstuurd")
+                            : appLabel("klanten.verbeterrichting.status.concept", "concept")}
+                        </div>
+                        <div style={{
+                          fontSize: "9.5px",
+                          fontWeight: 700,
+                          color: "#1e293b",
+                          marginBottom: "2px",
+                        }}>
+                          {it.title}
+                        </div>
+                        <p style={{
+                          margin: 0,
+                          fontSize: "9px",
+                          color: "#475569",
+                          lineHeight: 1.45,
+                          whiteSpace: "pre-wrap",
+                        }}>
+                          {it.intent_md}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </div>
 

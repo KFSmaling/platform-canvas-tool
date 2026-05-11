@@ -56,6 +56,13 @@ jest.mock("../services/klanten.service", () => ({
   unmarkPatternSuggestion:        jest.fn(),
   restorePatternSuggestion:       jest.fn(),
   listPatternSuggestionEvents:    jest.fn(),
+  // Stap 11.H — intents (KlantenWerkblad-root gebruikt useIntents)
+  listIntents:                    jest.fn(),
+  createIntent:                   jest.fn(),
+  updateIntent:                   jest.fn(),
+  deleteIntent:                   jest.fn(),
+  handoverIntentToRoadmap:        jest.fn(),
+  unsendIntent:                   jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
 
@@ -142,6 +149,7 @@ beforeEach(() => {
   klantenService.listPainPoints.mockResolvedValue({ data: [], error: null });
   klantenService.listCouplingsForCanvas.mockResolvedValue({ data: [], error: null });
   klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
+  klantenService.listIntents.mockResolvedValue({ data: [], error: null });
 });
 
 async function openFase3() {

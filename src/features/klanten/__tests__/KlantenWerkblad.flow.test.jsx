@@ -58,6 +58,13 @@ jest.mock("../services/klanten.service", () => ({
   unmarkPatternSuggestion:        jest.fn(),
   restorePatternSuggestion:       jest.fn(),
   listPatternSuggestionEvents:    jest.fn(),
+  // Stap 11.H — intents
+  listIntents:                    jest.fn(),
+  createIntent:                   jest.fn(),
+  updateIntent:                   jest.fn(),
+  deleteIntent:                   jest.fn(),
+  handoverIntentToRoadmap:        jest.fn(),
+  unsendIntent:                   jest.fn(),
 }));
 import * as klantenService from "../services/klanten.service";
 
@@ -94,6 +101,7 @@ beforeEach(() => {
   // Stap 11.G Vervolg-sessie B: pattern suggestions leeg (usePatternSuggestions
   // wordt nu in KlantenWerkblad geladen voor RapportView)
   klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
+  klantenService.listIntents.mockResolvedValue({ data: [], error: null });
 });
 
 describe("KlantenWerkblad — lege-canvas flow (stap 11.E correctie)", () => {

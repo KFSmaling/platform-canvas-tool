@@ -38,6 +38,7 @@ const { requireAuth } = require("../_auth");
 const { userScopedClient } = require("../_template");
 const { handleGenerate } = require("./_pattern_generate");
 const { handleEvents }   = require("./_pattern_events");
+const { handleIntents }  = require("./_improvement_intents");
 
 const TEXT_MAX = 8000;
 const ALLOWED_PATTERN_TYPES = ["cluster", "paradox", "positionering", "overstijgend", "eigen"];
@@ -52,6 +53,7 @@ module.exports = async function handler(req, res) {
   const subpath = req.query?._subpath;
   if (subpath === "generate") return handleGenerate(req, res);
   if (subpath === "events")   return handleEvents(req, res);
+  if (subpath === "intents")  return handleIntents(req, res);
 
   const user = await requireAuth(req, res);
   if (!user) return;
@@ -94,7 +96,7 @@ module.exports = async function handler(req, res) {
 
       // ── Action-routes (accept / reject / promote_to_intent) ──────────────
       if (id && action) {
-        return await handleAction({ supabase, res, id, action, tenantId, userRole, userId: user.id });
+        return await handleAction({ supabase, req, res, id, action, tenantId, userRole, userId: user.id });
       }
 
       // ── Create consultant-eigen patroon ───────────────────────────────────
@@ -261,7 +263,7 @@ function normalizeVanuit(input) {
   return null;
 }
 
-async function handleAction({ supabase, res, id, action, tenantId, userRole, userId }) {
+async function handleAction({ supabase, req, res, id, action, tenantId, userRole, userId }) {
   // Stap 11.G.3 F8: nieuwe actions `unmark` (un-accept/un-promote → open)
   // en `restore` (un-reject → open). Beide via append-only event-INSERT —
   // trigger cd_ps_sync_current_status zet current_status terug naar 'open'.
@@ -273,7 +275,7 @@ async function handleAction({ supabase, res, id, action, tenantId, userRole, use
   // Lees suggestion voor canvas_id + status-validatie
   const { data: existing, error: selErr } = await supabase
     .from("cd_pattern_suggestions")
-    .select("id, canvas_id, tenant_id, current_status, text_md, promoted_to_intent_at")
+    .select("id, canvas_id, tenant_id, current_status, text_md, vanuit, pattern_type, promoted_to_intent_at")
     .eq("id", id)
     .maybeSingle();
   if (selErr) return res.status(500).json({ error: selErr.message });
@@ -281,6 +283,7 @@ async function handleAction({ supabase, res, id, action, tenantId, userRole, use
 
   let eventType;
   let extraUpdate = null;
+  let createdIntent = null;
   if (action === "accept") {
     eventType = "accepted";
   } else if (action === "reject") {
@@ -291,6 +294,40 @@ async function handleAction({ supabase, res, id, action, tenantId, userRole, use
     }
     eventType = "promoted_to_intent";
     extraUpdate = { promoted_to_intent_at: new Date().toISOString() };
+
+    // Stap 11.H: bij body { title, intent_md } daadwerkelijk een intent
+    // aanmaken (1:1-relatie via source_suggestion_id). Backwards-compat: zonder
+    // body blijft het bestaande gedrag (alleen status-flag + audit-event).
+    const body = req?.body || {};
+    if (body.title && body.intent_md) {
+      const trimmedTitle  = String(body.title).trim();
+      const trimmedIntent = String(body.intent_md).trim();
+      if (trimmedTitle.length < 1 || trimmedTitle.length > 100) {
+        return res.status(400).json({ error: "title moet 1-100 tekens zijn" });
+      }
+      if (trimmedIntent.length < 50 || trimmedIntent.length > 2000) {
+        return res.status(400).json({ error: "intent_md moet 50-2000 tekens zijn" });
+      }
+      const { data: intentRow, error: intentErr } = await supabase
+        .from("cd_improvement_intents")
+        .insert({
+          canvas_id: existing.canvas_id,
+          tenant_id: existing.tenant_id,
+          title: trimmedTitle,
+          intent_md: trimmedIntent,
+          source_suggestion_id: existing.id,
+          vanuit: Array.isArray(existing.vanuit) ? existing.vanuit : null,
+        })
+        .select()
+        .single();
+      if (intentErr) {
+        if (intentErr.code === "23505") {
+          return res.status(409).json({ error: "Deze suggestion is al gepromoot naar een intent" });
+        }
+        return res.status(500).json({ error: intentErr.message });
+      }
+      createdIntent = intentRow;
+    }
   } else if (action === "unmark") {
     if (!["accepted", "promoted"].includes(existing.current_status)) {
       return res.status(409).json({ error: "alleen geaccepteerde of gepromoveerde suggestions kunnen ge-unmarkt worden" });
@@ -317,6 +354,11 @@ async function handleAction({ supabase, res, id, action, tenantId, userRole, use
   }
 
   // INSERT event — trigger sync't current_status automatisch
+  const eventMetadata = action === "promote_to_intent"
+    ? (createdIntent
+        ? { intent_id: createdIntent.id }
+        : { placeholder_for_fase_4: true })
+    : {};
   const { error: evErr } = await supabase
     .from("cd_pattern_suggestion_events")
     .insert({
@@ -326,7 +368,7 @@ async function handleAction({ supabase, res, id, action, tenantId, userRole, use
       actor_role: userRole,
       text_before_md: existing.text_md,
       text_after_md: existing.text_md,
-      metadata: action === "promote_to_intent" ? { placeholder_for_fase_4: true } : {},
+      metadata: eventMetadata,
       tenant_id: existing.tenant_id,
       canvas_id: existing.canvas_id,
     });
@@ -340,5 +382,9 @@ async function handleAction({ supabase, res, id, action, tenantId, userRole, use
     .single();
   if (rfErr) return res.status(500).json({ error: rfErr.message });
 
-  return res.status(200).json({ pattern_suggestion: refreshed, event_type: eventType });
+  return res.status(200).json({
+    pattern_suggestion: refreshed,
+    event_type: eventType,
+    ...(createdIntent ? { intent: createdIntent } : {}),
+  });
 }

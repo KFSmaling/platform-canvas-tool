@@ -16,13 +16,14 @@ import { useAppConfig } from "../../shared/context/AppConfigContext";
 import DimensieKolom from "./DimensieKolom";
 import PijnpuntenView from "./PijnpuntenView";
 import AnalyseView from "./AnalyseView";
+import VerbeterrichtingenView from "./VerbeterrichtingenView";
 
-// Stap 11.G: fase 3 enabled. Fase 4 blijft disabled tot 11.H.
+// Stap 11.H: fase 4 enabled.
 const FASE_TABS = [
-  { num: 1, key: "label.klanten.fase.1.titel", fallback: "Inventarisatie", enabled: true  },
-  { num: 2, key: "label.klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: true  },
-  { num: 3, key: "label.klanten.fase.3.titel", fallback: "Analyse",        enabled: true  },
-  { num: 4, key: "label.klanten.fase.4.titel", fallback: "Verbeterrichtingen", enabled: false },
+  { num: 1, key: "label.klanten.fase.1.titel", fallback: "Inventarisatie", enabled: true },
+  { num: 2, key: "label.klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: true },
+  { num: 3, key: "label.klanten.fase.3.titel", fallback: "Analyse",        enabled: true },
+  { num: 4, key: "label.klanten.fase.4.titel", fallback: "Verbeterrichtingen", enabled: true },
 ];
 
 export default function WerkruimteView({
@@ -37,12 +38,18 @@ export default function WerkruimteView({
   suggestionsLoading,
   suggestionsError,
   reloadSuggestions,
+  // Stap 11.H: intents single source of truth (pass-through via KlantenWerkblad)
+  intents,
+  intentsLoading,
+  intentsError,
+  reloadIntents,
   onItemClick,
   onAddItem,
   onAddDimensie,
   onEditDimensie,
   onAddPijnpunt,
   onEditPijnpunt,
+  onPromoteSuggestion,
 }) {
   const { label: appLabel } = useAppConfig();
   const [activeFase, setActiveFase] = useState(1);
@@ -86,7 +93,17 @@ export default function WerkruimteView({
       </div>
 
       {/* Fase-content */}
-      {activeFase === 3 ? (
+      {activeFase === 4 ? (
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <VerbeterrichtingenView
+            canvasId={canvasId}
+            intents={intents}
+            loading={intentsLoading}
+            error={intentsError}
+            reload={reloadIntents}
+          />
+        </div>
+      ) : activeFase === 3 ? (
         <div className="flex-1 overflow-hidden flex flex-col">
           <AnalyseView
             canvasId={canvasId}
@@ -98,6 +115,8 @@ export default function WerkruimteView({
             loading={suggestionsLoading}
             error={suggestionsError}
             reload={reloadSuggestions}
+            onPromoteSuggestion={onPromoteSuggestion}
+            intents={intents}
           />
         </div>
       ) : activeFase === 2 ? (

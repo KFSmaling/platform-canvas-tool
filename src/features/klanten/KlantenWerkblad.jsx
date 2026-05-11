@@ -21,12 +21,14 @@ import { useAppConfig } from "../../shared/context/AppConfigContext";
 import { useCanvasDimensions } from "./hooks/useCanvasDimensions";
 import { usePainPoints } from "./hooks/usePainPoints";
 import { usePatternSuggestions } from "./hooks/usePatternSuggestions";
+import { useIntents } from "./hooks/useIntents";
 import * as klantenService from "./services/klanten.service";
 import WerkruimteView from "./WerkruimteView";
 import RapportView from "./RapportView";
 import ItemModal from "./ItemModal";
 import DimensieModal from "./DimensieModal";
 import PijnpuntModal from "./PijnpuntModal";
+import PromoteToIntentModal from "./PromoteToIntentModal";
 
 export default function KlantenWerkblad({ canvasId, onClose }) {
   const { label: appLabel } = useAppConfig();
@@ -41,6 +43,15 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     error:   suggestionsError,
     reload:  reloadSuggestions,
   } = usePatternSuggestions(canvasId);
+  // Stap 11.H: intents single source of truth in KlantenWerkblad — anker
+  // 11.G.4 F11-fix. VerbeterrichtingenView + RapportView krijgen beide
+  // dezelfde data zonder eigen hook-instance.
+  const {
+    intents,
+    loading: intentsLoading,
+    error:   intentsError,
+    reload:  reloadIntents,
+  } = useIntents(canvasId);
 
   const [view, setView] = useState("werkruimte"); // "werkruimte" | "rapport"
   const [modalCtx, setModalCtx] = useState(null); // { dimension, item } of null
@@ -48,6 +59,10 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   const [dimModalState, setDimModalState] = useState(null);
   // pijnModalState: { mode, painPoint?, initialCouplings? } of null
   const [pijnModalState, setPijnModalState] = useState(null);
+  // Stap 11.H: promote-modal-state geactiveerd vanuit AnalyseView (collapse-
+  // sectie van gemarkeerde patterns). Bij opslaan creëert server de intent-
+  // rij; we reloaden intents + suggestions zodat beide views syncen.
+  const [promoteSuggestion, setPromoteSuggestion] = useState(null);
 
   function openCreateItem(dimension) {
     setModalCtx({ dimension, item: null });
@@ -77,6 +92,24 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   }
   function closePijnModal() {
     setPijnModalState(null);
+  }
+  function openPromoteModal(suggestion) {
+    setPromoteSuggestion(suggestion);
+  }
+  function closePromoteModal() {
+    setPromoteSuggestion(null);
+  }
+
+  async function handlePromoteSave({ title, intentMd }) {
+    if (!promoteSuggestion) return { error: new Error("modal context ontbreekt") };
+    const { error } = await klantenService.promotePatternSuggestionToIntent(
+      promoteSuggestion.id,
+      { title, intentMd },
+    );
+    if (error) return { error };
+    reloadIntents();
+    reloadSuggestions();
+    return { error: null };
   }
 
   // Save-handler doorgegeven aan PijnpuntModal — { error } contract.
@@ -245,12 +278,17 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           suggestionsLoading={suggestionsLoading}
           suggestionsError={suggestionsError}
           reloadSuggestions={reloadSuggestions}
+          intents={intents}
+          intentsLoading={intentsLoading}
+          intentsError={intentsError}
+          reloadIntents={reloadIntents}
           onItemClick={openEditItem}
           onAddItem={openCreateItem}
           onAddDimensie={openCreateDimensie}
           onEditDimensie={openEditDimensie}
           onAddPijnpunt={openCreatePijnpunt}
           onEditPijnpunt={openEditPijnpunt}
+          onPromoteSuggestion={openPromoteModal}
         />
       ) : (
         <RapportView
@@ -260,6 +298,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           painPoints={painPoints || []}
           couplings={couplings || []}
           suggestions={suggestions || []}
+          intents={intents || []}
           onClose={() => setView("werkruimte")}
         />
       )}
@@ -294,6 +333,15 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           items={items || []}
           onClose={closePijnModal}
           onSave={handleSavePijnpunt}
+        />
+      )}
+
+      {/* Promote-naar-intent modal (stap 11.H, vanuit AnalyseView collapse) */}
+      {promoteSuggestion && (
+        <PromoteToIntentModal
+          suggestion={promoteSuggestion}
+          onClose={closePromoteModal}
+          onSubmit={handlePromoteSave}
         />
       )}
     </div>

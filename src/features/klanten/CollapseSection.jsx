@@ -33,6 +33,10 @@ export default function CollapseSection({
   onAction,
   testIdPrefix = "collapse",
   busyId = null,
+  // Stap 11.H: optionele tweede actie (bv. "Promote naar verbeterrichting"
+  // op gemarkeerde patterns). Wanneer set, rendert naast primary action.
+  secondaryActionLabel = null,
+  onSecondaryAction = null,
 }) {
   const { label: appLabel } = useAppConfig();
   const [open, setOpen] = useState(false);
@@ -89,15 +93,28 @@ export default function CollapseSection({
                       {s.text_md}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    disabled={busyId === s.id}
-                    onClick={() => onAction(s)}
-                    data-testid={`${testIdPrefix}-actie-${s.id}`}
-                    className="shrink-0 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {actionLabel}
-                  </button>
+                  <div className="shrink-0 flex flex-col items-stretch gap-1">
+                    {secondaryActionLabel && onSecondaryAction && (
+                      <button
+                        type="button"
+                        disabled={busyId === s.id}
+                        onClick={() => onSecondaryAction(s)}
+                        data-testid={`${testIdPrefix}-actie-promote-${s.id}`}
+                        className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {secondaryActionLabel}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={busyId === s.id}
+                      onClick={() => onAction(s)}
+                      data-testid={`${testIdPrefix}-actie-${s.id}`}
+                      className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {actionLabel}
+                    </button>
+                  </div>
                 </div>
               );
             })

@@ -1,0 +1,155 @@
+/**
+ * IntentCard — één kaart per cd_improvement_intents in VerbeterrichtingenView.
+ *
+ * Toont:
+ *   - Status-badge (concept / verstuurd + datum)
+ *   - Titel + intent_md (whitespace-pre-wrap render, conform andere werkbladen)
+ *   - "Vanuit"-chips (jsonb-array)
+ *   - 3 actie-knoppen:
+ *       concept → Bewerk / Verwijder / Markeer als verstuurd
+ *       verstuurd → Bewerk / Verwijder / Terugtrekken
+ *
+ * F9-rebrand-consistency: geen Accept/Reject-terminologie. "Markeer als
+ * verstuurd" en "Terugtrekken" zijn status-transities (concept ↔ verstuurd).
+ *
+ * Props:
+ *   - intent: cd_improvement_intents-rij
+ *   - busy: boolean (true tijdens action-call → knoppen disabled)
+ *   - onEdit(intent)
+ *   - onDelete(intent)
+ *   - onHandover(intent) — stub voor Roadmap, status→verstuurd
+ *   - onUnsend(intent)   — terugtrekken, status→concept
+ */
+
+import React from "react";
+import { useAppConfig } from "../../shared/context/AppConfigContext";
+
+function formatDate(iso) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+export default function IntentCard({
+  intent,
+  busy = false,
+  onEdit,
+  onDelete,
+  onHandover,
+  onUnsend,
+}) {
+  const { label: appLabel } = useAppConfig();
+  const isVerstuurd = intent.status === "verstuurd";
+  const vanuit = Array.isArray(intent.vanuit) ? intent.vanuit : [];
+
+  return (
+    <div
+      data-testid={`intent-card-${intent.id}`}
+      data-status={intent.status}
+      className="rounded-md p-4 border border-slate-200 border-l-[3px] bg-white"
+      style={{ borderLeftColor: isVerstuurd ? "var(--color-primary)" : "#94a3b8" }}
+    >
+      {/* Header: status-badge + titel */}
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            {isVerstuurd ? (
+              <span
+                data-testid={`intent-status-${intent.id}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm text-white"
+                style={{ background: "var(--color-primary)" }}
+                title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
+              >
+                {appLabel("klanten.verbeterrichting.status.verstuurd", "verstuurd")}
+                {intent.handover_to_roadmap_at && (
+                  <span className="font-normal opacity-80">
+                    · {appLabel("klanten.verbeterrichting.handover.datum", "verstuurd op")} {formatDate(intent.handover_to_roadmap_at)}
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span
+                data-testid={`intent-status-${intent.id}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm bg-slate-100 text-slate-700 border border-slate-300"
+              >
+                {appLabel("klanten.verbeterrichting.status.concept", "concept")}
+              </span>
+            )}
+          </div>
+          <h4 className="text-sm font-bold text-[var(--color-primary)]">{intent.title}</h4>
+        </div>
+      </div>
+
+      {/* Beschrijving */}
+      <p className="text-[12.5px] leading-relaxed whitespace-pre-wrap text-slate-700 mb-3">
+        {intent.intent_md}
+      </p>
+
+      {/* Vanuit-chips */}
+      {vanuit.length > 0 && (
+        <div className="mb-3">
+          <span className="text-[10px] font-bold uppercase tracking-widest mr-2 text-slate-500">
+            {appLabel("klanten.verbeterrichting.veld.vanuit.label", "Vanuit")}:
+          </span>
+          <span className="inline-flex flex-wrap gap-1">
+            {vanuit.map((v, i) => (
+              <span
+                key={i}
+                className="inline-block text-[10px] px-2 py-0.5 rounded bg-slate-50 text-slate-600 border border-slate-200"
+              >
+                {String(v).length > 80 ? String(v).slice(0, 79) + "…" : v}
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
+
+      {/* Acties */}
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/70">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onEdit(intent)}
+          data-testid={`intent-actie-bewerk-${intent.id}`}
+          className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 disabled:opacity-50"
+        >
+          {appLabel("klanten.actie.bewerk", "Bewerk")}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onDelete(intent)}
+          data-testid={`intent-actie-verwijder-${intent.id}`}
+          className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors text-slate-500 hover:text-red-700 disabled:opacity-50"
+        >
+          {appLabel("klanten.actie.verwijder", "Verwijder")}
+        </button>
+        {isVerstuurd ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onUnsend(intent)}
+            data-testid={`intent-actie-terugtrekken-${intent.id}`}
+            className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-400 text-slate-700 hover:border-slate-600 disabled:opacity-50"
+          >
+            {appLabel("klanten.actie.terugtrekken", "Terugtrekken")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onHandover(intent)}
+            data-testid={`intent-actie-markeer-${intent.id}`}
+            title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
+            className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {appLabel("klanten.actie.markeer", "Markeer als verstuurd")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

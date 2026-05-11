@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/api/klanten/pattern_suggestions_generate", "destination": "/api/klanten/pattern_suggestions?_subpath=generate" },
     { "source": "/api/klanten/pattern_suggestion_events",    "destination": "/api/klanten/pattern_suggestions?_subpath=events" },
+    { "source": "/api/klanten/improvement_intents",          "destination": "/api/klanten/pattern_suggestions?_subpath=intents" },
     { "source": "/api/klanten/pain_point_couplings",         "destination": "/api/klanten/pain_points?_subpath=couplings" },
     { "source": "/((?!api/).*)",                             "destination": "/index.html" }
   ]
