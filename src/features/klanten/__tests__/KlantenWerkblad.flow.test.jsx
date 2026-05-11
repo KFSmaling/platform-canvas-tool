@@ -259,4 +259,90 @@ describe("KlantenWerkblad — lege-canvas flow (stap 11.E correctie)", () => {
     // Modal nog steeds open (titel zichtbaar)
     expect(screen.getByText("Nieuwe dimensie")).toBeInTheDocument();
   });
+
+  // ── Stap 11.K.2 F16 — canonical-delete-flow ────────────────────────────
+  test("F16: ItemModal in edit-mode toont Verwijderen-knop; bevestigen → deleteItem called", async () => {
+    const sampleDim = {
+      id: "dim-1", archetype: "klantsegment", name: "Klantsegmenten",
+      description: null, sort_order: 10, is_ordered: false,
+    };
+    const sampleItem = {
+      id: "item-1", dimension_id: "dim-1", canvas_id: TEST_CANVAS_ID,
+      name: "Bestaand item", description: "uit DB",
+      archetype_data: {}, is_draft: false, sort_order: 10,
+    };
+    klantenService.listDimensions.mockResolvedValue({ data: [sampleDim], error: null });
+    klantenService.listItemsForCanvas.mockResolvedValue({ data: [sampleItem], error: null });
+    klantenService.deleteItem.mockResolvedValue({ data: null, error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+
+    // Klik op item-card → opent ItemModal in edit-mode
+    const itemCard = await screen.findByText("Bestaand item");
+    await act(async () => { fireEvent.click(itemCard); });
+
+    // Verwijder-knop zichtbaar
+    const deleteBtn = await screen.findByTestId("item-modal-delete");
+    expect(deleteBtn).toBeInTheDocument();
+
+    // Click → inline-confirm strook zichtbaar (Opslaan-knop verborgen)
+    await act(async () => { fireEvent.click(deleteBtn); });
+    expect(await screen.findByTestId("item-modal-delete-confirm")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Opslaan$/i })).not.toBeInTheDocument();
+
+    // Annuleren → terug naar normale state
+    await act(async () => { fireEvent.click(screen.getByTestId("item-modal-delete-confirm-nee")); });
+    expect(screen.queryByTestId("item-modal-delete-confirm")).not.toBeInTheDocument();
+    expect(screen.getByTestId("item-modal-delete")).toBeInTheDocument();
+
+    // Opnieuw verwijderen → bevestigen → deleteItem called
+    await act(async () => { fireEvent.click(screen.getByTestId("item-modal-delete")); });
+    await act(async () => { fireEvent.click(screen.getByTestId("item-modal-delete-confirm-ja")); });
+
+    expect(klantenService.deleteItem).toHaveBeenCalledWith("item-1");
+  });
+
+  test("F16: ItemModal in create-mode toont GEEN Verwijderen-knop", async () => {
+    const sampleDim = {
+      id: "dim-1", archetype: "klantsegment", name: "Klantsegmenten",
+      description: null, sort_order: 10, is_ordered: false,
+    };
+    klantenService.listDimensions.mockResolvedValue({ data: [sampleDim], error: null });
+    klantenService.listItemsForCanvas.mockResolvedValue({ data: [], error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    // Open create-item modal via "+ item"-knop
+    const addBtn = await screen.findByRole("button", { name: /\+ item$/i });
+    await act(async () => { fireEvent.click(addBtn); });
+
+    // Modal open, maar GEEN delete-knop in create-mode
+    expect(await screen.findByText("Nieuw item")).toBeInTheDocument();
+    expect(screen.queryByTestId("item-modal-delete")).not.toBeInTheDocument();
+  });
+
+  test("F16: PijnpuntModal in edit-mode toont Verwijderen-knop; bevestigen → deletePainPoint called", async () => {
+    const samplePain = {
+      id: "pain-1", canvas_id: TEST_CANVAS_ID,
+      text_md: "Bestaand pijnpunt", is_floating: true, is_draft: false, sort_order: 10,
+    };
+    klantenService.listPainPoints.mockResolvedValue({ data: [samplePain], error: null });
+    klantenService.deletePainPoint.mockResolvedValue({ data: null, error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    // Switch naar fase 2
+    const fase2 = await screen.findByRole("button", { name: /^2 · Pijnpunten$/i });
+    await act(async () => { fireEvent.click(fase2); });
+
+    // Klik op pijnpunt-card → opent PijnpuntModal in edit-mode
+    const painCard = await screen.findByText("Bestaand pijnpunt");
+    await act(async () => { fireEvent.click(painCard); });
+
+    const deleteBtn = await screen.findByTestId("pijnpunt-modal-delete");
+    expect(deleteBtn).toBeInTheDocument();
+
+    await act(async () => { fireEvent.click(deleteBtn); });
+    await act(async () => { fireEvent.click(screen.getByTestId("pijnpunt-modal-delete-confirm-ja")); });
+
+    expect(klantenService.deletePainPoint).toHaveBeenCalledWith("pain-1");
+  });
 });

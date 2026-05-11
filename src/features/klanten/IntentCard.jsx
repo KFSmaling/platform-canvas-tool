@@ -6,11 +6,13 @@
  *   - Titel + intent_md (whitespace-pre-wrap render, conform andere werkbladen)
  *   - "Vanuit"-chips (jsonb-array)
  *   - 3 actie-knoppen:
- *       concept → Bewerk / Verwijder / Markeer als verstuurd
- *       verstuurd → Bewerk / Verwijder / Terugtrekken
+ *       concept → Bewerk / Verwijder / Markeer als in roadmap
+ *       verstuurd → Bewerk / Verwijder / Haal uit roadmap
  *
- * F9-rebrand-consistency: geen Accept/Reject-terminologie. "Markeer als
- * verstuurd" en "Terugtrekken" zijn status-transities (concept ↔ verstuurd).
+ * F9-rebrand-consistency: geen Accept/Reject-terminologie. Status-transities
+ * concept ↔ verstuurd. F18-rebrand (stap 11.K.2): UI-labels gebruiken
+ * "in roadmap" terminologie i.p.v. "verstuurd"; DB-enum blijft `'verstuurd'`
+ * tot RFC-003 / 11.L Roadmap-werkblad (zie tech_debt.md F15 / ADR-004 §G).
  *
  * Props:
  *   - intent: cd_improvement_intents-rij
@@ -63,10 +65,10 @@ export default function IntentCard({
                 style={{ background: "var(--color-primary)" }}
                 title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
               >
-                {appLabel("klanten.verbeterrichting.status.verstuurd", "verstuurd")}
+                {appLabel("klanten.verbeterrichting.status.verstuurd", "in roadmap")}
                 {intent.handover_to_roadmap_at && (
                   <span className="font-normal opacity-80">
-                    · {appLabel("klanten.verbeterrichting.handover.datum", "verstuurd op")} {formatDate(intent.handover_to_roadmap_at)}
+                    · {appLabel("klanten.verbeterrichting.handover.datum", "in roadmap sinds")} {formatDate(intent.handover_to_roadmap_at)}
                   </span>
                 )}
               </span>
@@ -135,7 +137,7 @@ export default function IntentCard({
             data-testid={`intent-actie-terugtrekken-${intent.id}`}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-400 text-slate-700 hover:border-slate-600 disabled:opacity-50"
           >
-            {appLabel("klanten.verbeterrichting.actie.terugtrekken", "Terugtrekken")}
+            {appLabel("klanten.verbeterrichting.actie.terugtrekken", "Haal uit roadmap")}
           </button>
         ) : (
           <button
@@ -146,7 +148,7 @@ export default function IntentCard({
             title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {appLabel("klanten.verbeterrichting.actie.markeer", "Markeer als verstuurd")}
+            {appLabel("klanten.verbeterrichting.actie.markeer", "Markeer als in roadmap")}
           </button>
         )}
       </div>

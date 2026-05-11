@@ -283,6 +283,23 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     return { error: null };
   }
 
+  // Stap 11.K.2 F16 — canonical-delete callbacks voor ItemModal + PijnpuntModal.
+  // Hard-delete via bestaande service-functies; geen audit-event (consultant-
+  // eigendom, niet AI-output). Reload na succes.
+  async function handleDeleteItem(itemId) {
+    const { error } = await klantenService.deleteItem(itemId);
+    if (error) return { error };
+    reload();
+    return { error: null };
+  }
+
+  async function handleDeletePijnpunt(painId) {
+    const { error } = await klantenService.deletePainPoint(painId);
+    if (error) return { error };
+    reloadPains();
+    return { error: null };
+  }
+
   // Canvas-naam afleiden uit eerste item/dimensie of fallback.
   // (MVP: geen aparte canvas-meta-fetch; voor rapport-header laat ik
   // canvasName leeg zodat default "Canvas" zichtbaar is.)
@@ -418,6 +435,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           dimension={modalCtx.dimension}
           onClose={closeModal}
           onSave={handleSaveItem}
+          onDelete={handleDeleteItem}
           onFillFieldsFromDossier={handleFillFieldsFromDossier}
           hasUploads={hasUploads}
           hasIndexedChunks={hasIndexedChunks}
@@ -435,7 +453,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
         />
       )}
 
-      {/* Pijnpunt-modal (create + edit, stap 11.F fase 2) */}
+      {/* Pijnpunt-modal (create + edit, stap 11.F fase 2; canonical-delete stap 11.K.2 F16) */}
       {pijnModalState && (
         <PijnpuntModal
           mode={pijnModalState.mode}
@@ -445,6 +463,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           items={items || []}
           onClose={closePijnModal}
           onSave={handleSavePijnpunt}
+          onDelete={handleDeletePijnpunt}
         />
       )}
 

@@ -36,6 +36,8 @@ export default function PijnpuntModal({
   items = [],
   onClose,
   onSave,
+  // Stap 11.K.2 F16 — canonical-delete: alleen in edit-mode getoond.
+  onDelete,
 }) {
   const { label: appLabel } = useAppConfig();
   const isEdit = mode === "edit";
@@ -47,6 +49,23 @@ export default function PijnpuntModal({
   );
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState(null);
+  // F16: inline-bevestiging-state.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleConfirmDelete() {
+    if (!isEdit || !onDelete || !painPoint?.id || deleting) return;
+    setDeleting(true);
+    setErrMsg(null);
+    const { error } = await onDelete(painPoint.id);
+    setDeleting(false);
+    if (error) {
+      setErrMsg(error.message || "Verwijderen mislukt");
+      setConfirmingDelete(false);
+      return;
+    }
+    onClose();
+  }
 
   const trimmed = textMd.trim();
   const textValid = trimmed.length > 0 && trimmed.length <= TEXT_MAX;
@@ -191,25 +210,71 @@ export default function PijnpuntModal({
           )}
         </form>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+        {/* Footer: F16 inline-bevestigingsdialog vervangt normale knoppen-rij
+            wanneer confirmingDelete=true. */}
+        {confirmingDelete ? (
+          <div
+            data-testid="pijnpunt-modal-delete-confirm"
+            className="flex items-center gap-3 px-6 py-3 border-t border-red-200 bg-red-50"
           >
-            {appLabel("klanten.knop.item.annuleren", "Annuleren")}
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] text-xs font-bold uppercase tracking-widest rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? "Opslaan…" : appLabel("klanten.knop.item.opslaan", "Opslaan")}
-          </button>
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-red-800">
+                {appLabel("klanten.modal.delete.confirm.titel", "Permanent verwijderen?")}
+              </p>
+              <p className="text-[11px] text-red-700">
+                {appLabel("klanten.modal.delete.confirm.tekst", "Dit kan niet ongedaan gemaakt worden.")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              disabled={deleting}
+              data-testid="pijnpunt-modal-delete-confirm-nee"
+              className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+            >
+              {appLabel("klanten.modal.delete.confirm.nee", "Annuleer")}
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              data-testid="pijnpunt-modal-delete-confirm-ja"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-widest rounded disabled:opacity-50"
+            >
+              {deleting ? "Bezig…" : appLabel("klanten.modal.delete.confirm.ja", "Verwijder definitief")}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-slate-200">
+            {isEdit && onDelete && (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                disabled={saving}
+                data-testid="pijnpunt-modal-delete"
+                className="mr-auto px-4 py-2 text-xs font-bold uppercase tracking-widest text-red-600 hover:text-red-700 disabled:opacity-50"
+              >
+                {appLabel("klanten.knop.pijnpunt.verwijderen", "Verwijderen")}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+            >
+              {appLabel("klanten.knop.item.annuleren", "Annuleren")}
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] text-xs font-bold uppercase tracking-widest rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "Opslaan…" : appLabel("klanten.knop.item.opslaan", "Opslaan")}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

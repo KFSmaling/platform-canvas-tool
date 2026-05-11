@@ -297,4 +297,5 @@ describe("KlantenWerkblad — dossier-driven AI-affordances (stap 11.K)", () => 
     });
     expect(klantenService.acceptDraftPainPoint).toHaveBeenCalledWith(draftPain.id);
   });
+
 });

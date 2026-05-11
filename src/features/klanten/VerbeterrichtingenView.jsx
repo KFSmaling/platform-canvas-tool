@@ -208,10 +208,10 @@ export default function VerbeterrichtingenView({
       {verstuurdList.length > 0 && (
         <div className="mb-6" data-testid="verbeterrichting-lijst-verstuurd">
           <CollapseSection
-            title={`${appLabel("klanten.verbeterrichting.status.verstuurd", "Verstuurd")} (${verstuurdCount})`}
+            title={`${appLabel("klanten.verbeterrichting.status.verstuurd", "In roadmap")} (${verstuurdCount})`}
             items={verstuurdList}
             emptyMessage=""
-            actionLabel={appLabel("klanten.actie.terugtrekken", "Terugtrekken")}
+            actionLabel={appLabel("klanten.verbeterrichting.actie.terugtrekken", "Haal uit roadmap")}
             onAction={handleUnsend}
             testIdPrefix="verstuurd"
             busyId={busyAction?.action === "unsend" ? busyAction.id : null}

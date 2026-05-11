@@ -12,7 +12,7 @@
  */
 
 import React, { useState } from "react";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import { getSchemaFor } from "./archetypeSchemas";
 
@@ -27,6 +27,9 @@ export default function ItemModal({
   hasIndexedChunks = false,
   hasUploads = false,
   uploadsProcessing = false,
+  // Stap 11.K.2 F16 — canonical-delete: alleen in edit-mode getoond,
+  // inline-bevestiging vóór hard-delete. KlantenWerkblad handelt de service-call af.
+  onDelete,
 }) {
   const { label: appLabel } = useAppConfig();
   const isEdit = !!item;
@@ -38,7 +41,12 @@ export default function ItemModal({
   const [saving, setSaving]   = useState(false);
   const [errMsg, setErrMsg]   = useState(null);
   const [filling, setFilling] = useState(false);
+  // F17: fillNote-shape is { type: "success" | "empty", text: string } i.p.v. plain string,
+  // zodat we visueel onderscheid kunnen maken (groene vs. amber banner met passend icoon).
   const [fillNote, setFillNote] = useState(null);
+  // F16: inline-bevestiging-state. Toont confirm-strook in footer i.p.v. browser-confirm.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function setField(key, value) {
     setArchetypeData(d => ({ ...d, [key]: value }));
@@ -64,9 +72,15 @@ export default function ItemModal({
     const proposed = meta?.proposed_fields || {};
     const count = Object.keys(proposed).length;
     if (count === 0) {
-      setFillNote(meta?.note || "Geen onderbouwing gevonden voor lege velden");
+      setFillNote({
+        type: "empty",
+        text: meta?.note || "AI vond geen onderbouwing voor lege velden",
+      });
     } else {
-      setFillNote(`${count} veld${count === 1 ? "" : "en"} ingevuld vanuit dossier`);
+      setFillNote({
+        type: "success",
+        text: `${count} veld${count === 1 ? "" : "en"} ingevuld vanuit dossier`,
+      });
     }
   }
 
@@ -78,6 +92,20 @@ export default function ItemModal({
       : uploadsProcessing
         ? appLabel("klanten.dossier.disabled_processing", "Documenten worden nog verwerkt")
         : null;
+
+  async function handleConfirmDelete() {
+    if (!isEdit || !onDelete || !item?.id || deleting) return;
+    setDeleting(true);
+    setErrMsg(null);
+    const { error } = await onDelete(item.id);
+    setDeleting(false);
+    if (error) {
+      setErrMsg(error.message || "Verwijderen mislukt");
+      setConfirmingDelete(false);
+      return;
+    }
+    onClose();
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -158,8 +186,32 @@ export default function ItemModal({
                 </button>
               )}
             </div>
+            {/* F17: banner-stijl feedback ipv klein-tekst — onderscheid succes/empty
+                via groene/amber kleuren + passend icoon. Sluitbaar via X-icon. */}
             {fillNote && (
-              <p className="text-[10px] text-blue-700 italic" data-testid="dossier-fields-fill-note">{fillNote}</p>
+              <div
+                data-testid="dossier-fields-fill-note"
+                data-fill-type={fillNote.type}
+                className={`flex items-start gap-2 px-3 py-2 text-xs rounded border ${
+                  fillNote.type === "success"
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-amber-50 border-amber-200 text-amber-800"
+                }`}
+              >
+                {fillNote.type === "success"
+                  ? <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+                  : <AlertCircle  size={14} className="mt-0.5 shrink-0" />}
+                <p className="flex-1">{fillNote.text}</p>
+                <button
+                  type="button"
+                  onClick={() => setFillNote(null)}
+                  aria-label="Sluit"
+                  data-testid="dossier-fields-fill-note-sluit"
+                  className="shrink-0 text-current opacity-60 hover:opacity-100"
+                >
+                  <X size={12} />
+                </button>
+              </div>
             )}
             {schema.length === 0 && (
               <p className="text-xs text-slate-500 italic">Geen velden gedefinieerd voor archetype "{dimension?.archetype}"</p>
@@ -195,22 +247,71 @@ export default function ItemModal({
           )}
         </form>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-slate-200">
-          <button
-            type="button" onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+        {/* Footer: F16 inline-bevestigingsdialog vervangt normale knoppen-rij wanneer
+            confirmingDelete=true. Stijl is "strook in footer" om binnen de modal te blijven
+            (geen browser-confirm — wel stijlbaar en testbaar). */}
+        {confirmingDelete ? (
+          <div
+            data-testid="item-modal-delete-confirm"
+            className="flex items-center gap-3 px-6 py-3 border-t border-red-200 bg-red-50"
           >
-            {appLabel("klanten.knop.item.annuleren", "Annuleren")}
-          </button>
-          <button
-            type="button" onClick={handleSubmit}
-            disabled={saving}
-            className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] text-xs font-bold uppercase tracking-widest rounded disabled:opacity-50"
-          >
-            {saving ? "Opslaan…" : appLabel("klanten.knop.item.opslaan", "Opslaan")}
-          </button>
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-red-800">
+                {appLabel("klanten.modal.delete.confirm.titel", "Permanent verwijderen?")}
+              </p>
+              <p className="text-[11px] text-red-700">
+                {appLabel("klanten.modal.delete.confirm.tekst", "Dit kan niet ongedaan gemaakt worden.")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              disabled={deleting}
+              data-testid="item-modal-delete-confirm-nee"
+              className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+            >
+              {appLabel("klanten.modal.delete.confirm.nee", "Annuleer")}
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              data-testid="item-modal-delete-confirm-ja"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-widest rounded disabled:opacity-50"
+            >
+              {deleting ? "Bezig…" : appLabel("klanten.modal.delete.confirm.ja", "Verwijder definitief")}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-slate-200">
+            {/* F16: Verwijder-knop links — alleen in edit-mode + wanneer onDelete-callback bestaat */}
+            {isEdit && onDelete && (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                disabled={saving}
+                data-testid="item-modal-delete"
+                className="mr-auto px-4 py-2 text-xs font-bold uppercase tracking-widest text-red-600 hover:text-red-700 disabled:opacity-50"
+              >
+                {appLabel("klanten.knop.item.verwijderen", "Verwijderen")}
+              </button>
+            )}
+            <button
+              type="button" onClick={onClose}
+              disabled={saving}
+              className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+            >
+              {appLabel("klanten.knop.item.annuleren", "Annuleren")}
+            </button>
+            <button
+              type="button" onClick={handleSubmit}
+              disabled={saving}
+              className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] text-xs font-bold uppercase tracking-widest rounded disabled:opacity-50"
+            >
+              {saving ? "Opslaan…" : appLabel("klanten.knop.item.opslaan", "Opslaan")}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -359,4 +359,36 @@ describe("KlantenWerkblad — fase-4 Verbeterrichtingen flow (stap 11.H)", () =>
     await openFase4();
     expect(screen.getByTestId("verbeterrichting-lijst-leeg")).toBeInTheDocument();
   });
+
+  // ── Stap 11.K.2 F18 — UI-rebrand 'verstuurd' → 'in roadmap' ────────────
+  test("11. F18: concept-intent toont 'Markeer als in roadmap'-knop (rebrand)", async () => {
+    klantenService.listIntents.mockResolvedValue({ data: [sampleConceptIntent], error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    await openFase4();
+
+    // Markeer-knop bestaat met nieuwe rebrand-fallback (label-mock retourneert fallback)
+    const markeerBtn = await screen.findByTestId(`intent-actie-markeer-${sampleConceptIntent.id}`);
+    expect(markeerBtn).toHaveTextContent(/markeer als in roadmap/i);
+    expect(markeerBtn).not.toHaveTextContent(/verstuurd/i);
+  });
+
+  test("12. F18: verstuurd-intent toont 'In roadmap'-badge + 'in roadmap sinds {date}' + 'Haal uit roadmap'-knop", async () => {
+    klantenService.listIntents.mockResolvedValue({ data: [sampleVerstuurdIntent], error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    await openFase4();
+
+    // Verstuurd-intent zit in collapse-sectie — open en check knop-tekst
+    const verstuurdSection = await screen.findByTestId("verbeterrichting-lijst-verstuurd");
+    expect(verstuurdSection).toHaveTextContent(/in roadmap/i);
+    expect(verstuurdSection).not.toHaveTextContent(/^Verstuurd \(/m);
+
+    // Open collapse en check terugtrekken-knop heeft nieuwe label
+    const toggle = within(verstuurdSection).getByTestId("verstuurd-toggle");
+    await act(async () => { fireEvent.click(toggle); });
+    const terugtrekBtn = within(verstuurdSection).getByTestId(`verstuurd-actie-${sampleVerstuurdIntent.id}`);
+    expect(terugtrekBtn).toHaveTextContent(/haal uit roadmap/i);
+    expect(terugtrekBtn).not.toHaveTextContent(/^Terugtrekken$/i);
+  });
 });
