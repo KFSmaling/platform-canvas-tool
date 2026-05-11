@@ -477,7 +477,7 @@ feature-root in DeepDiveOverlay (CLAUDE.md §4.1).
 |---|---|---|---|
 | `strategy`   | `src/features/strategie/` | ✅ live | StrategieWerkblad + StrategyOnePager (anker voor rapport-laag-styling) |
 | `principles` | `src/features/richtlijnen/` | ✅ live | RichtlijnenWerkblad |
-| `customers`  | `src/features/klanten/` | ✅ Fase 1+2+3+4 + dossier-driven AI + alle 9 archetypes volledig (incl. klantreis Scope A met 80/20-denkdwang) live (stap 11.D-I.2, 2026-05-08 t/m 2026-05-12; Kees-handmatige-test van AI-flow pending) | Zie blok onder de tabel voor volledige stand; buiten scope: Type B visueel rapport (11.J post-MVP), J2+J3+J5+J6 Playwright (11.G.5), F12 canvas-tegel-feedback (na 11.K-test), F15 prompt-naming-cleanup post-MVP, status-enum DB-rename via ADR-004/RFC-003, drag-and-drop is_ordered-UI + gestructureerde DMU-editor (P3 uit 11.I.2), platform-pattern voor cross-werkblad-AI (F10) |
+| `customers`  | `src/features/klanten/` | ✅ **MVP volledig compleet** — Fase 1+2+3+4 + dossier-driven AI + 9/9 archetypes volledig (incl. klantreis Scope A met 80/20-denkdwang `StrategischeWegingBlok`) + canonical-delete + UX-banner + in-roadmap-rebrand + verbeteractie-terminologie (stap 11.D-K.2 + 11.I.1-I.2 + DimensieModal-boy-scout, master `9e803c3`, 2026-05-08 t/m 2026-05-12; Kees-handmatige-test van AI-flow pending) | Zie blok onder de tabel voor volledige stand; alle openstaande klant-substappen zijn hygiene of post-MVP — zie §10 |
 | `processes` / `people` / `technology` / `portfolio` | — | placeholder | DeepDiveOverlay valt terug op `GenericPlaceholder`-component |
 
 **Klanten-werkblad-architectuur (stap 11.D-I.2):**
@@ -500,6 +500,9 @@ feature-root in DeepDiveOverlay (CLAUDE.md §4.1).
 - RTL: 65/65 PASS over 8 suites — KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow + DossierAffordances.flow + ItemModal.flow + ItemModal.archetypes + ItemModal.klantreis (mocks op service-laag, refactor-veilig). 11.I.2-uitbreiding: 8 cases in nieuwe ItemModal.klantreis (12-veld-rendering + stap_type-dropdown + Strategische-weging-blok-data-attribute + MoT-toggle-flow + weight-numeric + silent_period_risk-conditional + tag_list save/edit)
 - Label-corpus: **232 totaal** `label.klanten.*`-keys (207 vóór 11.I.2 + 25 nieuw). 11.I.2 nieuwe keys: 16 klantreis-veld-labels (incl. denkdwang-blok-titel/helper) + 9 stap_type-dropdown-labels. Plus 1 nieuwe `enum.klanten.klantreis.stap_type`-key (categorie `enum`, niet `label`). **F13 ✅ afgerond in 11.K**: werkblad-onderdeel-prefix toegepast — `klanten.actie.markeer`/`.terugtrekken` (intent-context) gerenamed naar `klanten.verbeterrichting.actie.markeer`/`.terugtrekken`; nieuwe `klanten.dossier.actie.markeer="Markeer als richting"` voor draft-acceptance. **F18 ✅ afgerond in 11.K.2**: UI-rebrand 'verstuurd' → 'in roadmap' (Optie A — DB-enum `cd_improvement_intents.status='verstuurd'` blijft tot RFC-003/11.L Roadmap-werkblad). Algemene `klanten.actie.bewerk`/`.verwijder`/`.promote` blijven context-onafhankelijk
 - Frontend canonical-delete (stap 11.K.2 F16): ItemModal + PijnpuntModal hebben in edit-mode een Verwijder-knop links in footer (`mr-auto`) met inline-bevestigingsdialog (rode strook met titel/tekst + Annuleer/Verwijder definitief). Hard-delete via bestaande `deleteItem`/`deletePainPoint`-services — items/pijnpunten zijn consultant-eigendom (geen AI-output), dus geen audit-event. KlantenWerkblad handelt `handleDeleteItem`/`handleDeletePijnpunt` af + reload na succes.
+- Verbeteractie-terminologie-rename (12 mei via Supabase-MCP, geen migratie-file): 15 labels-UPDATE waarbij "verbeterrichting" in label-waarden vervangen is door "verbeteractie" (zelfde key-naam, andere weergave). DB-rename voltooid: 0 keys met "verbeterrichting" in waarde, 10 met "verbeteractie" in waarde. Code-fallbacks in `WerkruimteView` / `AnalyseView` / `PromoteToIntentModal` (≥5 plekken) zijn nog **niet** ge-update — **F20** open finding voor latere boy-scout (geen runtime-impact want DB-waarden winnen, alleen fallback-strings bij anonymous role).
+- DimensieModal-boy-scout (12 mei post-11.I.2, commit `9e803c3`): `ARCHETYPE_OPTIONS` had nog 6 archetypes op `enabled: false` met "komt in latere sprint"-tooltip. Sinds 11.I.1 + 11.I.2 zijn alle 9 archetypes volledig uitgewerkt — alle 9 nu enabled met passende placeholders.
+- **80/20-denkdwang design-principe** (zie `platform/architecture/decisions/inputs/2026-05-12-design-principle-80-20-denkdwang.md`): vier categorieën (onderscheidingsvraag / trade-off / asymmetrie-erkenning / intentionaliteit-check); max één per component; niet stapelen. Eerste bewezen toepassing in 11.I.2 klantreis `StrategischeWegingBlok` (asymmetrie-erkenning via MoT + Silent Period + weight_multiplier). Architect-checklist: bij elke nieuwe component-RFC één denkdwang expliciet benoemd; reviewer-Type-9-walk-uitbreiding. Bij latere component-aanpassingen (klantsegment "Why us?", propositie "Wat geven we op?", PMC intentionaliteit) toepassen.
 - A2-feedback-banner (stap 11.K.2 F17): ItemModal toont na A2-call een banner-stijl feedback i.p.v. subtiele klein-tekst. `fillNote`-state shape `{ type: "success" | "empty", text }` — groene banner met CheckCircle2 bij gevulde proposed_fields, amber banner met AlertCircle bij lege server-note. Sluitbaar via X-icon.
 - Archetype-schemas (stap 11.I.1): 5 lichte archetypes volledig uitgewerkt — `regio` (3 velden: geografie/marktgrootte/lokale_kenmerken), `behoefte` (4: job_to_be_done/context/bestaande_oplossingen/frustraties — JTBD-frame ADR-003 §C), `merk` (4: positionering/belofte/doelgroep/relatie_tot_andere_merken), `gedragspatroon` (4: intensiteit/loyaliteit/koopgedrag/digitale_volwassenheid), `anders` (1 jsonb-veld `vrije_velden` met max 4 keys via `custom_pairs`-type). Server-side ARCHETYPE_FIELDS in `_archetypes.js` was al compleet — alleen frontend-schema + labels werden in 11.I.1 uitgewerkt. Nieuwe `CustomPairsField`-component met interne array-state (voorkomt pair-positie-shuffling tijdens typen) — herbruikbaar voor toekomstige archetypes.
 - Klantreis-archetype Scope A (stap 11.I.2): 12 velden in 3 visuele blokken — **Wat** (stap_type dropdown + customer_goal textarea), **Hoe** (touchpoints/dmu/emotions/kpis als tag_list), **Strategisch** (is_moment_of_truth + is_silent_period + weight_multiplier in eigen "Strategische weging"-blok met visual emphasis; silent_period_risk conditional; regulatoire_context + insight). **80/20-denkdwang asymmetrie-erkenning** (inputs/2026-05-12-design-principle-80-20-denkdwang.md): MoT + Silent Period + weight_multiplier zijn dé strategische functie van klantreis-archetype — niet ondergeschikt aan andere velden, rendered in `StrategischeWegingBlok`-component met amber MoT-toggle (Zap-icon) / slate Silent-toggle (MoonStar-icon) / numeric weight (default 1.0, claim 3.0). Schema-properties uitgebreid: `enumKey` / `enumLabelPrefix` / `conditionalOn` / `denkdwang` / `visualEmphasis` / `defaultValue` / `step/min/max` / `helperKey` / `group`. Generieke `renderSchema` + `FieldRenderer`-helper in ItemModal voor type-dispatch (dropdown/tag_list/textarea/text/boolean/numeric/custom_pairs). Tenant-overridable `stap_type`-enum via nieuwe `enum`-categorie in `app_config` (CHECK uitgebreid) + `appConfig.enum(key)`-resolver. KF-default 9-stage verzekerings-lijst. Verzekerings-seed in KF-canvas `d22e6ac0` met 9 items conform Kees-input §8.2 (Claim stage = weight 3.0, Servicing/Trigger = Silent Period).
@@ -597,7 +600,8 @@ Gedetailleerde lijst staat in `TECH_DEBT.md`. Korte versie:
   `f6cc467` (11.K.2 cleanup F16 canonical-delete + F17 A2-banner + F18
   in-roadmap-rebrand) + `1255aa2` (11.I.1 5 lichte archetypes + custom_pairs
   UX) + `a46d343` (11.I.2 klantreis Scope A + 80/20-denkdwang MoT/Silent +
-  verzekerings-9-stage-seed). Laatste deploy: `dpl_u5KFHFbt5V8DsCJcz5RTLDocHA4v`
+  verzekerings-9-stage-seed) + `9e803c3` (DimensieModal-boy-scout: alle 9
+  archetypes enabled). Laatste deploy: `dpl_GGt6THAWiscXiqSfsNTsBTiKzGFg`
   op `kingfisher-btcprod.vercel.app`. Sectie 5.1 + 7 `cd_*`-tabellen
   (incl. `cd_improvement_intents` + `cd_input_suggestion_events` actief)
   + 14 RLS-tests groen (9 RFC-001 §7 + 5 RFC-002 §8.1 via MCP) + cross-
@@ -608,85 +612,103 @@ Gedetailleerde lijst staat in `TECH_DEBT.md`. Korte versie:
   tenant-isolatie zodra eerste echte klant onboardt), **P3 uit 11.K**:
   magic-staff end-to-end-test pending (afhankelijk van Kees-handmatige-
   test). Zie `tech_debt.md`.
-- **Stap 11.G.5 J2+J3+J5+J6 Playwright-specs** — dedicated mini-sprint.
-  Vijf keer boy-scout overgeslagen (G.1, G.2, G.3, H, K) — patroon is
-  duidelijk, eigen sessie nodig. Niet acuut.
-- **Stap 11.I.1 ✅ afgerond per 2026-05-12** — 5 lichte archetypes
-  (regio + behoefte + merk + gedragspatroon + anders) volledig uitgewerkt
-  met betekenisvolle veld-volgorde + CustomPairsField voor anders.
-- **Stap 11.I.2 ✅ afgerond per 2026-05-12** — Klantreis Scope A: 12 velden
-  in 3 visuele blokken (Wat/Hoe/Strategisch) + 80/20-denkdwang MoT/Silent
-  Period/weight als asymmetrie-erkenning + tenant-overridable stap_type-enum
-  + verzekerings-9-stage-seed in KF-canvas. Drag-and-drop is_ordered-UI +
-  gestructureerde DMU-editor uitgesteld als P3 (zie tech_debt.md).
-- **Stap 11.J Type B visueel rapport** — post-MVP. Vier-kwadranten +
-  veranderacties-pinnetjes. Gamma/PPTX/PDF-route nog te kiezen.
-- **F12 canvas-tegel-feedback** — TECH_DEBT P3: canvas-overzicht-tegel
-  toont fase-status (fase 1/2/3/4 counts) zodat consultants in één
-  oogopslag zien waar elk canvas in z'n levenscyclus zit. Wacht op
-  succesvolle Kees-handmatige-test van 11.K voordat we deze sprint
-  opnemen.
-- **F13 ✅ afgerond per 2026-05-11 in 11.K** — werkblad-onderdeel-prefix
-  toegepast (`klanten.actie.markeer/.terugtrekken` →
-  `klanten.verbeterrichting.actie.*`) + nieuwe `klanten.dossier.actie.markeer`.
-- **F16 ✅ afgerond per 2026-05-11 in 11.K.2** — canonical-delete in
-  ItemModal + PijnpuntModal met inline-bevestigingsdialog.
-- **F17 ✅ afgerond per 2026-05-11 in 11.K.2** — A2-feedback-banner
-  (groen/amber met icoon) ipv subtiele klein-tekst.
-- **F18 ✅ afgerond per 2026-05-11 in 11.K.2** — UI-rebrand 'verstuurd' →
-  'in roadmap' (Optie A: DB-enum blijft, alleen labels gewijzigd).
-- **F15 prompt-naming-cleanup** — open voor post-MVP cleanup-sprint.
-- **DB-enum-rename `status='verstuurd'`** — open voor RFC-003 / 11.L
-  Roadmap-werkblad. Bundeling met andere status-vocabulair-wijzigingen.
-- Vervolg-sprints (vooruitkijk, niet acuut): klantreis-archetype (11.I),
-  Type B visueel rapport (11.J post-MVP), platform-pattern voor cross-
-  werkblad-AI (F10), P13 rapport-architectuur als platform-laag.
+### 🎯 Klanten-werkblad MVP volledig compleet per 2026-05-12
+
+Alle resterende klant-substappen zijn **hygiene** of **post-MVP**. Klantwerkblad
+is feature-volledig; AI-flow wacht op Kees-handmatige-test.
+
+### Nieuwe roadmap-volgorde (Kees-koerswijziging 12 mei)
+
+**Was** (RFC-003-instructie Q8 + initieel akkoord): Roadmap als #2 werkblad,
+vóór Proces/Org/IT.
+
+**Nu:** klant → **proces** → organisatie → IT → roadmap als convergentielaag.
+Reden: Roadmap is convergentie — beter bouwen pas als alle 4 bronnen leven.
+RFC-003 blijft Accepted (geen werk weggegooid), maar 11.L bouw-implementatie
+uitgesteld tot na 11.M/11.N/11.O. Mogelijk RFC-003 mini-revisie (~1u) voor
+`source_intent_table` polymorphic CHECK-uitbreiding wanneer alle 4 bronnen
+bestaan.
+
+**Volgende natuurlijke werk:** RFC-004 Proces-werkblad-datamodel door
+architect (replicatie ADR-004 op `pr_*`-tabellen). Bouwer-werk volgt na
+RFC-004-akkoord als 11.M Proces-bouwer-implementatie.
+
+### Afgeronde findings/sprints (12 mei)
+
+- **F13 ✅ in 11.K** (werkblad-onderdeel-prefix label-keys), **F16 ✅** (canonical-delete in modals), **F17 ✅** (A2-banner-upgrade), **F18 ✅** (UI-rebrand verstuurd→in roadmap) — alle vier in 11.K.2
+- **Stap 11.I.1 ✅** — 5 lichte archetypes (regio/behoefte/merk/gedragspatroon/anders)
+- **Stap 11.I.2 ✅** — klantreis Scope A + 80/20-denkdwang `StrategischeWegingBlok`
+- **Verbeteractie-terminologie-rename** — 15 labels-UPDATE via Supabase-MCP (geen migratie-file); DB-state: 0 keys met "verbeterrichting" in waarde, 10 met "verbeteractie"
+- **ADR-004 Status-flow-model Accepted** — anker voor proces/org/IT-replicatie
+- **RFC-003 Roadmap-werkblad-datamodel Accepted** — na RP4 waardestroom-canvas-niveau-verhuizing
+- **DimensieModal boy-scout** — alle 9 archetypes enabled (post-11.I.2)
+
+### Hygiene / post-MVP (niet acuut)
+
+- **Stap 11.G.5** — J2+J3+J5+J6 Playwright-specs als mini-sprint (5x boy-scout-overgeslagen)
+- **Stap 11.J** — Type B visueel rapport (vier-kwadranten + veranderacties-pinnetjes; Gamma/PPTX/PDF-route nog te kiezen)
+- **F12** — canvas-tegel-feedback (fase 1/2/3/4 counts op overzicht-tegel; wacht op Kees-test 11.K)
+- **F15** — prompt-naming-cleanup
+- **F19** — P2 RLS hardcoded-email + onConflict-mismatch (workaround: log in als `smaling.kingfisher@icloud.com`); mini-sprint na klant-afsluiting
+- **F20** — code-fallbacks-strings uit-sync met DB-rename verbeterrichting→verbeteractie (≥5 plekken: `WerkruimteView` / `AnalyseView` / `PromoteToIntentModal` / etc.); kleine fix wanneer file toch aangeraakt wordt; geen runtime-impact want DB-waarden winnen voor authenticated role
+- **DB-enum-rename** `cd_improvement_intents.status='verstuurd'` → `'in_roadmap'` — open voor RFC-003 / 11.L Roadmap-werkblad of dedicated cleanup-sprint
+- **3 nieuwe P3 uit 11.I.2** — drag-and-drop is_ordered-UI klantreis (4-6u) / gestructureerde DMU-editor 3-kolom (3-4u) / strict type-validatie per veld in `_archetypes.js` (1-2u)
+- **P3 uit 11.K** — magic-staff end-to-end-test pending op productie (Kees-test)
+- Vervolg-sprints (post-MVP klanten): platform-pattern voor cross-werkblad-AI (F10), P13 rapport-architectuur als platform-laag
 
 ---
 
 ## 11. VERSE-SESSIE-STARTROUTINE
 
-Bij een verse Claude Code-sessie (nieuwe instance, geen context):
+**Verse-sessie-start (13 mei 2026 en later — eventueel een andere Claude Code-instance zonder onze chat-historie):** lees deze documenten in deze volgorde:
 
-1. Lees **CLAUDE.md** (deze file) — actuele werkblad-status in §5.1, open
-   punten in §10
-2. Lees **WORKFLOW.md** — sprint-rituelen, instruction/result-handoff-
-   pattern, Type 1-9 review-disciplines
-3. Lees **tech_debt.md** — open P3/P4-items + done-log (recente sprint-
-   afsluitingen)
-4. Check **`handoff/to-builder/`** — pending instructies (oudste eerst);
-   `archive/` is afgehandeld
-5. Bij twijfel over scope: question-file naar reviewer in
-   `handoff/to-reviewer/` (niet meteen code schrijven)
+1. **`platform/reviewer/COWORK_REVIEWER.md`** — reviewer-anker met volledige stap-11-status + nieuwe roadmap-volgorde + 80/20-denkdwang-design-principe
+2. **`CLAUDE.md`** (dit bestand) — §5.1 + §5 architectuur-blok (werkblad-status) + §10 open punten + §11 hoofd-state
+3. **`platform/architecture/decisions/ADR-004-status-flow-model.md`** — Accepted; anker voor proces/org/IT-replicatie
+4. **`platform/architecture/RFCs/RFC-003-roadmap-werkblad-datamodel.md`** — Accepted (na RP4 waardestroom-canvas-niveau-verhuizing); voor latere 11.L Roadmap-bouwer-implementatie
+5. **`platform/architecture/decisions/inputs/2026-05-12-design-principle-80-20-denkdwang.md`** — checklist voor elke nieuwe component (vier categorieën: onderscheiding / trade-off / asymmetrie / intentionaliteit)
+6. **`platform/reviewer/findings/2026-05-07-klanten-werkblad-ux-consistency.md`** — open findings F1/F2/F6/F10/F12/F15/F19/F20
 
-### Huidige hoofd-state (per einde 2026-05-11)
+Daarna: **tech_debt.md** (open P3/P4-items + done-log), **WORKFLOW.md** (sprint-rituelen), **`handoff/to-builder/`** (pending instructies, oudste eerst). Bij twijfel over scope: question-file naar reviewer in `handoff/to-reviewer/`.
+
+### Huidige hoofd-state (per einde 2026-05-12)
 
 | Aspect | Waarde |
 |---|---|
-| Laatste deploy | `dpl_u5KFHFbt5V8DsCJcz5RTLDocHA4v` (12 mei) op `kingfisher-btcprod.vercel.app` |
-| Master HEAD | `a46d343` — Stap 11.I.2 klantreis Scope A + 80/20-denkdwang (Kees-handmatige-test 11.K AI-flow nog steeds pending) |
+| Laatste deploy | `dpl_GGt6THAWiscXiqSfsNTsBTiKzGFg` (12 mei) op `kingfisher-btcprod.vercel.app` |
+| Master HEAD | `9e803c3` — DimensieModal alle 9 archetypes enabled (boy-scout post-11.I.2). Klantwerkblad-MVP volledig compleet. Kees-handmatige-test van 11.K AI-flow nog pending. |
 | Test-credentials | `keessmaling+test@gmail.com` / staat in `.env.test` (gitignored) — KF tenant_admin |
 | E2E-suite | `npm run test:e2e` — J1-blueprint live, J2/J3/J5/J6 nog niet (mini-sprint 11.G.5) |
-| RTL | 65/65 PASS over 8 klanten-suites (incl. ItemModal.klantreis voor 11.I.2) |
+| RTL | 65/65 PASS over 8 klanten-suites (KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow + DossierAffordances.flow + ItemModal.flow + ItemModal.archetypes + ItemModal.klantreis) |
 | Endpoint-budget Vercel | 12/12 (Hobby), 4 rewrites + sub-route-dispatchers (incl. dossier_extract op items.js + pain_points.js) |
-| Klanten-labels | 232 totaal `label.klanten.*` (207 + 16 klantreis-veld + 9 stap_type-dropdown). Plus 1 enum-key `enum.klanten.klantreis.stap_type` (nieuwe categorie). |
+| Klanten-labels | **232 totaal** `label.klanten.*` (na 11.I.2 + verbeteractie-rename). Plus 1 enum-key `enum.klanten.klantreis.stap_type` (nieuwe `enum`-categorie naast prompt/label/setting). |
 | Klanten-prompts | 7 totaal `prompt.klanten.*` (4 analyse + 3 dossier, allen `tenant_overridable=true`) |
 | Audit-tabellen | `cd_pattern_suggestion_events` + `cd_input_suggestion_events` (beide append-only via RLS-policies SELECT+INSERT) |
 | Supabase-migrations CI | `workflow_dispatch`-only sinds 2026-05-11 (auto-trigger uitgeschakeld; migraties via Supabase-MCP applied tijdens sprints) |
+| Architectuur-decisions live | ADR-002 (prompt-flexibiliteit) + ADR-003 (klantwerkblad) + **ADR-004 (status-flow-model — anker voor proces/org/IT)** |
+| RFC-status | RFC-001 (klanten-datamodel) + RFC-002 (dossier-driven AI) + **RFC-003 (roadmap-werkblad — Accepted, bouw uitgesteld tot na proces/org/IT)** |
+| Design-principe | **80/20-denkdwang** per component (zie `inputs/2026-05-12-...md`). Eerst bewezen in 11.I.2 klantreis `StrategischeWegingBlok` (asymmetrie). Architect-checklist + reviewer-Type-9-walk-uitbreiding. |
 
 ### Verwachte volgende stappen
 
-- **Kees-handmatige-test 11.K** — magic-staff-AI-flow end-to-end testen
-  op `kingfisher-btcprod.vercel.app`: upload PDF naar canvas → A1+A2+A3
-  affordances draaien → verifieer draft-rendering + accept/reject-flow
-  + RapportView-filter (geen drafts) + F13-rebrand op fase 4. Bij AI-
-  output-kwaliteit-issues: prompts tunen via Admin-UI (groep "Klanten &
-  Dienstverlening").
-- **Stap 11.G.5** — J2+J3+J5+J6 Playwright-specs als mini-sprint (niet
-  acuut)
-- **F12 canvas-tegel-feedback** — wacht op succesvolle Kees-test van 11.K
-- **Stap 11.J** — Type B visueel rapport (post-MVP)
-- **F15 prompt-naming-cleanup** — post-MVP cleanup-sprint
-- **P3 drag-and-drop is_ordered-UI klantreis** — uitgesteld vanuit 11.I.2;
-  consultant gebruikt nu sort_order veld
-- **P3 gestructureerde DMU-editor** — uitgesteld vanuit 11.I.2; nu tag_list
+**Hoofdspoor (volgens nieuwe roadmap-volgorde klant → proces → org → IT → roadmap):**
+
+- **RFC-004 Proces-werkblad-datamodel** — architect-werk. Replicatie van ADR-004 status-flow-model op `pr_*`-tabellen. Vergelijkbaar met RFC-001 (klanten-datamodel) als anker. Bouwer-werk volgt na RFC-004-akkoord als **stap 11.M Proces-bouwer-implementatie**.
+- Daarna: RFC-005 Organisatie + 11.N Organisatie-bouwer (replicatie-patroon).
+- Daarna: RFC-006 IT + 11.O IT-bouwer.
+- Tot slot: **11.L Roadmap-werkblad-bouwer** — convergentielaag pas wanneer alle 4 bronnen leven. Mogelijk RFC-003 mini-revisie (~1u) voor `source_intent_table` polymorphic CHECK-uitbreiding op dat moment.
+
+**Parallelle/secundaire sporen:**
+
+- **Kees-handmatige-test 11.K** — magic-staff-AI-flow end-to-end testen op `kingfisher-btcprod.vercel.app` (PDF upload → A1+A2+A3 affordances → draft-rendering + accept/reject + RapportView-filter + F18-rebrand op fase 4). Bij output-kwaliteit-issues: prompts tunen via Admin-UI groep "Klanten & Dienstverlening" (geen redeploy nodig — tenant_overridable=true).
+- **Stap 11.G.5** — J2+J3+J5+J6 Playwright-specs (niet acuut)
+- **F19 mini-sprint** — RLS hardcoded-email + onConflict-mismatch oplossen
+- **F20** — code-fallbacks-strings sync met verbeteractie-rename (boy-scout)
+- **3 P3-items uit 11.I.2** — drag-and-drop is_ordered-UI / gestructureerde DMU-editor / strict type-validatie
+
+**Post-MVP klanten:**
+
+- Stap 11.J Type B visueel rapport
+- F12 canvas-tegel-feedback (wacht op Kees-test 11.K)
+- F15 prompt-naming-cleanup
+- DB-enum-rename `verstuurd→in_roadmap` (bundeling RFC-003 / cleanup-sprint)
