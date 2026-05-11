@@ -15,6 +15,7 @@ import React, { useState } from "react";
 import { X, Sparkles, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import { getSchemaFor } from "./archetypeSchemas";
+import CustomPairsField from "./CustomPairsField";
 
 export default function ItemModal({
   item,
@@ -216,28 +217,47 @@ export default function ItemModal({
             {schema.length === 0 && (
               <p className="text-xs text-slate-500 italic">Geen velden gedefinieerd voor archetype "{dimension?.archetype}"</p>
             )}
-            {schema.map(field => (
-              <div key={field.key}>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  {appLabel(field.labelKey, field.fallback)}
-                </label>
-                {field.type === "textarea" ? (
-                  <textarea
-                    rows={2}
-                    value={archetypeData[field.key] ?? ""}
-                    onChange={e => setField(field.key, e.target.value)}
-                    className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+            {schema.map(field => {
+              // Stap 11.I.1: custom_pairs-type voor anders.vrije_velden (max 4 keys).
+              // Server-side validatie via _archetypes.js — UI rendert 4 paren-formulier.
+              if (field.type === "custom_pairs") {
+                return (
+                  <CustomPairsField
+                    key={field.key}
+                    fieldKey={field.key}
+                    value={archetypeData[field.key] ?? {}}
+                    onChange={next => setField(field.key, next)}
+                    labelKey={field.labelKey}
+                    fallback={field.fallback}
+                    helperKey="klanten.veld.anders.helper"
+                    helperFallback="Definieer maximaal 4 eigen sleutels en waarden voor deze dimensie."
+                    appLabel={appLabel}
                   />
-                ) : (
-                  <input
-                    type="text"
-                    value={archetypeData[field.key] ?? ""}
-                    onChange={e => setField(field.key, e.target.value)}
-                    className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-                  />
-                )}
-              </div>
-            ))}
+                );
+              }
+              return (
+                <div key={field.key}>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    {appLabel(field.labelKey, field.fallback)}
+                  </label>
+                  {field.type === "textarea" ? (
+                    <textarea
+                      rows={2}
+                      value={archetypeData[field.key] ?? ""}
+                      onChange={e => setField(field.key, e.target.value)}
+                      className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={archetypeData[field.key] ?? ""}
+                      onChange={e => setField(field.key, e.target.value)}
+                      className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {errMsg && (

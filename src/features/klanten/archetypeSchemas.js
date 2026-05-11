@@ -39,13 +39,44 @@ export const ARCHETYPE_SCHEMAS = {
     { key: "ervaring", labelKey: "klanten.veld.kanaal.ervaring", fallback: "Ervaring", type: "textarea" },
     { key: "economie", labelKey: "klanten.veld.kanaal.economie", fallback: "Economie", type: "textarea" },
   ],
-  // Onderstaande zijn buiten MVP-scope; minimal-stub voor latere uitbreiding.
-  regio:          [{ key: "geografie", labelKey: "klanten.veld.regio.geografie", fallback: "Geografie", type: "text" }],
-  behoefte:       [{ key: "job_to_be_done", labelKey: "klanten.veld.behoefte.jtbd", fallback: "Job to be done", type: "textarea" }],
-  merk:           [{ key: "positionering", labelKey: "klanten.veld.merk.positionering", fallback: "Positionering", type: "textarea" }],
-  gedragspatroon: [{ key: "intensiteit", labelKey: "klanten.veld.gedragspatroon.intensiteit", fallback: "Intensiteit", type: "text" }],
-  klantreis:      [{ key: "stap_type", labelKey: "klanten.veld.klantreis.stap_type", fallback: "Stap-type", type: "text" }],
-  anders:         [{ key: "vrije_velden", labelKey: "klanten.veld.anders.vrije_velden", fallback: "Vrije velden (jsonb, max 4 keys)", type: "textarea" }],
+  // Stap 11.I.1 — 5 lichte archetypes uitgewerkt. Klantreis blijft minimal-
+  // stub (komt 11.I.2 met is_ordered-UI + DMU + insurance-overlay).
+  // Veld-volgorde: betekenisvol (RFC-001 §2.2.1) i.p.v. alfabetisch.
+  regio: [
+    { key: "geografie",        labelKey: "klanten.veld.regio.geografie",        fallback: "Geografie",        type: "text" },
+    { key: "marktgrootte",     labelKey: "klanten.veld.regio.marktgrootte",     fallback: "Marktgrootte",     type: "text" },
+    { key: "lokale_kenmerken", labelKey: "klanten.veld.regio.lokale_kenmerken", fallback: "Lokale kenmerken", type: "textarea" },
+  ],
+  // behoefte = jobs-to-be-done-frame (ADR-003 §C). job_to_be_done eerst,
+  // dan context (waarin/wanneer), dan bestaande oplossingen, dan frustraties.
+  behoefte: [
+    { key: "job_to_be_done",        labelKey: "klanten.veld.behoefte.job_to_be_done",        fallback: "Job to be done",        type: "textarea" },
+    { key: "context",               labelKey: "klanten.veld.behoefte.context",               fallback: "Context",               type: "textarea" },
+    { key: "bestaande_oplossingen", labelKey: "klanten.veld.behoefte.bestaande_oplossingen", fallback: "Bestaande oplossingen", type: "text" },
+    { key: "frustraties",           labelKey: "klanten.veld.behoefte.frustraties",           fallback: "Frustraties",           type: "textarea" },
+  ],
+  merk: [
+    { key: "positionering",             labelKey: "klanten.veld.merk.positionering",             fallback: "Positionering",             type: "textarea" },
+    { key: "belofte",                   labelKey: "klanten.veld.merk.belofte",                   fallback: "Belofte",                   type: "textarea" },
+    { key: "doelgroep",                 labelKey: "klanten.veld.merk.doelgroep",                 fallback: "Doelgroep",                 type: "text" },
+    { key: "relatie_tot_andere_merken", labelKey: "klanten.veld.merk.relatie_tot_andere_merken", fallback: "Relatie tot andere merken", type: "textarea" },
+  ],
+  gedragspatroon: [
+    { key: "intensiteit",            labelKey: "klanten.veld.gedragspatroon.intensiteit",            fallback: "Intensiteit",            type: "text" },
+    { key: "loyaliteit",             labelKey: "klanten.veld.gedragspatroon.loyaliteit",             fallback: "Loyaliteit",             type: "text" },
+    { key: "koopgedrag",             labelKey: "klanten.veld.gedragspatroon.koopgedrag",             fallback: "Koopgedrag",             type: "textarea" },
+    { key: "digitale_volwassenheid", labelKey: "klanten.veld.gedragspatroon.digitale_volwassenheid", fallback: "Digitale volwassenheid", type: "text" },
+  ],
+  // Stap 11.I.1: `anders.vrije_velden` jsonb met max 4 keys. UI rendert
+  // 4 key+value-paren-formulier via CustomPairsField. Save filtert lege
+  // paren; server-validatie blokkeert >4 keys (RFC-001 §2.2.1 + _archetypes.js).
+  anders: [
+    { key: "vrije_velden", labelKey: "klanten.veld.anders.vrije_velden", fallback: "Eigen velden (max 4)", type: "custom_pairs" },
+  ],
+  // Klantreis BLIJFT minimal-stub — wordt uitgewerkt in 11.I.2.
+  klantreis: [
+    { key: "stap_type", labelKey: "klanten.veld.klantreis.stap_type", fallback: "Stap-type", type: "text" },
+  ],
 };
 
 export function getSchemaFor(archetype) {
