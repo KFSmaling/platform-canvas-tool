@@ -399,6 +399,63 @@ documenten.
 
 **Effort:** ~30 min Kees-handmatige-test + eventuele prompt-tuning post-test.
 
+---
+
+## P3 — Klantreis: drag-and-drop is_ordered-UI
+
+Stap 11.I.2 zet `cd_dimensions.is_ordered=true` op klantreis-dimensies maar
+levert geen drag-and-drop-UI om de stage-volgorde te wijzigen. Consultant
+gebruikt nu het `sort_order` numeric-veld via ItemModal of natuurlijke
+volgorde via stage-namen ("1. ...", "2. ..."). Voor een geordend archetype
+is dat onvolledig.
+
+**Fix-pad:** drag-and-drop-bibliotheek (`react-dnd` of `@dnd-kit/sortable`)
+in DimensieKolom voor items wanneer `dimension.is_ordered=true`. Bij drop:
+herbereken `sort_order` van alle items in dimensie + bulk-PUT naar
+`/api/klanten/items` (of nieuwe sub-route voor reorder).
+
+**Urgentie:** medium. Klantreis werkt zonder, maar consultant-flow voor
+volgorde-wijziging is onnatuurlijk. Eerst Kees-praktijktest van 11.I.2,
+dan implementeren.
+
+**Effort:** 4-6u (library-keuze + DimensieKolom-uitbreiding + RTL +
+race-guards bij bulk-update).
+
+---
+
+## P3 — Klantreis: gestructureerde DMU-editor
+
+Stap 11.I.2 gebruikt `tag_list`-pattern voor `dmu` (comma-separated rollen
+zoals `klant, adviseur, verzekeraar`). Strategie-adviseur-input §8.3 noemt
+"adviseur-driehoek": DMU per stage zou rijker kunnen — rol + naam +
+beslisrol-niveau.
+
+**Fix-pad:** vergelijkbaar met `CustomPairsField` (11.I.1), maar dan met
+3 kolommen (rol, naam, beslisrol) en dynamische aantal regels.
+`StructuredDMUField`-component met interne array-state.
+
+**Urgentie:** low. Tag_list is voldoende voor MVP-analyse. Bij eerste
+echte klantreis-use-case bij verzekerings-tenant herzien.
+
+**Effort:** 3-4u.
+
+---
+
+## P3 — `_archetypes.js` strict type-validatie per veld
+
+Server-side `validateArchetypeData` valideert alleen veld-keys (allow-list),
+niet veld-types. `is_moment_of_truth` kan dus elke jsonb-type accepteren —
+string "true" zou er doorheen kunnen. Voor MVP acceptabel; frontend zorgt
+voor correcte types via toggle-buttons + numeric-input.
+
+**Fix-pad:** type-spec per veld in ARCHETYPE_FIELDS (van string-array naar
+object-array met `{ key, type }`). Server valideert per veld op `typeof`.
+
+**Urgentie:** low. Geen runtime-bug; defense-in-depth tegen onverwachte
+client-state.
+
+**Effort:** 1-2u (refactor + RTL).
+
 ## Done log
 
 - 2026-04-22 — P1 Lifecycle — `key={canvasId}` toegevoegd aan `<Werkblad>` (DeepDiveOverlay) en `<MasterImporterPanel>` (App.js). Commit: `78911c9`
@@ -427,6 +484,7 @@ documenten.
 - 2026-05-11 — Workflow-noise-fix — `Supabase Migrations`-workflow naar `workflow_dispatch`-only. Auto-trigger op push gaf GitHub-fail-mails bij elke commit met migration-files (migraties al via Supabase-MCP applied → `supabase db push` faalt op "already applied"). Workflow blijft beschikbaar als handmatig fall-back. Past bij review-discipline.md Type 6 vermelding (3 mei) — die workflow faalde al sinds 26 april op missende secret; secret is sinds stap 7 P7 wel gezet, maar root-cause was niet de secret maar de applied-by-MCP-conflict.
 - 2026-05-11 — Stap 11.H.1 — Admin-UI groepering Klanten (F14). 3 wijzigingen in `src/features/admin/AdminPage.jsx`: nieuwe label-groep "Werkblad Klanten" vóór Overig-fallback (matcht `label.klanten.*` → 174 keys uit Overig), nieuwe prompt-groep "Klanten & Dienstverlening" na guideline (matcht `prompt.klanten.*` → 4 fase-3-prompts admin-bewerkbaar), boy-scout prompts-Overig-fallback (vóór deze fix zouden onverwachte prompt-keys onzichtbaar zijn). Bijgevolg vangt deze matcher post-11.K automatisch de 3 nieuwe `prompt.klanten.dossier.*`-keys op — geen extra UI-werk nodig. Master-commit `16a1b9b`, deploy `dpl_6frXqbJS9iqmCErHsy9v5iagceHW`. Geen RTL (admin heeft geen test-suite — Kees-visueel-check).
 - 2026-05-11 — Stap 11.K — Dossier-driven AI-input + F13 key-rename. RFC-002 Accepted-keuzes geïmplementeerd: drie shared prompts met archetype-token (Optie 1), `is_draft`-flag-storage op `cd_items` (bestond) + `cd_pain_points` (nieuw, Optie A), aparte `cd_input_suggestion_events`-tabel met polymorphic target (Optie Y). Drie affordances: A1 items_from_dossier (DimensieKolom-header) + A2 fields_from_dossier (ItemModal) + A3 pain_points_from_dossier (PijnpuntenView-header). 3 migraties (schema + 3 prompts + 10 labels) via Supabase-MCP applied. Helper `api/klanten/_dossier_extract.js` ~600 regels met 9 sub-functies (RAG via OpenAI text-embedding-3-small + Supabase match_document_chunks RPC; Claude haiku-4-5; pure JSON-parser; audit-event-INSERT met metadata.ai_model + prompt_version="11K-v1"). Sub-routes via dispatcher (Pad B) op items.js + pain_points.js — endpoint-budget=12 behouden. Polymorphic-validatie-trigger met rejected-uitzondering voor verwijderde target (audit-preservatie RFC-002 §5.4). Append-only via RLS afgedwongen (alleen SELECT + INSERT policies). Frontend: `useCanvasUploads`-hook single source of truth (anker 11.G.4) + DraftItemCard + DraftPainCard met opacity + dossier-suggestie-badge + dossier.actie.*-knoppen (Markeer als richting / Bewerk / Verwijder). RapportView filtert is_draft=false (RFC-002 §10 #7). F13 key-rename: `klanten.actie.markeer`/`.terugtrekken` → `klanten.verbeterrichting.actie.*` + nieuwe `klanten.dossier.actie.markeer="Markeer als richting"`. 10 nieuwe labels → 184 totaal klanten.*. RTL 42/42 PASS over 5 suites (8 nieuwe DossierAffordances-cases). 5 RLS-tests via MCP DO-blokken pass: structuur + cross-canvas-blokkade + cross-tenant-blokkade + append-only-bewijs + rejected-uitzondering. Master-merge `8ccaa5c` (feature-commit `a066f4d`), deploy `dpl_4P452zG6cC1n2PFCxqM3p8P8Mi8G`. Kees-handmatige-test van magic-staff-flow op productie pending (zie P3 hieronder).
+- 2026-05-12 — Stap 11.I.2 — Klantreis-archetype Scope A volledig uitgewerkt met 80/20-denkdwang asymmetrie-erkenning. Klantreis was minimal-stub (1 veld) sinds 11.D; nu 12 velden in 3 visuele blokken: **Wat** (stap_type dropdown + customer_goal), **Hoe** (touchpoints/dmu/emotions/kpis als tag_list), **Strategisch** (is_moment_of_truth + is_silent_period + weight_multiplier in eigen `StrategischeWegingBlok`-component met amber MoT-toggle (Zap-icon) / slate Silent-toggle (MoonStar-icon) / numeric weight default 1.0; silent_period_risk conditional; regulatoire_context + insight). **80/20-denkdwang = dé strategische functie** van klantreis: zonder MoT/Silent/weight wordt analyse "we moeten overal verbeteren", met = "claim weegt 3x zwaarder, focus daar". Server-side `_archetypes.js` ARCHETYPE_FIELDS uitgebreid (vervangt RFC-001 preliminary-velden). Schema-properties uitgebreid: enumKey/enumLabelPrefix/conditionalOn/denkdwang/visualEmphasis/defaultValue/step/min/max/helperKey/group. Generieke `renderSchema` + `FieldRenderer` in ItemModal voor type-dispatch. Tenant-overridable `stap_type`-enum via nieuwe `enum`-categorie in `app_config` (CHECK uitgebreid van prompt/label/setting naar incl. 'enum') + `appConfig.enum(key)`-resolver in AppConfigContext. KF-default = 9-stage verzekerings-lijst. 3 migraties applied via MCP: `20260515000000_seed_labels_klanten_klantreis_scope_a.sql` (16 labels), `20260515050000_seed_klantreis_stap_type_enum.sql` (ALTER CHECK + 1 enum-row + 9 stap_type-labels), `20260515100000_seed_klantreis_kf_verzekerings_9_stages.sql` (KF-canvas `d22e6ac0` krijgt klantreis-dim + 9 items conform Kees-input §8.2; Stage 8 Claim = weight 3.0, Stages 3/4/6/9 = MoT weight 2.0, Stages 1/7 = Silent Period met risk-tekst). DB-state via MCP: 1 klantreis-dim + 9 items in KF-canvas, 16 klantreis-labels + 9 stap_type-labels + 1 enum-key (totaal 232 klanten-labels). RTL 65/65 PASS over 8 suites (8 nieuwe ItemModal.klantreis-cases). Endpoint-budget 12/12 ongewijzigd. Master-merge `a46d343` (feature-commit `9570f95`), deploy `dpl_u5KFHFbt5V8DsCJcz5RTLDocHA4v`. **Buiten scope (drie nieuwe P3-items hieronder):** drag-and-drop is_ordered-UI, gestructureerde DMU-editor, strict type-validatie per veld in `_archetypes.js`.
 - 2026-05-12 — Stap 11.I.1 — 5 lichte archetypes (regio + behoefte + merk + gedragspatroon + anders) uitgewerkt van minimal-stub naar volledige schemas. Server-side ARCHETYPE_FIELDS in `_archetypes.js` was al compleet (RFC-001 §2.2.1) — alleen frontend-schema + labels werden uitgewerkt. `archetypeSchemas.js` regel 42-79: 3+4+4+4+1 velden met betekenisvolle volgorde (reviewer-keuze, niet alfabetisch). `behoefte` volgt JTBD-frame uit ADR-003 §C (job_to_be_done eerst, dan context/oplossingen/frustraties). Klantreis blijft minimal-stub tot 11.I.2 (is_ordered-UI + DMU + insurance-overlay). Nieuwe `CustomPairsField.jsx`-component voor `anders.vrije_velden` jsonb (max 4 keys) — interne array-state pattern voorkomt pair-positie-shuffling tijdens typen (eerste poging derived-from-object faalde op halfgevulde paren). Lege keys worden gefilterd in save-payload; server-validatie blokkeert >4 keys (ongewijzigd). ItemModal `schema.map` met conditional voor `field.type === "custom_pairs"`. 17 nieuwe labels via migratie `20260514200000_seed_labels_klanten_lichte_archetypes.sql` applied via Supabase-MCP (1 key bestond al; 18 INSERT-statements, 17 nieuwe rows → 207 totaal klanten-labels). LABEL_FALLBACKS gesynchroniseerd. Nieuwe `ItemModal.archetypes.test.jsx` met 7 cases (5 archetype-renderings + 2 anders-save/edit-paden) → 57/57 PASS over 7 suites. Endpoint-count 12/12 ongewijzigd. Master-merge `1255aa2` (feature-commit `66c2e95`), deploy `dpl_Gkj9NGELJmg5tQkzwHEw89ydSfvA`.
 - 2026-05-11 — Stap 11.K.2 — Cleanup-sprint F16 + F17 + F18. Drie kleine UX-correcties uit Kees-handmatige-test van 11.K, gebundeld in één mini-sprint. **F16 canonical-delete**: ItemModal + PijnpuntModal hebben in edit-mode een Verwijder-knop links in footer (`mr-auto`, rode tekst) met inline-bevestigingsdialog (rode strook + titel/tekst + Annuleer/Verwijder definitief). Hard-delete via bestaande `deleteItem`/`deletePainPoint`-services — geen audit-event want items/pijnpunten zijn consultant-eigendom, niet AI-output. 6 nieuwe labels (`klanten.knop.{item,pijnpunt}.verwijderen` + `klanten.modal.delete.confirm.{titel,tekst,ja,nee}`) via migratie `20260514100000_seed_labels_canonical_delete.sql`. KlantenWerkblad-handlers `handleDeleteItem`/`handleDeletePijnpunt` met reload. Feature-commit `a10a3d3`. **F17 A2-feedback-banner**: ItemModal `fillNote`-state shape uitgebreid naar `{ type: "success" | "empty", text }` zodat banner-styling per type kan. Groene banner met CheckCircle2-icoon bij gevulde proposed_fields, amber banner met AlertCircle bij lege server-note. Sluitbaar via X-icon. Geen nieuwe labels (server-note hergebruikt). Nieuwe `ItemModal.flow.test.jsx` (3 cases geïsoleerd). Feature-commit `f6013d8`. **F18 UI-rebrand 'verstuurd' → 'in roadmap'** (Optie A — DB-enum blijft tot RFC-003): 6 label-UPDATEs via `20260514120000_rename_verstuurd_labels_to_in_roadmap.sql`. Code-fallbacks in IntentCard + VerbeterrichtingenView gesynchroniseerd. Feature-commit `702f346`. RTL 50/50 PASS over 6 suites (3 F16 + 3 F17 + 2 F18 nieuwe cases). 190 totaal klanten-labels. Endpoint-budget 12/12 ongewijzigd. Master-merge `f6cc467`, deploy `dpl_42GdeFacaDw9eZr7oPg5SAAAU9eL`. Findings-tracker: F16/F17/F18 alle drie ✅ afgerond.
 
