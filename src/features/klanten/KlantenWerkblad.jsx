@@ -16,7 +16,7 @@
  */
 
 import React, { useState } from "react";
-import { X, Layout, FileText } from "lucide-react";
+import { ArrowLeft, Layout, FileText } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import { useCanvasDimensions } from "./hooks/useCanvasDimensions";
 import { usePainPoints } from "./hooks/usePainPoints";
@@ -319,7 +319,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     return (
       <div className="flex flex-col flex-1 min-h-0 bg-slate-50">
         <div className="flex items-center gap-3 px-8 py-4 bg-[var(--color-primary)]">
-          <button onClick={onClose} className="text-white/60 hover:text-white"><X size={18} /></button>
+          <button onClick={onClose} aria-label="Terug naar canvas" className="text-white/60 hover:text-white"><ArrowLeft size={18} /></button>
           <h2 className="text-lg font-bold text-white">{appLabel("klanten.werkblad.titel", "Klanten & Dienstverlening")}</h2>
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -333,7 +333,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     return (
       <div className="flex flex-col flex-1 min-h-0 bg-slate-50">
         <div className="flex items-center gap-3 px-8 py-4 bg-[var(--color-primary)]">
-          <button onClick={onClose} className="text-white/60 hover:text-white"><X size={18} /></button>
+          <button onClick={onClose} aria-label="Terug naar canvas" className="text-white/60 hover:text-white"><ArrowLeft size={18} /></button>
           <h2 className="text-lg font-bold text-white">{appLabel("klanten.werkblad.titel", "Klanten & Dienstverlening")}</h2>
         </div>
         <div className="flex-1 flex items-center justify-center text-center px-6">
@@ -353,7 +353,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     <div className="flex flex-col flex-1 min-h-0 bg-slate-50">
       {/* Header */}
       <div className="flex items-center gap-3 px-8 py-4 bg-[var(--color-primary)] flex-shrink-0">
-        <button onClick={onClose} className="text-white/60 hover:text-white transition-colors"><X size={18} /></button>
+        <button onClick={onClose} aria-label="Terug naar canvas" className="text-white/60 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
         <h2 className="text-lg font-bold text-white">{appLabel("klanten.werkblad.titel", "Klanten & Dienstverlening")}</h2>
 
         {/* Werkruimte/Rapport-toggle */}
