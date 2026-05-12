@@ -227,6 +227,12 @@ const LABEL_FALLBACKS = {
   "klanten.analyse.actie.refine.deeper":            "Verfijn — graaf dieper",
   "klanten.analyse.actie.reject":                   "Verwijder",
   "klanten.analyse.accept.tooltip.fase4":           "nog te promoten in fase 4 (verbeteracties) — komt later",
+  // Bundle 1+2 F28 — analyse-intro + 4 SuggestionCard actie-tooltips
+  "klanten.analyse.intro":                          "Patronen herkennen in de pijnpunten — selecteer een analyse-type hieronder. AI doet de eerste pas; jij blijft eigenaar van het resultaat. Bewerk wat moet, verwijder wat niet klopt, markeer wat doorbouwt naar verbeteracties.",
+  "klanten.analyse.actie.accept.tooltip":           "Dit patroon doorbouwen naar fase 4 als verbeteractie",
+  "klanten.analyse.actie.refine.edit.tooltip":      "Tekst aanpassen — audit-spoor onthoudt dat consultant gewijzigd heeft",
+  "klanten.analyse.actie.reject.tooltip":           "Wegnemen uit zicht. Zichtbaar in \"Verwijderd\"-collapse om terug te halen",
+  "klanten.analyse.actie.refine.deeper.tooltip":    "Nieuwe AI-variant op basis van dit patroon",
   // Stap 11.G.3 F8 — collapse-secties Gemarkeerd + Verwijderd
   "klanten.analyse.gemarkeerd.titel":               "Gemarkeerd voor verbeteracties",
   "klanten.analyse.gemarkeerd.leeg":                "Nog niets gemarkeerd",

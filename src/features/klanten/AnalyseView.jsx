@@ -282,7 +282,7 @@ export default function AnalyseView({
       {/* Intro + AI-knoppen */}
       <div className="mb-6">
         <p className="text-[11px] text-slate-500 italic mb-4 max-w-3xl">
-          {appLabel("klanten.analyse.helper.intro", "AI doet een eerste pas op je pijnpunten. Per suggestie kies je: markeer als richting, bewerk (eigen tekst), graaf dieper (AI verfijnt), of verwijder.")}
+          {appLabel("klanten.analyse.intro", "Patronen herkennen in de pijnpunten — selecteer een analyse-type hieronder. AI doet de eerste pas; jij blijft eigenaar van het resultaat. Bewerk wat moet, verwijder wat niet klopt, markeer wat doorbouwt naar verbeteracties.")}
         </p>
 
         {!hasPainPoints && (

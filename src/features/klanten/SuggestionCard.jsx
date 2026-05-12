@@ -140,7 +140,7 @@ export default function SuggestionCard({
             disabled={busy}
             onClick={() => onAccept(suggestion)}
             data-testid={`actie-accept-${suggestion.id}`}
-            title={appLabel("klanten.analyse.accept.tooltip.fase4", "nog te promoten in fase 4 — komt later")}
+            title={appLabel("klanten.analyse.actie.accept.tooltip", "Dit patroon doorbouwen naar fase 4 als verbeteractie")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {appLabel("klanten.analyse.actie.accept", "Markeer als richting")}
@@ -150,6 +150,7 @@ export default function SuggestionCard({
             disabled={busy}
             onClick={() => onRefineEdit(suggestion)}
             data-testid={`actie-refine-edit-${suggestion.id}`}
+            title={appLabel("klanten.analyse.actie.refine.edit.tooltip", "Tekst aanpassen — audit-spoor onthoudt dat consultant gewijzigd heeft")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 disabled:opacity-50"
           >
             {appLabel("klanten.analyse.actie.refine.edit", "Bewerk")}
@@ -159,6 +160,7 @@ export default function SuggestionCard({
             disabled={busy}
             onClick={() => onRefineDeeper(suggestion)}
             data-testid={`actie-refine-deeper-${suggestion.id}`}
+            title={appLabel("klanten.analyse.actie.refine.deeper.tooltip", "Nieuwe AI-variant op basis van dit patroon")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 disabled:opacity-50"
           >
             {appLabel("klanten.analyse.actie.refine.deeper", "Verfijn — graaf dieper")}
@@ -168,6 +170,7 @@ export default function SuggestionCard({
             disabled={busy}
             onClick={() => onReject(suggestion)}
             data-testid={`actie-reject-${suggestion.id}`}
+            title={appLabel("klanten.analyse.actie.reject.tooltip", "Wegnemen uit zicht. Zichtbaar in \"Verwijderd\"-collapse om terug te halen")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors text-slate-500 hover:text-red-700 disabled:opacity-50"
           >
             {appLabel("klanten.analyse.actie.reject", "Verwijder")}
