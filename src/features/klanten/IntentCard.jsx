@@ -63,7 +63,7 @@ export default function IntentCard({
                 data-testid={`intent-status-${intent.id}`}
                 className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm text-white"
                 style={{ background: "var(--color-primary)" }}
-                title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
+                title={appLabel("klanten.verbeterrichting.status.in_roadmap.tooltip", "Doorgezet naar Roadmap-werkblad")}
               >
                 {appLabel("klanten.verbeterrichting.status.verstuurd", "in roadmap")}
                 {intent.handover_to_roadmap_at && (
@@ -76,6 +76,7 @@ export default function IntentCard({
               <span
                 data-testid={`intent-status-${intent.id}`}
                 className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm bg-slate-100 text-slate-700 border border-slate-300"
+                title={appLabel("klanten.verbeterrichting.status.concept.tooltip", "Concept — verbeteractie staat in fase 4 maar is nog niet in Roadmap-werkblad doorgezet")}
               >
                 {appLabel("klanten.verbeterrichting.status.concept", "concept")}
               </span>
@@ -145,7 +146,7 @@ export default function IntentCard({
             disabled={busy}
             onClick={() => onHandover(intent)}
             data-testid={`intent-actie-markeer-${intent.id}`}
-            title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
+            title={appLabel("klanten.verbeterrichting.actie.markeer.tooltip", "Zet deze verbeteractie in het Roadmap-werkblad voor concrete acties, eigenaars en planning")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {appLabel("klanten.verbeterrichting.actie.markeer", "Naar roadmap")}

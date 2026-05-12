@@ -279,6 +279,10 @@ const LABEL_FALLBACKS = {
   // `verbeterrichting.actie.*` (intent-context). Nieuwe `dossier.actie.*` voor
   // draft-acceptance. Generieke bewerk/verwijder blijven context-onafhankelijk.
   "klanten.verbeterrichting.actie.markeer":          "Naar roadmap",
+  // Bundle 1+2 F29 deel-2 — 3 status-tooltips IntentCard
+  "klanten.verbeterrichting.status.concept.tooltip":    "Concept — verbeteractie staat in fase 4 maar is nog niet in Roadmap-werkblad doorgezet",
+  "klanten.verbeterrichting.status.in_roadmap.tooltip": "Doorgezet naar Roadmap-werkblad",
+  "klanten.verbeterrichting.actie.markeer.tooltip":     "Zet deze verbeteractie in het Roadmap-werkblad voor concrete acties, eigenaars en planning",
   "klanten.verbeterrichting.actie.terugtrekken":     "Haal uit roadmap",
   "klanten.dossier.actie.markeer":                   "Markeer als richting",
   "klanten.dossier.actie.bewerk":                    "Bewerk",
