@@ -186,6 +186,8 @@ export default function WerkruimteView({
                   key={dim.id}
                   dimension={dim}
                   items={itemsByDim(dim.id)}
+                  couplings={couplings || []}
+                  currentPhase={activeFase}
                   onItemClick={onItemClick}
                   onAddItem={() => onAddItem(dim)}
                   onEditDimensie={onEditDimensie}

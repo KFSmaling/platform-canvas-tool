@@ -302,6 +302,18 @@ const LABEL_FALLBACKS = {
   "klanten.dossier.disabled_processing":             "Documenten worden nog verwerkt",
   // Stap 11.I.2 + Bundle 1+2 — klantreis strategische-weging uitleg (F25)
   "klanten.veld.klantreis.strategische_weging.uitleg": "Niet elke stap weegt even zwaar. Markeer Moments of Truth (kritische ervaringsmomenten waar de klant \"wakker wordt\") en Silent periods (stille fases waar de klant uit zicht is — risico op churn). Pas de weging aan om strategisch belang in de rapport- en analyse-laag zichtbaar te maken.",
+  // Bundle 4 F26 — chevron-overview korte stap-namen + pill-cues
+  "klanten.klantreis.stap_type.trigger_life_event.short":      "Life Event",
+  "klanten.klantreis.stap_type.orientatie.short":              "Awareness",
+  "klanten.klantreis.stap_type.quote_aanvraag.short":          "Quote",
+  "klanten.klantreis.stap_type.underwriting.short":            "Underwriting",
+  "klanten.klantreis.stap_type.closing_polis.short":           "Closing",
+  "klanten.klantreis.stap_type.onboarding.short":              "Onboarding",
+  "klanten.klantreis.stap_type.servicing_in_life.short":       "Servicing",
+  "klanten.klantreis.stap_type.claim_schade.short":            "Claim",
+  "klanten.klantreis.stap_type.renewal_churn_advocacy.short":  "Renewal",
+  "klanten.klantreis.card.pill.mot":                           "bepalend moment",
+  "klanten.klantreis.card.pill.silent":                        "silent period",
   "klanten.verbeterrichting.titel":                  "Verbeterrichtingen",
   "klanten.verbeterrichting.intro":                  "Verscherp geaccepteerde patronen tot intent. Verstuur naar Roadmap voor concrete acties, eigenaars en planning.",
   "klanten.verbeterrichting.counter.concept":        "concept",

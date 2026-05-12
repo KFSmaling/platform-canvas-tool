@@ -18,13 +18,17 @@
  *   - busyAction: { action, id? } of null
  */
 
-import React from "react";
+import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { Sparkles, Plus, Pencil, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
+import KlantreisChevronOverview from "./KlantreisChevronOverview";
 
 export default function DimensieKolom({
   dimension,
   items,
+  // Bundle 4 F26 — klantreis chevron-overview voor geordende archetypes
+  couplings = [],
+  currentPhase = 1,
   onItemClick,
   onAddItem,
   onEditDimensie,
@@ -37,6 +41,62 @@ export default function DimensieKolom({
   busyAction = null,
 }) {
   const { label: appLabel } = useAppConfig();
+
+  // Bundle 4 F26 — bereken pijnpunt-count per item voor chevron-overlay (fase 2+).
+  // Only voor klantreis-archetype gebruikt; map blijft leeg voor andere
+  // archetypes om unnecessary work te vermijden.
+  const isKlantreis = dimension.archetype === "klantreis";
+  const painPointCounts = useMemo(() => {
+    if (!isKlantreis) return new Map();
+    const map = new Map();
+    for (const c of couplings) {
+      if (c.target_table !== "cd_items") continue;
+      map.set(c.target_id, (map.get(c.target_id) || 0) + 1);
+    }
+    return map;
+  }, [isKlantreis, couplings]);
+
+  // Klantreis-items voor chevron-overview: alleen canonical, sorted op
+  // sort_order (zelfde bron als detail-cards).
+  const canonicalKlantreisItems = useMemo(() => {
+    if (!isKlantreis) return [];
+    return items
+      .filter(it => !it.is_draft)
+      .slice()
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  }, [isKlantreis, items]);
+
+  // Bundle 4 F26 commit 3 — bi-directional click+highlight.
+  // chevronClick → scroll naar card + tijdelijke ring-glow op card (~1s).
+  // cardClick    → tijdelijke ring-glow op chevron (~1s).
+  const cardRefs = useRef(new Map());
+  const [highlightedCardId, setHighlightedCardId]       = useState(null);
+  const [highlightedChevronId, setHighlightedChevronId] = useState(null);
+
+  const handleChevronClick = useCallback((itemId) => {
+    const el = cardRefs.current.get(itemId);
+    if (el?.scrollIntoView) {
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+    setHighlightedCardId(itemId);
+  }, []);
+
+  const handleKlantreisCardClick = useCallback((item) => {
+    setHighlightedChevronId(item.id);
+    onItemClick && onItemClick(item);
+  }, [onItemClick]);
+
+  // Reset glow na 1s
+  useEffect(() => {
+    if (!highlightedCardId) return undefined;
+    const t = setTimeout(() => setHighlightedCardId(null), 1000);
+    return () => clearTimeout(t);
+  }, [highlightedCardId]);
+  useEffect(() => {
+    if (!highlightedChevronId) return undefined;
+    const t = setTimeout(() => setHighlightedChevronId(null), 1000);
+    return () => clearTimeout(t);
+  }, [highlightedChevronId]);
 
   const headerClickable = typeof onEditDimensie === "function";
   const hasExtractCallback = typeof onExtractFromDossier === "function";
@@ -77,6 +137,16 @@ export default function DimensieKolom({
 
       {/* Items */}
       <div className="flex-1 px-4 py-3 space-y-2 overflow-auto">
+        {/* Bundle 4 F26 — chevron-overview boven detail-cards voor klantreis */}
+        {isKlantreis && canonicalKlantreisItems.length > 0 && (
+          <KlantreisChevronOverview
+            items={canonicalKlantreisItems}
+            painPointCounts={painPointCounts}
+            currentPhase={currentPhase}
+            highlightedItemId={highlightedChevronId}
+            onChevronClick={handleChevronClick}
+          />
+        )}
         {items.length === 0 && (
           <p className="text-xs text-slate-400 italic">Nog geen items — voeg er één toe.</p>
         )}
@@ -92,16 +162,21 @@ export default function DimensieKolom({
               appLabel={appLabel}
             />
           ) : (
-            <button
+            <KlantreisOrPlainItemCard
               key={item.id}
-              onClick={() => onItemClick(item)}
-              className="w-full text-left border border-slate-200 rounded px-3 py-2 hover:border-[var(--color-accent)] hover:bg-slate-50 transition-colors"
-            >
-              <div className="text-sm font-medium text-slate-800">{item.name}</div>
-              {item.description && (
-                <div className="text-[11px] text-slate-500 mt-0.5">{item.description}</div>
-              )}
-            </button>
+              item={item}
+              isKlantreis={isKlantreis}
+              currentPhase={currentPhase}
+              isHighlighted={highlightedCardId === item.id}
+              cardRefSetter={el => {
+                if (isKlantreis) {
+                  if (el) cardRefs.current.set(item.id, el);
+                  else cardRefs.current.delete(item.id);
+                }
+              }}
+              onClick={() => isKlantreis ? handleKlantreisCardClick(item) : onItemClick(item)}
+              appLabel={appLabel}
+            />
           )
         ))}
       </div>
@@ -144,6 +219,61 @@ export default function DimensieKolom({
         )}
       </div>
     </div>
+  );
+}
+
+// Bundle 4 F26 commit 4 — klantreis-card-render met asymmetrie-cues
+// (designer-note 6 mei). Voor niet-klantreis-archetypes valt 'm terug op
+// de huidige minimal-card-render (geen pill-badge, geen rode background).
+function KlantreisOrPlainItemCard({ item, isKlantreis, currentPhase, isHighlighted, cardRefSetter, onClick, appLabel }) {
+  const data = item.archetype_data || {};
+  const isMoT     = isKlantreis && data.is_moment_of_truth === true;
+  const isSilent  = isKlantreis && data.is_silent_period === true;
+  const weight    = typeof data.weight_multiplier === "number" ? data.weight_multiplier : 1;
+  const isWeighted = isKlantreis && weight > 1.0;
+  const showAsymmetriePill = isKlantreis && currentPhase >= 2 && (isMoT || isSilent || isWeighted);
+
+  // Pill-tekst: MoT (met weight) > Silent > "x× weight" als enige asymmetrie
+  let pillText = null;
+  if (isMoT) {
+    pillText = appLabel("klanten.klantreis.card.pill.mot", "bepalend moment")
+      + (weight > 1.0 ? ` · ${weight}×` : "");
+  } else if (isSilent) {
+    pillText = appLabel("klanten.klantreis.card.pill.silent", "silent period");
+  } else if (isWeighted) {
+    pillText = `${weight}×`;
+  }
+
+  // Lichte rode card-background bij asymmetrie + pijn (fase 2+)
+  const bgClass = showAsymmetriePill ? "bg-red-50/40" : "";
+
+  return (
+    <button
+      ref={cardRefSetter}
+      data-testid={`item-card-${item.id}`}
+      data-asymmetrie={showAsymmetriePill ? "true" : "false"}
+      onClick={onClick}
+      className={`w-full text-left border rounded px-3 py-2 hover:border-[var(--color-accent)] hover:bg-slate-50 transition-all ${bgClass} ${
+        isHighlighted
+          ? "border-purple-400 ring-2 ring-purple-300 ring-offset-1"
+          : "border-slate-200"
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <div className="text-sm font-medium text-slate-800 flex-1">{item.name}</div>
+        {pillText && (
+          <span
+            data-testid={`item-card-pill-${item.id}`}
+            className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-700 border border-red-200"
+          >
+            {pillText}
+          </span>
+        )}
+      </div>
+      {item.description && (
+        <div className="text-[11px] text-slate-500 mt-0.5">{item.description}</div>
+      )}
+    </button>
   );
 }
 
