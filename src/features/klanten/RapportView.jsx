@@ -239,7 +239,7 @@ export default function RapportView({
       <div className="flex-1 overflow-auto p-6 flex justify-center">
         <div
           id="klanten-print-area"
-          className="bg-white shadow-2xl rounded-sm overflow-hidden flex flex-col"
+          className="bg-white shadow-2xl rounded-sm flex flex-col flex-shrink-0"
           style={{ width: "297mm", minHeight: "210mm" }}
         >
           <PageHeader

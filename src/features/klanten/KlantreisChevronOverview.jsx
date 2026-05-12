@@ -82,9 +82,11 @@ export default function KlantreisChevronOverview({
   return (
     <div
       data-testid="klantreis-chevron-overview"
-      className={`sticky top-0 z-10 bg-white pb-3 -mx-4 px-4 ${fullWidth ? "" : "border-b border-slate-200 mb-3"}`}
+      className={`sticky top-0 z-10 bg-white pt-3 pb-3 -mx-4 px-4 ${fullWidth ? "" : "border-b border-slate-200 mb-3"}`}
     >
-      <div className={`flex items-stretch pb-1 ${fullWidth ? "overflow-x-hidden" : "overflow-x-auto"}`}>
+      <div
+        className={`flex items-stretch pb-1 ${fullWidth ? "overflow-x-hidden gap-1" : "overflow-x-auto"}`}
+      >
         {items.map((item, idx) => {
           const nummer = idx + 1;
           const stapType = item.archetype_data?.stap_type || "";
@@ -100,11 +102,15 @@ export default function KlantreisChevronOverview({
           const isHighlighted = highlightedItemId === item.id;
           const clipPath = clipFor(idx, total);
 
+          // In fullWidth-mode geen `-ml-3` overlap meer — bij brede chevrons
+          // werd notch (12px) visueel verloren waardoor strip als één
+          // paarse balk leek. Met `gap-1` (4px witte ruimte) op de flex-
+          // container blijven chevron-vormen herkenbaar.
           return (
             <div
               key={item.id}
-              className={`relative ${idx === 0 ? "" : "-ml-3"} ${
-                fullWidth ? "flex-1 min-w-[60px]" : "shrink-0"
+              className={`relative ${
+                fullWidth ? "flex-1 min-w-[60px]" : `shrink-0 ${idx === 0 ? "" : "-ml-3"}`
               }`}
               style={fullWidth ? undefined : { width: 88 }}
             >
