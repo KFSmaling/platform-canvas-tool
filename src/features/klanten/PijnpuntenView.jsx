@@ -228,6 +228,7 @@ export default function PijnpuntenView({
             painPointCounts={klantreisPainCounts}
             currentPhase={2}
             onChevronClick={onKlantreisChevronClick}
+            fullWidth
           />
           {/* Doorlopende horizontale flow van pijnpunt-chevron-cards
               (Layout B uit designer-result — gesorteerd op stage-volgorde,

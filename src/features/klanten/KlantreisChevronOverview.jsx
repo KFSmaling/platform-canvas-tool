@@ -70,6 +70,10 @@ export default function KlantreisChevronOverview({
   currentPhase = 1,
   highlightedItemId = null,
   onChevronClick,
+  // F26-iteratie fix — bij `fullWidth=true` spreidden chevrons over volle
+  // container-breedte (flex-1 ipv vaste 88px). Voor top-strip-render in
+  // WerkruimteView + PijnpuntenView. Default false voor backwards-compat.
+  fullWidth = false,
 }) {
   const { label: appLabel } = useAppConfig();
   const total = items.length;
@@ -78,9 +82,9 @@ export default function KlantreisChevronOverview({
   return (
     <div
       data-testid="klantreis-chevron-overview"
-      className="sticky top-0 z-10 bg-white border-b border-slate-200 px-2 pt-2 pb-3 -mx-4 mb-3"
+      className={`sticky top-0 z-10 bg-white pb-3 -mx-4 px-4 ${fullWidth ? "" : "border-b border-slate-200 mb-3"}`}
     >
-      <div className="flex items-stretch overflow-x-auto pb-1">
+      <div className={`flex items-stretch pb-1 ${fullWidth ? "overflow-x-hidden" : "overflow-x-auto"}`}>
         {items.map((item, idx) => {
           const nummer = idx + 1;
           const stapType = item.archetype_data?.stap_type || "";
@@ -99,8 +103,10 @@ export default function KlantreisChevronOverview({
           return (
             <div
               key={item.id}
-              className={`relative shrink-0 ${idx === 0 ? "" : "-ml-3"}`}
-              style={{ width: 88 }}
+              className={`relative ${idx === 0 ? "" : "-ml-3"} ${
+                fullWidth ? "flex-1 min-w-[60px]" : "shrink-0"
+              }`}
+              style={fullWidth ? undefined : { width: 88 }}
             >
               <button
                 type="button"

@@ -238,6 +238,7 @@ export default function WerkruimteView({
                   painPointCounts={klantreisPainCounts}
                   currentPhase={activeFase}
                   onChevronClick={handleTopStripChevronClick}
+                  fullWidth
                 />
               </div>
             )}

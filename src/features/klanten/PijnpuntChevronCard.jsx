@@ -27,7 +27,7 @@
  */
 
 import React from "react";
-import { clipFor } from "./KlantreisChevronOverview";
+import { CHEVRON_CLIP_FIRST } from "./KlantreisChevronOverview";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 
 const COLOR_FILL    = "#FEF2F2";  // red-50
@@ -64,12 +64,16 @@ export default function PijnpuntChevronCard({
   stageNummer = null,
   stageShortName = "",
   extraDimensieCount = 0,
-  clipIdx = 0,
-  clipTotal = 1,
+  // clipIdx + clipTotal blijven prop-signatuur intact voor backwards-compat,
+  // maar pijnpunt-cards gebruiken altijd FIRST-clip: flat-left + arrow-right
+  // (pijl naar gekoppelde stage). Geen overlap zoals stage-chevrons, dus
+  // notch-links ziet er raar uit zonder voorganger.
+  clipIdx: _clipIdx = 0,
+  clipTotal: _clipTotal = 1,
   onClick,
 }) {
   const { label: appLabel } = useAppConfig();
-  const clipPath = clipFor(clipIdx, clipTotal);
+  const clipPath = CHEVRON_CLIP_FIRST;
   const title    = titleFromText(pijnpunt.text_md);
   const subtext  = subtextFromText(pijnpunt.text_md);
 
