@@ -194,6 +194,11 @@ const LABEL_FALLBACKS = {
   "klanten.rapport.section.pijnpunten":             "Pijnpunten",
   "klanten.rapport.pijnpunten.leeg":                "Nog geen pijnpunten vastgelegd.",
   "klanten.pijnpunt.overstijgend.section":          "Overstijgend (geen koppeling)",
+  // F26-iteratie — pijnpunt-chevron-card labels voor volle-breedte-strip
+  "klanten.pijnpunt.stage_koppeling.prefix":        "stap",
+  "klanten.pijnpunt.multi_relationeel.prefix":      "+ {N} dimensies",
+  "klanten.pijnpunten.klantreis.flow.titel":        "Pijnpunten op klantreis · {N} stuks",
+  "klanten.pijnpunten.andere_dims.titel":           "Pijnpunten andere dimensies · {N} stuks",
   // Stap 11.G — Fase 3 Analyse + AI (canvas-niveau-affordances)
   "klanten.analyse.intro":                          "AI doet een eerste pas met patroon-suggesties. Consultant blijft eigenaar — markeer als richting, bewerk, of verwijder.",
   "klanten.analyse.knop.cluster":                   "Cluster zoeken",
