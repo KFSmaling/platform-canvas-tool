@@ -671,23 +671,57 @@ RFC-004-akkoord als 11.M Proces-bouwer-implementatie.
 
 Daarna: **tech_debt.md** (open P3/P4-items + done-log), **WORKFLOW.md** (sprint-rituelen), **`handoff/to-builder/`** (pending instructies, oudste eerst). Bij twijfel over scope: question-file naar reviewer in `handoff/to-reviewer/`.
 
-### Huidige hoofd-state (per einde 2026-05-12)
+### Huidige hoofd-state (per einde 2026-05-12 — eind-dag-administratie)
 
 | Aspect | Waarde |
 |---|---|
-| Laatste deploy | `dpl_GGt6THAWiscXiqSfsNTsBTiKzGFg` (12 mei) op `kingfisher-btcprod.vercel.app` |
-| Master HEAD | `9e803c3` — DimensieModal alle 9 archetypes enabled (boy-scout post-11.I.2). Klantwerkblad-MVP volledig compleet. Kees-handmatige-test van 11.K AI-flow nog pending. |
+| Laatste deploy | `platform-canvas-tool-ota2dgboq` (12 mei einde) op `kingfisher-btcprod.vercel.app` |
+| Master HEAD | `9e5f537` — F26-iteratie volle-breedte-strip + chevron-shape + rapport-scroll-fixes na Kees-feedback. **3 UI-polish-issues open voor clean sprint 13 mei** (chevron-proporties + pain-badge-clipping + rapport-witte-canvas-extend); zie eind-dag-result-file. |
 | Test-credentials | `keessmaling+test@gmail.com` / staat in `.env.test` (gitignored) — KF tenant_admin |
 | E2E-suite | `npm run test:e2e` — J1-blueprint live, J2/J3/J5/J6 nog niet (mini-sprint 11.G.5) |
-| RTL | 65/65 PASS over 8 klanten-suites (KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow + DossierAffordances.flow + ItemModal.flow + ItemModal.archetypes + ItemModal.klantreis) |
-| Endpoint-budget Vercel | 12/12 (Hobby), 4 rewrites + sub-route-dispatchers (incl. dossier_extract op items.js + pain_points.js) |
-| Klanten-labels | **232 totaal** `label.klanten.*` (na 11.I.2 + verbeteractie-rename). Plus 1 enum-key `enum.klanten.klantreis.stap_type` (nieuwe `enum`-categorie naast prompt/label/setting). |
+| RTL | **94/94 PASS over 13 suites** (was 65/65, +29 vandaag): KlantenWerkblad.flow + PijnpuntenView.flow + AnalyseView.flow + VerbeterrichtingenView.flow + DossierAffordances.flow + ItemModal.flow + ItemModal.archetypes + ItemModal.klantreis (Optie A) + DimensieModal.flow (F21) + AppConfigContext.flow (F30) + RapportView.flow (F32) + KlantreisChevronOverview.flow (F26) + PijnpuntChevronCard.flow (F26-iter) |
+| Endpoint-budget Vercel | 12/12 (Hobby), 4 rewrites + sub-route-dispatchers (incl. dossier_extract op items.js + pain_points.js) — geen wijzigingen vandaag |
+| Klanten-labels | **~270 totaal** `label.klanten.*` (was 232, **+40 vandaag** via 4 MCP-applied migrations). Plus 1 enum-key `enum.klanten.klantreis.stap_type` (nieuwe `enum`-categorie naast prompt/label/setting). |
 | Klanten-prompts | 7 totaal `prompt.klanten.*` (4 analyse + 3 dossier, allen `tenant_overridable=true`) |
 | Audit-tabellen | `cd_pattern_suggestion_events` + `cd_input_suggestion_events` (beide append-only via RLS-policies SELECT+INSERT) |
 | Supabase-migrations CI | `workflow_dispatch`-only sinds 2026-05-11 (auto-trigger uitgeschakeld; migraties via Supabase-MCP applied tijdens sprints) |
-| Architectuur-decisions live | ADR-002 (prompt-flexibiliteit) + ADR-003 (klantwerkblad) + **ADR-004 (status-flow-model — anker voor proces/org/IT)** |
-| RFC-status | RFC-001 (klanten-datamodel) + RFC-002 (dossier-driven AI) + **RFC-003 (roadmap-werkblad — Accepted, bouw uitgesteld tot na proces/org/IT)** |
-| Design-principe | **80/20-denkdwang** per component (zie `inputs/2026-05-12-...md`). Eerst bewezen in 11.I.2 klantreis `StrategischeWegingBlok` (asymmetrie). Architect-checklist + reviewer-Type-9-walk-uitbreiding. |
+| Architectuur-decisions live | ADR-002 (prompt-flexibiliteit) + ADR-003 (klantwerkblad) + ADR-004 (status-flow-model — anker voor proces/org/IT) |
+| RFC-status | RFC-001 (klanten-datamodel) + RFC-002 (dossier-driven AI) + RFC-003 (roadmap-werkblad — Accepted, bouw uitgesteld tot na proces/org/IT) |
+| Design-principe | 80/20-denkdwang per component (zie `inputs/2026-05-12-...md`). Eerst bewezen in 11.I.2 klantreis `StrategischeWegingBlok` (asymmetrie). Architect-checklist + reviewer-Type-9-walk-uitbreiding. |
+
+### Sprints afgerond 12 mei — chronologisch
+
+| Sprint | Master | Deploy-id | RTL | DB-keys via MCP |
+|---|---|---|---|---|
+| F30 fix-pad B (auth-state-change listener) + Bundle 1+2 Copy & UX | `b634a58` | `dpl_2ML7jgDgSEaf8CeyHwdoU6pPPQpg` | 68/68 | 11 keys |
+| Stap_type-dropdown dubbele-enum-prefix-fix (1-regel + RTL Optie A) | `6858d5d` | `dpl_9DWPVjP3MeZneg7FaELw4CDL6Utt` | 68/68 | — (DB correct) |
+| Bundle 3 F21 dimensie-delete + F23 1Password + F24 ArrowLeft + F27 genummerde pijnpunten | `096d31c` | `platform-canvas-tool-6qsdr44m6` | 74/74 | 5 keys |
+| Bundle 4 F26 Klantreis-chevron-overview (DimensieKolom-pad) | `6cf6293` | `platform-canvas-tool-m00wonzyc` | 81/81 | 11 keys |
+| Bundle 5 F32 Rapport-onepager eindresultaat + "Toon proces-info"-toggle | `ab18f04` | `platform-canvas-tool-dwa6vxjzy` | 87/87 | 9 keys |
+| F26-iteratie volle-breedte-strip + PijnpuntChevronCard (Layout B) | `5ea2c35` → `9e5f537` (incl. 2 fix-rondes) | `m5vvxwxqz` → `ota2dgboq` | 94/94 | 4 keys |
+
+**Totaal:** 6 master-merges, 6 deploys (incl. 2 post-Kees-feedback-fix-deploys), 4 migrations via MCP, 40 nieuwe label-keys, 13 RTL-suite-uitbreidingen.
+
+### 3 open UI-polish-issues (verse-sessie-werk 13 mei)
+
+Niet-test-detecteerbaar — alle suites groen. Pure visuele render-symptomen op
+`kingfisher-btcprod.vercel.app` deploy `ota2dgboq` na Kees-handmatige-test:
+
+1. **Chevron-strip niet hoog genoeg + niet fraai** — `h-10` chevron-hoogte
+   werkt niet voor `flex-1` brede chevrons; padding-container `pt-3 pb-3`
+   te krap voor pain-badge `absolute -top-1.5`
+2. **Pain-badges halve bolletjes zichtbaar** — vermoedelijk
+   `overflow-x-hidden` op `fullWidth`-container clipt badge horizontaal
+3. **Rapport witte canvas loopt niet door + toggle data buiten papier** —
+   `klanten-print-area` `minHeight: 210mm` zonder content-grow, na
+   `overflow-hidden`-fix groeit content erbuiten op grijs-slate-200-bg
+   ipv binnen wit-canvas
+
+Volledige diagnose-aanbevelingen + voorgestelde clean-sprint-structuur in
+`handoff/to-reviewer/2026-05-13-0000-result-eind-dag-12mei-open-ui-polish-issues.md`.
+
+**Inbox `to-builder/` per einde 12 mei:** leeg. Reviewer schrijft 13 mei
+nieuwe diagnose-eerst-instructie voor UI-polish-mini-sprint (~2-3u).
 
 ### Verwachte volgende stappen
 
@@ -700,10 +734,11 @@ Daarna: **tech_debt.md** (open P3/P4-items + done-log), **WORKFLOW.md** (sprint-
 
 **Parallelle/secundaire sporen:**
 
+- **UI-polish-mini-sprint 13 mei** (3 open issues) — chevron-proporties + pain-badge-clipping + rapport-witte-canvas-extend. Diagnose-eerst-discipline per stap_type-fix-leerpunt (geen trial-and-error). Volledige aanbevelingen in eind-dag-result-file.
 - **Kees-handmatige-test 11.K** — magic-staff-AI-flow end-to-end testen op `kingfisher-btcprod.vercel.app` (PDF upload → A1+A2+A3 affordances → draft-rendering + accept/reject + RapportView-filter + F18-rebrand op fase 4). Bij output-kwaliteit-issues: prompts tunen via Admin-UI groep "Klanten & Dienstverlening" (geen redeploy nodig — tenant_overridable=true).
 - **Stap 11.G.5** — J2+J3+J5+J6 Playwright-specs (niet acuut)
 - **F19 mini-sprint** — RLS hardcoded-email + onConflict-mismatch oplossen
-- **F20** — code-fallbacks-strings sync met verbeteractie-rename (boy-scout)
+- **F20** — code-fallbacks-strings sync met verbeteractie-rename (boy-scout — grotendeels gedaan 12 mei in Bundle 1+2, mogelijk nog restanten)
 - **3 P3-items uit 11.I.2** — drag-and-drop is_ordered-UI / gestructureerde DMU-editor / strict type-validatie
 
 **Post-MVP klanten:**
