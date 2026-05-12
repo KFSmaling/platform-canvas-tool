@@ -18,7 +18,7 @@
  *   - busyAction: { action, id? } of null
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { Sparkles, Plus, Pencil, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import KlantreisChevronOverview from "./KlantreisChevronOverview";
@@ -66,6 +66,38 @@ export default function DimensieKolom({
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   }, [isKlantreis, items]);
 
+  // Bundle 4 F26 commit 3 — bi-directional click+highlight.
+  // chevronClick → scroll naar card + tijdelijke ring-glow op card (~1s).
+  // cardClick    → tijdelijke ring-glow op chevron (~1s).
+  const cardRefs = useRef(new Map());
+  const [highlightedCardId, setHighlightedCardId]       = useState(null);
+  const [highlightedChevronId, setHighlightedChevronId] = useState(null);
+
+  const handleChevronClick = useCallback((itemId) => {
+    const el = cardRefs.current.get(itemId);
+    if (el?.scrollIntoView) {
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+    setHighlightedCardId(itemId);
+  }, []);
+
+  const handleKlantreisCardClick = useCallback((item) => {
+    setHighlightedChevronId(item.id);
+    onItemClick && onItemClick(item);
+  }, [onItemClick]);
+
+  // Reset glow na 1s
+  useEffect(() => {
+    if (!highlightedCardId) return undefined;
+    const t = setTimeout(() => setHighlightedCardId(null), 1000);
+    return () => clearTimeout(t);
+  }, [highlightedCardId]);
+  useEffect(() => {
+    if (!highlightedChevronId) return undefined;
+    const t = setTimeout(() => setHighlightedChevronId(null), 1000);
+    return () => clearTimeout(t);
+  }, [highlightedChevronId]);
+
   const headerClickable = typeof onEditDimensie === "function";
   const hasExtractCallback = typeof onExtractFromDossier === "function";
   const extractDisabled = !hasIndexedChunks || uploadsProcessing;
@@ -111,6 +143,8 @@ export default function DimensieKolom({
             items={canonicalKlantreisItems}
             painPointCounts={painPointCounts}
             currentPhase={currentPhase}
+            highlightedItemId={highlightedChevronId}
+            onChevronClick={handleChevronClick}
           />
         )}
         {items.length === 0 && (
@@ -130,8 +164,19 @@ export default function DimensieKolom({
           ) : (
             <button
               key={item.id}
-              onClick={() => onItemClick(item)}
-              className="w-full text-left border border-slate-200 rounded px-3 py-2 hover:border-[var(--color-accent)] hover:bg-slate-50 transition-colors"
+              ref={el => {
+                if (isKlantreis) {
+                  if (el) cardRefs.current.set(item.id, el);
+                  else cardRefs.current.delete(item.id);
+                }
+              }}
+              data-testid={`item-card-${item.id}`}
+              onClick={() => isKlantreis ? handleKlantreisCardClick(item) : onItemClick(item)}
+              className={`w-full text-left border rounded px-3 py-2 hover:border-[var(--color-accent)] hover:bg-slate-50 transition-all ${
+                highlightedCardId === item.id
+                  ? "border-purple-400 ring-2 ring-purple-300 ring-offset-1"
+                  : "border-slate-200"
+              }`}
             >
               <div className="text-sm font-medium text-slate-800">{item.name}</div>
               {item.description && (
