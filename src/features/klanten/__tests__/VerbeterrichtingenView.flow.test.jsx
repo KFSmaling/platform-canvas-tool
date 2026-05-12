@@ -148,7 +148,7 @@ beforeEach(() => {
 });
 
 async function openFase4() {
-  const fase4 = await screen.findByRole("button", { name: /^4 · Verbeterrichtingen$/i });
+  const fase4 = await screen.findByRole("button", { name: /^4 · Verbeteracties$/i });
   await act(async () => {
     fireEvent.click(fase4);
   });

@@ -257,12 +257,12 @@ export default function RapportView({
                 {dimensions.length} dimensie{dimensions.length === 1 ? "" : "s"}, {items.length} item{items.length === 1 ? "" : "s"},{" "}
                 {painPoints.length} pijnpunt{painPoints.length === 1 ? "" : "en"} ({overstijgendPains.length} overstijgend),{" "}
                 {acceptedCount} geaccepteerde patron{acceptedCount === 1 ? "" : "en"},{" "}
-                {intents.length} verbeterrichting{intents.length === 1 ? "" : "en"} vastgelegd.
+                {intents.length} {appLabel("klanten.rapport.counter.verbeteracties", intents.length === 1 ? "verbeteractie" : "verbeteracties")} vastgelegd.
                 {intents.length === 0 && acceptedCount === 0
                   ? " Werkblad in inventarisatie + pijnpunten-fase."
                   : intents.length === 0
                     ? " Werkblad in inventarisatie + pijnpunten + analyse-fase."
-                    : " Werkblad in volledige fase-keten — verbeterrichtingen vastgelegd."}
+                    : ` ${appLabel("klanten.rapport.samenvatting.volledig", "Werkblad in volledige fase-keten — verbeteracties vastgelegd.")}`}
               </p>
             </section>
 
@@ -396,13 +396,13 @@ export default function RapportView({
                 hook zodat fase-4-edits onmiddellijk doorslaan naar rapport. */}
             <section data-testid="rapport-section-verbeterrichtingen">
               <div style={sectionLabelStyle}>
-                {appLabel("klanten.rapport.section.verbeterrichtingen", "Verbeterrichtingen")}
+                {appLabel("klanten.rapport.section.verbeterrichtingen", "Verbeteracties")}
               </div>
               {intents.length === 0 ? (
                 <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
                   {appLabel(
                     "klanten.rapport.verbeterrichtingen.leeg",
-                    "Nog geen verbeterrichtingen vastgelegd — werkblad zit nog in inventarisatie/analyse-fase."
+                    "Nog geen verbeteracties vastgelegd — werkblad zit nog in inventarisatie/analyse-fase."
                   )}
                 </p>
               ) : (

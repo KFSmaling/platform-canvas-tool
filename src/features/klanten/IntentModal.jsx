@@ -69,8 +69,8 @@ export default function IntentModal({
   }
 
   const headerLabel = isEdit
-    ? appLabel("klanten.verbeterrichting.modal.edit.titel", "Verbeterrichting bewerken")
-    : appLabel("klanten.verbeterrichting.modal.create.titel", "Nieuwe verbeterrichting");
+    ? appLabel("klanten.verbeterrichting.modal.edit.titel", "Verbeteractie bewerken")
+    : appLabel("klanten.verbeterrichting.modal.create.titel", "Nieuwe verbeteractie");
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-6">
@@ -118,7 +118,7 @@ export default function IntentModal({
               rows={8}
               value={intentMd}
               onChange={e => setIntentMd(e.target.value.slice(0, INTENT_MAX))}
-              placeholder={appLabel("klanten.verbeterrichting.veld.intent.placeholder", "Verscherp het patroon tot een concrete verbeterrichting. Wat moet er gebeuren en waarom?")}
+              placeholder={appLabel("klanten.verbeterrichting.veld.intent.placeholder", "Verscherp het patroon tot een concrete verbeteractie. Wat moet er gebeuren en waarom?")}
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
               maxLength={INTENT_MAX}
               data-testid="intent-veld-md"

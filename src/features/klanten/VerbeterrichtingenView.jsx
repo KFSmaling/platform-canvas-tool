@@ -185,7 +185,7 @@ export default function VerbeterrichtingenView({
       <div className="mb-6">
         {conceptCount === 0 && verstuurdCount === 0 ? (
           <p className="text-[12px] text-slate-400 italic" data-testid="verbeterrichting-lijst-leeg">
-            {appLabel("klanten.verbeterrichting.lijst.leeg", "Nog geen verbeterrichtingen — promoot een gemarkeerd patroon vanuit fase 3 of voeg een eigen richting toe.")}
+            {appLabel("klanten.verbeterrichting.lijst.leeg", "Nog geen verbeteracties — promoot een gemarkeerd patroon vanuit fase 3 of voeg een eigen verbeteractie toe.")}
           </p>
         ) : conceptList.length === 0 ? null : (
           <div className="space-y-3" data-testid="verbeterrichting-lijst-concept">
@@ -229,7 +229,7 @@ export default function VerbeterrichtingenView({
           className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-1.5 rounded-sm transition-colors disabled:opacity-50"
         >
           <Plus size={12} />
-          {appLabel("klanten.verbeterrichting.knop.toevoegen", "+ verbeterrichting toevoegen")}
+          {appLabel("klanten.verbeterrichting.knop.toevoegen", "+ verbeteractie toevoegen")}
         </button>
       </div>
 

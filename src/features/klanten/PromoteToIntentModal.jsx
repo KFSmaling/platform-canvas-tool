@@ -75,14 +75,14 @@ export default function PromoteToIntentModal({
       <div className="bg-white rounded-md shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <h3 className="text-base font-bold text-[var(--color-primary)]">
-            {appLabel("klanten.verbeterrichting.promote.titel", "Promote naar verbeterrichting")}
+            {appLabel("klanten.verbeterrichting.promote.titel", "Promote naar verbeteractie")}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700"><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-auto px-6 py-5 space-y-4">
           <p className="text-[11px] text-slate-500 italic">
-            {appLabel("klanten.verbeterrichting.promote.intro", "Verscherp dit gemarkeerde patroon tot een concrete verbeterrichting. Title en beschrijving zijn vooringevuld — bewerk waar nodig.")}
+            {appLabel("klanten.verbeterrichting.promote.intro", "Verscherp dit gemarkeerde patroon tot een concrete verbeteractie. Title en beschrijving zijn vooringevuld — bewerk waar nodig.")}
           </p>
 
           <div>

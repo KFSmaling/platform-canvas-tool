@@ -445,7 +445,7 @@ describe("KlantenWerkblad — fase-3 Analyse flow (stap 11.G Vervolg-sessie B)",
     // Collapse-sectie zichtbaar met juiste count
     const markedSection = await screen.findByTestId("marked-section");
     expect(markedSection).toBeInTheDocument();
-    expect(markedSection).toHaveTextContent(/Gemarkeerd voor verbeterrichtingen.*1/i);
+    expect(markedSection).toHaveTextContent(/Gemarkeerd voor verbeteracties.*1/i);
 
     // Default ingeklapt — kaart niet zichtbaar
     expect(screen.queryByTestId(`marked-card-${sampleSuggestionAccepted.id}`)).not.toBeInTheDocument();

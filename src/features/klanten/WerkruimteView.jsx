@@ -23,7 +23,7 @@ const FASE_TABS = [
   { num: 1, key: "label.klanten.fase.1.titel", fallback: "Inventarisatie", enabled: true },
   { num: 2, key: "label.klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: true },
   { num: 3, key: "label.klanten.fase.3.titel", fallback: "Analyse",        enabled: true },
-  { num: 4, key: "label.klanten.fase.4.titel", fallback: "Verbeterrichtingen", enabled: true },
+  { num: 4, key: "label.klanten.fase.4.titel", fallback: "Verbeteracties", enabled: true },
 ];
 
 export default function WerkruimteView({
