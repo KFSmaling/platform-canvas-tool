@@ -266,14 +266,17 @@ const LABEL_FALLBACKS = {
   "klanten.analyse.modal.eigen.opslaan":            "Toevoegen",
   "klanten.rapport.section.patronen":               "Geaccepteerde patronen",
   "klanten.rapport.patronen.leeg":                  "Nog geen geaccepteerde patronen — accepteer suggesties in fase 3 (Analyse).",
-  // Stap 11.G Vervolg-sessie B — RapportView AI-sectie + toggle
-  "klanten.rapport.toggle.disabled":                "Geen geaccepteerde patronen — accepteer er minstens één",
-  "klanten.rapport.toggle.uit":                     "Klik om AI-advies uit print te verwijderen",
-  "klanten.rapport.toggle.aan":                     "Klik om AI-advies toe te voegen aan print",
-  "klanten.rapport.toggle.label.aan":               "Advies in print ✓",
-  "klanten.rapport.toggle.label.uit":               "Advies in print",
-  "klanten.rapport.patronen.uit":                   "AI-advies staat uit voor deze print — klik 'Advies in print' bovenin om te tonen.",
-  "klanten.rapport.patronen.meer":                  "+ N meer geaccepteerd, niet getoond in deze print-samenvatting.",
+  // Stap 11.G Vervolg-sessie B + F32 Bundle 5 — RapportView toggle "Toon proces-info"
+  "klanten.rapport.toggle.uit":                     "Klik om proces-info te verbergen — toon alleen eindresultaat",
+  "klanten.rapport.toggle.aan":                     "Klik om AI-patronen + concept-verbeteracties zichtbaar te maken",
+  "klanten.rapport.toggle.label.aan":               "Proces-info zichtbaar ✓",
+  "klanten.rapport.toggle.label.uit":               "Toon proces-info",
+  // F32 — eindresultaat-onepager: nieuwe section + counter-keys
+  "klanten.rapport.section.naar_roadmap":           "Verbeteracties → Roadmap",
+  "klanten.rapport.naar_roadmap.leeg":              "Nog geen verbeteracties naar Roadmap doorgezet.",
+  "klanten.rapport.counter.naar_roadmap":           "verbeteracties naar Roadmap",
+  "klanten.rapport.section.concept_intents":        "Concept-verbeteracties",
+  "klanten.rapport.concept_intents.toelichting":    "Verbeteracties in concept-status — nog niet doorgezet naar Roadmap.",
   // Stap 11.H — Fase 4 Verbeterrichtingen. Nieuwe algemene actie-keys
   // (Optie 2 uit RFC-002 RP1 open vraag #11) — herbruikbaar over werkbladen
   // heen. Deprecatie van `klanten.analyse.actie.*` blijft achter.
