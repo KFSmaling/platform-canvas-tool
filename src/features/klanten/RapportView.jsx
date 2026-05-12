@@ -325,23 +325,14 @@ export default function RapportView({
               )}
             </section>
 
-            {/* Geaccepteerde patronen (Stap 11.G Vervolg-sessie B) */}
+            {/* Geaccepteerde patronen (Stap 11.G Vervolg-sessie B; F32: alleen
+                zichtbaar bij `includeInPrint=true` — proces-info, geen
+                eindresultaat-content). */}
+            {includeInPrint && acceptedCount > 0 && (
             <section style={{ marginBottom: "16px" }} data-testid="rapport-section-patronen">
               <div style={sectionLabelStyle}>
                 {appLabel("klanten.rapport.section.patronen", "Geaccepteerde patronen")}
               </div>
-              {acceptedCount === 0 ? (
-                <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
-                  {appLabel("klanten.rapport.patronen.leeg", "Nog geen geaccepteerde patronen — accepteer suggesties in fase 3 (Analyse).")}
-                </p>
-              ) : !includeInPrint ? (
-                <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
-                  {appLabel(
-                    "klanten.rapport.patronen.uit",
-                    "AI-advies staat uit voor deze print — klik 'Advies in print' bovenin om te tonen."
-                  )}
-                </p>
-              ) : (
                 <div
                   data-testid="rapport-patronen-grid"
                   style={{
@@ -390,10 +381,10 @@ export default function RapportView({
                     );
                   })}
                 </div>
-              )}
               {/* Stap 11.G.3 F7-fix: footer "+ N meer geaccepteerd" weggehaald
                   — alle accepted patterns worden nu getoond in het grid. */}
             </section>
+            )}
 
             {/* F32 Bundle 5 — "Verbeteracties → Roadmap": alleen `status=verstuurd`
                 (= naar Roadmap doorgezet). Concept-intents zitten achter
@@ -463,6 +454,74 @@ export default function RapportView({
                 </div>
               )}
             </section>
+
+            {/* F32 Bundle 5 — Concept-verbeteracties (achter "Toon proces-info"-
+                toggle). Subtielere kleur dan Roadmap-sectie + italic toelichting.
+                Geen designer-opmaak — komt later in aparte sessie. */}
+            {includeInPrint && conceptIntents.length > 0 && (
+              <section style={{ marginTop: "10px" }} data-testid="rapport-section-concept-intents">
+                <div style={sectionLabelStyle}>
+                  {appLabel("klanten.rapport.section.concept_intents", "Concept-verbeteracties")}
+                </div>
+                <p style={{ fontSize: "8px", color: "#94a3b8", marginBottom: "4px", fontStyle: "italic" }}>
+                  {appLabel(
+                    "klanten.rapport.concept_intents.toelichting",
+                    "Verbeteracties in concept-status — nog niet doorgezet naar Roadmap."
+                  )}
+                </p>
+                <div
+                  data-testid="rapport-concept-intents-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: conceptIntents.length === 1
+                      ? "1fr"
+                      : conceptIntents.length === 2 ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
+                    gap: "6px",
+                  }}
+                >
+                  {conceptIntents.map(it => (
+                    <div
+                      key={it.id}
+                      data-testid={`rapport-concept-intent-card-${it.id}`}
+                      style={{
+                        background: "#f8fafc",
+                        borderLeft: `3px solid #cbd5e1`,
+                        borderRadius: "3px",
+                        padding: "6px 8px",
+                      }}
+                    >
+                      <div style={{
+                        fontSize: "7px",
+                        fontWeight: 800,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                        color: "#64748b",
+                        marginBottom: "3px",
+                      }}>
+                        {appLabel("klanten.verbeterrichting.status.concept", "concept")}
+                      </div>
+                      <div style={{
+                        fontSize: "9.5px",
+                        fontWeight: 700,
+                        color: "#1e293b",
+                        marginBottom: "2px",
+                      }}>
+                        {it.title}
+                      </div>
+                      <p style={{
+                        margin: 0,
+                        fontSize: "9px",
+                        color: "#475569",
+                        lineHeight: 1.45,
+                        whiteSpace: "pre-wrap",
+                      }}>
+                        {it.intent_md}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           <PageFooter brandName={brandName} appLabel={appLabel} />
