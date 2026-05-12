@@ -338,7 +338,21 @@ export function AppConfigProvider({ children }) {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadConfig(); }, [loadConfig]);
+  // Stap F30 Fix-pad B (2026-05-12): mount-fetch + auth-state-change listener.
+  // Reden: bij eerste React-mount kan Supabase-auth-session nog niet hersteld
+  // zijn → RPC-call in anon-context → 0 rijen via RLS-block → `config` blijft
+  // leeg → LABEL_FALLBACKS-strings winnen over DB-waarden. Listener re-fetcht
+  // zodra SIGNED_IN of TOKEN_REFRESHED gefired wordt.
+  useEffect(() => {
+    loadConfig();
+    if (!supabase) return undefined;
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, _session) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        loadConfig();
+      }
+    });
+    return () => { authListener?.subscription?.unsubscribe(); };
+  }, [loadConfig]);
 
   /**
    * label("app.title") → waarde uit DB, anders hardcoded fallback
