@@ -148,7 +148,7 @@ export default function IntentCard({
             title={appLabel("klanten.verbeterrichting.handover.tooltip", "")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {appLabel("klanten.verbeterrichting.actie.markeer", "Markeer als in roadmap")}
+            {appLabel("klanten.verbeterrichting.actie.markeer", "Naar roadmap")}
           </button>
         )}
       </div>

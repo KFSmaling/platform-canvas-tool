@@ -361,7 +361,7 @@ describe("KlantenWerkblad — fase-4 Verbeterrichtingen flow (stap 11.H)", () =>
   });
 
   // ── Stap 11.K.2 F18 — UI-rebrand 'verstuurd' → 'in roadmap' ────────────
-  test("11. F18: concept-intent toont 'Markeer als in roadmap'-knop (rebrand)", async () => {
+  test("11. F29 deel-1: concept-intent toont 'Naar roadmap'-knop (rebrand)", async () => {
     klantenService.listIntents.mockResolvedValue({ data: [sampleConceptIntent], error: null });
 
     render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
@@ -369,7 +369,7 @@ describe("KlantenWerkblad — fase-4 Verbeterrichtingen flow (stap 11.H)", () =>
 
     // Markeer-knop bestaat met nieuwe rebrand-fallback (label-mock retourneert fallback)
     const markeerBtn = await screen.findByTestId(`intent-actie-markeer-${sampleConceptIntent.id}`);
-    expect(markeerBtn).toHaveTextContent(/markeer als in roadmap/i);
+    expect(markeerBtn).toHaveTextContent(/naar roadmap/i);
     expect(markeerBtn).not.toHaveTextContent(/verstuurd/i);
   });
 

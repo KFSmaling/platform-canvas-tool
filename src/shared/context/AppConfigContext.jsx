@@ -272,7 +272,7 @@ const LABEL_FALLBACKS = {
   // `klanten.actie.markeer/.terugtrekken` zijn 11 mei gerenamed naar
   // `verbeterrichting.actie.*` (intent-context). Nieuwe `dossier.actie.*` voor
   // draft-acceptance. Generieke bewerk/verwijder blijven context-onafhankelijk.
-  "klanten.verbeterrichting.actie.markeer":          "Markeer als in roadmap",
+  "klanten.verbeterrichting.actie.markeer":          "Naar roadmap",
   "klanten.verbeterrichting.actie.terugtrekken":     "Haal uit roadmap",
   "klanten.dossier.actie.markeer":                   "Markeer als richting",
   "klanten.dossier.actie.bewerk":                    "Bewerk",
