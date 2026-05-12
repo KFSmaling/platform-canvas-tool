@@ -284,6 +284,8 @@ const LABEL_FALLBACKS = {
   "klanten.dossier.disabled_no_uploads":             "Upload eerst documenten",
   "klanten.dossier.disabled_no_items":               "Voeg eerst items toe",
   "klanten.dossier.disabled_processing":             "Documenten worden nog verwerkt",
+  // Stap 11.I.2 + Bundle 1+2 — klantreis strategische-weging uitleg (F25)
+  "klanten.veld.klantreis.strategische_weging.uitleg": "Niet elke stap weegt even zwaar. Markeer Moments of Truth (kritische ervaringsmomenten waar de klant \"wakker wordt\") en Silent periods (stille fases waar de klant uit zicht is — risico op churn). Pas de weging aan om strategisch belang in de rapport- en analyse-laag zichtbaar te maken.",
   "klanten.verbeterrichting.titel":                  "Verbeterrichtingen",
   "klanten.verbeterrichting.intro":                  "Verscherp geaccepteerde patronen tot intent. Verstuur naar Roadmap voor concrete acties, eigenaars en planning.",
   "klanten.verbeterrichting.counter.concept":        "concept",

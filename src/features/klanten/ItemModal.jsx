@@ -478,13 +478,16 @@ function StrategischeWegingBlok({ fields, archetypeData, setField, appLabel }) {
       data-denkdwang="asymmetrie"
       className="rounded-md border border-amber-200/70 bg-amber-50/30 p-3"
     >
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-[11px] font-bold uppercase tracking-widest text-amber-800">
+      <div className="mb-2">
+        <h4 className="text-[11px] font-bold uppercase tracking-widest text-amber-800 mb-1.5">
           {appLabel("klanten.veld.klantreis.strategische_weging_titel", "Strategische weging")}
         </h4>
-        <span className="text-[9px] text-amber-700/70 italic">
-          {appLabel("klanten.veld.klantreis.strategische_weging.helper", "80/20-denkdwang — asymmetrie-erkenning")}
-        </span>
+        <p className="text-[10px] text-amber-800/80 leading-relaxed">
+          {appLabel(
+            "klanten.veld.klantreis.strategische_weging.uitleg",
+            "Niet elke stap weegt even zwaar. Markeer Moments of Truth (kritische ervaringsmomenten waar de klant \"wakker wordt\") en Silent periods (stille fases waar de klant uit zicht is — risico op churn). Pas de weging aan om strategisch belang in de rapport- en analyse-laag zichtbaar te maken."
+          )}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
