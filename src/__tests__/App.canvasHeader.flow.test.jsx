@@ -195,3 +195,20 @@ describe("Canvas-header — retro-fix Bev. 2 (Canvas-delete OverflowMenu-item)",
     );
   });
 });
+
+describe("Canvas-header — retro-fix Bev. 1 (KF-logo Optie C login-pattern)", () => {
+  test("7. LogoBrand-img is gewrapt in witte tile (bg-white rounded) op canvas-header", async () => {
+    render(<App />);
+    // Header rendert (proxy via Consistency-knop bestaan)
+    await screen.findByTestId("header-tool-consistency");
+
+    // LogoBrand met variant="dark" gebruikt logoUrl (default '/kf-logo.png');
+    // het <img> staat in een wrapper-div met bg-white rounded.
+    const logoImg = document.querySelector("header img");
+    expect(logoImg).not.toBeNull();
+    // Closest ancestor met bg-white-class is de witte tile (Optie C).
+    const tile = logoImg.closest('div.bg-white');
+    expect(tile).not.toBeNull();
+    expect(tile.className).toMatch(/rounded/);
+  });
+});

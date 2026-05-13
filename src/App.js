@@ -97,14 +97,23 @@ function AppInner() {
           (50px op werkblad). border-b-2 accent-line behouden voor brand-anker. */}
       <header className="h-[68px] bg-[var(--color-primary)] flex items-center justify-between z-20 border-b-2 border-[var(--color-accent)] shrink-0 shadow-lg">
 
-        {/* Left: logo + app title + versie-pill (designer §7 punt 11) */}
+        {/* Left: logo + app title + versie-pill (designer §7 punt 11).
+            Retro-fix Bev. 1 — gebruik LoginScreen-pattern (dark logo in witte
+            tile) zodat /kf-logo.png — bestaand asset — zichtbaar is op donkere
+            charcoal-strip. variant="light" zonder tile faalde voor tenants
+            zonder logo_white_url-asset (KF heeft NULL → fallback-pad
+            /kf-logo-white.png bestaat niet → text-fallback). Witte tile
+            werkt voor alle tenants met een donker-logo en is al consistent
+            toegepast op LoginScreen.js:78-86. */}
         <div className="flex items-center h-full shrink-0">
           <div className="px-6 flex items-center justify-center h-full shrink-0 border-r border-white/10">
-            <LogoBrand
-              variant="light"
-              imgClassName="h-10 w-auto object-contain object-center"
-              textClassName="text-white font-bold text-lg tracking-wide"
-            />
+            <div className="bg-white rounded px-2 py-1">
+              <LogoBrand
+                variant="dark"
+                imgClassName="h-8 w-auto object-contain"
+                textClassName="text-[var(--color-primary)] font-bold text-base tracking-wide px-1"
+              />
+            </div>
           </div>
           <div className="px-6 border-r border-white/10 h-full flex flex-col justify-center">
             <div className="flex items-baseline gap-2">
