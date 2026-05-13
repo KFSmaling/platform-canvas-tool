@@ -107,7 +107,7 @@ function AppInner() {
               </h1>
               <span
                 data-testid="header-versie-pill"
-                className="font-mono text-[10px] px-1.5 py-0.5 rounded text-[var(--color-accent)]"
+                className="font-mono text-xs px-1.5 py-0.5 rounded text-[var(--color-accent)]"
                 style={{ backgroundColor: "rgba(255,255,255,0.08)", fontFamily: "var(--font-mono)" }}
                 title={`Versie ${process.env.REACT_APP_VERSION || "0.1.0"}`}
               >

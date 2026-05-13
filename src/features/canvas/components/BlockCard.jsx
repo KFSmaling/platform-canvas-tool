@@ -197,12 +197,12 @@ function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
               </span>
             )}
             <div>
-              <h3 className="text-[var(--color-primary)] font-bold text-[13px] uppercase tracking-[0.12em] leading-tight" style={{fontFamily:"'Montserrat','Inter',sans-serif"}}>{title}</h3>
+              <h3 className="text-[var(--color-primary)] font-bold text-base uppercase tracking-[0.12em] leading-tight" style={{fontFamily:"'Montserrat','Inter',sans-serif"}}>{title}</h3>
               <p className="text-[11px] text-slate-500 mt-0.5 tracking-wide">{sub}</p>
             </div>
           </div>
           {badge && (
-            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shrink-0 ml-2 ${badge.color}`}>
+            <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider shrink-0 ml-2 ${badge.color}`}>
               {badge.label}
             </span>
           )}
@@ -220,7 +220,7 @@ function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
                   {stBullets.slice(0, 2).map((b, i) => (
                     <div key={i} className="flex items-start gap-2 mt-0.5">
                       <div className={`mt-1.5 w-1 h-1 rotate-45 shrink-0 ${st.dot}`} />
-                      <span className="text-[13px] text-slate-700 leading-snug">{b.text}</span>
+                      <span className="text-base text-slate-700 leading-snug">{b.text}</span>
                     </div>
                   ))}
                 </div>
@@ -235,7 +235,7 @@ function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
             {(bullets || []).slice(0, isWide ? 4 : 3).map((b, i) => (
               <div key={i} className="flex items-start gap-2">
                 <div className="mt-1.5 w-1.5 h-1.5 bg-orange-500 rotate-45 shrink-0" />
-                <span className="text-[13px] text-slate-700 leading-snug">{typeof b === "string" ? b : b.text}</span>
+                <span className="text-base text-slate-700 leading-snug">{typeof b === "string" ? b : b.text}</span>
               </div>
             ))}
             {(bullets || []).length === 0 && (
