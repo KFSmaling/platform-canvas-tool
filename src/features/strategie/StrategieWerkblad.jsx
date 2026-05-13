@@ -530,6 +530,13 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
   // Kernwaarden input state (controlled)
   const [newKernwaardeInput, setNewKernwaardeInput] = useState("");
 
+  const addKernwaarde = () => {
+    const v = newKernwaardeInput.trim();
+    if (!v) return;
+    setCore(prev => ({ ...prev, kernwaarden: [...prev.kernwaarden, v] }));
+    setNewKernwaardeInput("");
+  };
+
   const coreDebounceRef  = useRef(null); // autosave strategy_core
   const titleDebounceRef = useRef(null); // updateThemaTitle
   const kpiDebounceRef   = useRef(null); // updateKsfKpiItem
@@ -1228,7 +1235,16 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-base font-semibold text-slate-700">{appLabel("strat.field.kernwaarden", "Kernwaarden")}</label>
-                <WandButton onClick={() => callWerkbladMagic("kernwaarden", true)} loading={magic.kernwaarden?.loading} disabled={!!drafts.kernwaarden} />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={addKernwaarde}
+                    disabled={!newKernwaardeInput.trim()}
+                    data-testid="strat-kernwaarde-toevoegen"
+                    className="text-xs font-bold text-[var(--color-primary)] hover:text-[var(--color-primary)]/70 disabled:text-slate-300 disabled:cursor-not-allowed flex items-center gap-1">
+                    <Plus size={10} /> Toevoegen
+                  </button>
+                  <WandButton onClick={() => callWerkbladMagic("kernwaarden", true)} loading={magic.kernwaarden?.loading} disabled={!!drafts.kernwaarden} />
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5 min-h-[60px] bg-white border border-slate-200 rounded-lg p-2.5">
                 {core.kernwaarden.map((kw, i) => (
@@ -1241,17 +1257,15 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
                 <input
                   value={newKernwaardeInput}
                   onChange={e => setNewKernwaardeInput(e.target.value)}
-                  placeholder="+ Waarde…"
+                  placeholder="Nieuwe waarde + Enter, of klik Toevoegen…"
                   onKeyDown={e => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      const v = newKernwaardeInput.trim();
-                      if (!v) return;
-                      setCore(prev => ({ ...prev, kernwaarden: [...prev.kernwaarden, v] }));
-                      setNewKernwaardeInput("");
+                      addKernwaarde();
                     }
                   }}
-                  className="text-sm bg-transparent border-none focus:outline-none placeholder:text-slate-300 text-slate-600 min-w-[80px]"
+                  data-testid="strat-kernwaarde-input"
+                  className="text-sm bg-transparent border-none focus:outline-none placeholder:text-slate-300 text-slate-600 min-w-[180px] flex-1"
                 />
               </div>
               {/* Draft voor kernwaarden */}

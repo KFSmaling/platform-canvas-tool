@@ -129,12 +129,18 @@ export default function WerkbladHeader({
           )}
           {showLogo && (
             <>
+              {/* Retro-fix Bev. 1 — LoginScreen-pattern (dark logo in witte tile)
+                  zodat /kf-logo.png zichtbaar is op donkere charcoal-strip,
+                  identiek aan App.js canvas-header. Werkt voor tenants zonder
+                  logo_white_url-asset (KF + Platform default). */}
               <div className="flex items-center h-full">
-                <LogoBrand
-                  variant="light"
-                  imgClassName="h-7 w-auto object-contain object-center"
-                  textClassName="text-white font-medium text-sm tracking-wide"
-                />
+                <div className="bg-white rounded px-1.5 py-0.5">
+                  <LogoBrand
+                    variant="dark"
+                    imgClassName="h-6 w-auto object-contain"
+                    textClassName="text-[var(--color-primary)] font-medium text-sm tracking-wide px-1"
+                  />
+                </div>
               </div>
               {appTitle && (
                 <div className="flex items-baseline gap-2 border-l border-white/10 pl-3">

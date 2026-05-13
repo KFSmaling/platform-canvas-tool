@@ -3,7 +3,7 @@ import { LangProvider, useLang } from "./i18n";
 import {
   Zap, X, LogOut, Save, AlertOctagon,
   SlidersHorizontal, Database, ShieldCheck, Maximize2,
-  Info, Languages, Settings, FolderClock,
+  Info, Languages, Settings, FolderClock, Trash2,
 } from "lucide-react";
 import OverflowMenu from "./shared/components/OverflowMenu";
 import OverDialog from "./shared/components/OverDialog";
@@ -46,6 +46,12 @@ function AppInner() {
   const [tipsSection,     setTipsSection]     = useState("algemeen");
   const [showInfoSidebar, setShowInfoSidebar] = useState(false);
   const [showOverDialog,  setShowOverDialog]  = useState(false);
+
+  // Retro-fix Bev. 2 — Canvas-verwijderen via OverflowMenu. Inline-confirm
+  // pattern (hergebruik van CanvasMenu.jsx:99-133-stijl, geen nieuwe component).
+  const [showDeleteCanvasConfirm, setShowDeleteCanvasConfirm] = useState(false);
+  const [deletingCanvas, setDeletingCanvas] = useState(false);
+  const [deleteCanvasError, setDeleteCanvasError] = useState(null);
 
   // ── Canvas state + handlers (business logic in hook) ──────────────────────
   const {
@@ -91,14 +97,23 @@ function AppInner() {
           (50px op werkblad). border-b-2 accent-line behouden voor brand-anker. */}
       <header className="h-[68px] bg-[var(--color-primary)] flex items-center justify-between z-20 border-b-2 border-[var(--color-accent)] shrink-0 shadow-lg">
 
-        {/* Left: logo + app title + versie-pill (designer §7 punt 11) */}
+        {/* Left: logo + app title + versie-pill (designer §7 punt 11).
+            Retro-fix Bev. 1 — gebruik LoginScreen-pattern (dark logo in witte
+            tile) zodat /kf-logo.png — bestaand asset — zichtbaar is op donkere
+            charcoal-strip. variant="light" zonder tile faalde voor tenants
+            zonder logo_white_url-asset (KF heeft NULL → fallback-pad
+            /kf-logo-white.png bestaat niet → text-fallback). Witte tile
+            werkt voor alle tenants met een donker-logo en is al consistent
+            toegepast op LoginScreen.js:78-86. */}
         <div className="flex items-center h-full shrink-0">
           <div className="px-6 flex items-center justify-center h-full shrink-0 border-r border-white/10">
-            <LogoBrand
-              variant="light"
-              imgClassName="h-10 w-auto object-contain object-center"
-              textClassName="text-white font-bold text-lg tracking-wide"
-            />
+            <div className="bg-white rounded px-2 py-1">
+              <LogoBrand
+                variant="dark"
+                imgClassName="h-8 w-auto object-contain"
+                textClassName="text-[var(--color-primary)] font-bold text-base tracking-wide px-1"
+              />
+            </div>
           </div>
           <div className="px-6 border-r border-white/10 h-full flex flex-col justify-center">
             <div className="flex items-baseline gap-2">
@@ -176,12 +191,15 @@ function AppInner() {
             <Maximize2 size={14} /> {t("header.tips")}
           </button>
 
-          {/* Consistency-check — primary action, behoudt prominentie */}
+          {/* Consistency-check — canvas-niveau-tool, secondary-outline-stijl
+              consistent met Dossier+Tips (retro-fix Bev. 3). Footer-CTA bij
+              "Alles compleet" (regel ~312) blijft accent-styled — prestatie-
+              CTA is een andere rol dan tool-action. */}
           <button
             onClick={() => setShowConsistency(true)}
             data-testid="header-tool-consistency"
-            className="flex items-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] px-3 py-2 rounded-md text-sm transition-all"
-            style={{ color: "var(--color-primary)" }}
+            className="flex items-center gap-2 text-white/70 hover:text-white border border-white/20 hover:border-white/40 px-3 py-2 rounded-md text-sm transition-all"
+            title={t("header.consistency")}
           >
             <ShieldCheck size={14} /> {t("header.consistency")}
           </button>
@@ -222,6 +240,20 @@ function AppInner() {
                 icon: Info,
                 onClick: () => setShowOverDialog(true),
                 divider: true,
+              },
+              // Retro-fix Bev. 2 — Canvas verwijderen-pad voor het ACTIEVE canvas.
+              // Hidden als geen canvas open (anders niets om te verwijderen).
+              {
+                id: "delete-canvas",
+                label: "Canvas verwijderen",
+                icon: Trash2,
+                onClick: () => {
+                  setDeleteCanvasError(null);
+                  setShowDeleteCanvasConfirm(true);
+                },
+                divider: true,
+                danger: true,
+                hidden: !activeCanvasId,
               },
               {
                 id: "uitloggen",
@@ -373,6 +405,64 @@ function AppInner() {
       {/* Over Platform Workbench dialog (Fase 3 design-systeem §7 punt 11) */}
       {showOverDialog && (
         <OverDialog onClose={() => setShowOverDialog(false)} />
+      )}
+
+      {/* Retro-fix Bev. 2 — Canvas-verwijderen confirm-dialog (inline-pattern,
+          hergebruik van CanvasMenu.jsx:99-133 red-bordered confirm-stijl). */}
+      {showDeleteCanvasConfirm && activeCanvasId && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-6"
+          onClick={() => !deletingCanvas && setShowDeleteCanvasConfirm(false)}
+          data-testid="delete-canvas-confirm-overlay"
+        >
+          <div
+            className="bg-red-50 border border-red-200 rounded-lg shadow-2xl max-w-md w-full p-5"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            data-testid="delete-canvas-confirm-dialog"
+          >
+            <p className="text-sm font-semibold text-red-700 mb-2">
+              Verwijder "{scope || "Naamloos"}"?
+            </p>
+            <p className="text-xs text-red-500 mb-3">
+              Dit verwijdert ook alle geüploade documenten en chunks. Niet ongedaan te maken.
+            </p>
+            {deleteCanvasError && (
+              <p className="text-xs text-red-600 font-semibold mb-3 bg-red-100 rounded px-2 py-1">
+                {deleteCanvasError}
+              </p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setShowDeleteCanvasConfirm(false); setDeleteCanvasError(null); }}
+                disabled={deletingCanvas}
+                className="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded px-3 py-1.5 transition-colors"
+                data-testid="delete-canvas-cancel"
+              >
+                Annuleer
+              </button>
+              <button
+                disabled={deletingCanvas}
+                onClick={async () => {
+                  setDeleteCanvasError(null);
+                  setDeletingCanvas(true);
+                  const result = await handleDeleteCanvas(activeCanvasId);
+                  setDeletingCanvas(false);
+                  if (result?.error) {
+                    setDeleteCanvasError("Verwijderen mislukt. Probeer het opnieuw.");
+                  } else {
+                    setShowDeleteCanvasConfirm(false);
+                  }
+                }}
+                className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 rounded px-3 py-1.5 transition-colors"
+                data-testid="delete-canvas-confirm"
+              >
+                {deletingCanvas ? "Bezig…" : "Ja, verwijder"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Deep Dive Overlay — werkblad per blok via registry */}
