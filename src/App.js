@@ -50,8 +50,8 @@ function AppInner() {
   // ── Canvas state + handlers (business logic in hook) ──────────────────────
   const {
     activeCanvasId, canvases, scope, meta, docs, insights, bullets,
-    strategyManual, guidelineCounts, saveStatus, multiTabWarning,
-    setMeta, setMultiTabWarning, setStrategyManual, refreshGuidelineCounts,
+    strategyManual, guidelineCounts, canvasSummary, saveStatus, multiTabWarning,
+    setMeta, setMultiTabWarning, setStrategyManual, refreshGuidelineCounts, refreshCanvasSummary,
     handleNewCanvas, handleSelectCanvas, handleRenameCanvas, handleDeleteCanvas,
     handleLoadExample, handleDocsChange, handleInsightAccept, handleInsightReject,
     handleMoveToBullets, handleDeleteBullet, handleAddBullet,
@@ -71,19 +71,25 @@ function AppInner() {
   const allDone     = BLOCKS.every(b => (bullets[b.id] || []).length > 0);
 
   // ── Herlaad guideline counts als gebruiker het richtlijnen werkblad sluit ────
+  // + S1 design-systeem F12: herlaad canvas-summary na elke werkblad-close
+  // zodat tegel-feedback up-to-date is na mutaties.
   const prevDeepDiveRef = useRef(null);
   useEffect(() => {
-    if (prevDeepDiveRef.current === "principles" && deepDiveBlockId === null) {
-      refreshGuidelineCounts(activeCanvasId);
+    if (prevDeepDiveRef.current !== null && deepDiveBlockId === null && activeCanvasId) {
+      if (prevDeepDiveRef.current === "principles") {
+        refreshGuidelineCounts(activeCanvasId);
+      }
+      refreshCanvasSummary(activeCanvasId);
     }
     prevDeepDiveRef.current = deepDiveBlockId;
-  }, [deepDiveBlockId, activeCanvasId, refreshGuidelineCounts]);
+  }, [deepDiveBlockId, activeCanvasId, refreshGuidelineCounts, refreshCanvasSummary]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[var(--color-primary)] font-sans flex flex-col">
 
-      {/* Header */}
-      <header className="h-20 bg-[var(--color-primary)] flex items-center justify-between z-20 border-b-2 border-[var(--color-accent)] shrink-0 shadow-lg">
+      {/* Header — S1 design-systeem §3.7: 68px charcoal-strip op canvas-niveau
+          (50px op werkblad). border-b-2 accent-line behouden voor brand-anker. */}
+      <header className="h-[68px] bg-[var(--color-primary)] flex items-center justify-between z-20 border-b-2 border-[var(--color-accent)] shrink-0 shadow-lg">
 
         {/* Left: logo + app title + versie-pill (designer §7 punt 11) */}
         <div className="flex items-center h-full shrink-0">
@@ -101,7 +107,7 @@ function AppInner() {
               </h1>
               <span
                 data-testid="header-versie-pill"
-                className="font-mono text-[10px] px-1.5 py-0.5 rounded text-[var(--color-accent)]"
+                className="font-mono text-xs px-1.5 py-0.5 rounded text-[var(--color-accent)]"
                 style={{ backgroundColor: "rgba(255,255,255,0.08)", fontFamily: "var(--font-mono)" }}
                 title={`Versie ${process.env.REACT_APP_VERSION || "0.1.0"}`}
               >
@@ -285,6 +291,7 @@ function AppInner() {
                 status={getBlockStatus(block.id, docs, insights, bullets)}
                 bullets={bullets[block.id]}
                 insightCount={(insights[block.id] || []).filter(i => i.status === "pending").length}
+                summary={canvasSummary}
                 onClick={() => setDeepDiveBlockId(block.id)}
               />
             ))}
@@ -296,6 +303,7 @@ function AppInner() {
               status={getBlockStatus("portfolio", docs, insights, bullets)}
               bullets={bullets["portfolio"]}
               insightCount={(insights["portfolio"] || []).filter(i => i.status === "pending").length}
+              summary={canvasSummary}
               onClick={() => setDeepDiveBlockId("portfolio")}
             />
           </div>

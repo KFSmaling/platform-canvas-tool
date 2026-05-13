@@ -4,6 +4,7 @@ import {
   Users, Route, HeartHandshake, Laptop, Crosshair, Compass, LayoutGrid,
 } from "lucide-react";
 import { useLang } from "../../../i18n";
+import CanvasTegelSummary from "./CanvasTegelSummary";
 
 // Fase 3 design-systeem §2.7 — Tabler-outline categorie-iconen.
 // Lucide-equivalenten (Tabler-migratie kan in latere fase):
@@ -162,7 +163,7 @@ const SEV_COLOR = { high: "border-l-red-400 bg-red-50", medium: "border-l-amber-
 const SEV_TEXT  = { high: "text-red-600", medium: "text-amber-700", low: "text-slate-500" };
 
 // ── Block Card (dashboard) ───────────────────────────────────────────────────
-function BlockCard({ block, status, bullets, insightCount, onClick }) {
+function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
   const { t } = useLang();
   const badgeDef = STATUS_BADGE_KEYS[status];
   const badge = badgeDef ? { label: t(badgeDef.labelKey), color: badgeDef.color } : null;
@@ -196,12 +197,12 @@ function BlockCard({ block, status, bullets, insightCount, onClick }) {
               </span>
             )}
             <div>
-              <h3 className="text-[var(--color-primary)] font-bold text-[13px] uppercase tracking-[0.12em] leading-tight" style={{fontFamily:"'Montserrat','Inter',sans-serif"}}>{title}</h3>
+              <h3 className="text-[var(--color-primary)] font-bold text-base uppercase tracking-[0.12em] leading-tight" style={{fontFamily:"'Montserrat','Inter',sans-serif"}}>{title}</h3>
               <p className="text-[11px] text-slate-500 mt-0.5 tracking-wide">{sub}</p>
             </div>
           </div>
           {badge && (
-            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shrink-0 ml-2 ${badge.color}`}>
+            <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider shrink-0 ml-2 ${badge.color}`}>
               {badge.label}
             </span>
           )}
@@ -219,7 +220,7 @@ function BlockCard({ block, status, bullets, insightCount, onClick }) {
                   {stBullets.slice(0, 2).map((b, i) => (
                     <div key={i} className="flex items-start gap-2 mt-0.5">
                       <div className={`mt-1.5 w-1 h-1 rotate-45 shrink-0 ${st.dot}`} />
-                      <span className="text-[13px] text-slate-700 leading-snug">{b.text}</span>
+                      <span className="text-base text-slate-700 leading-snug">{b.text}</span>
                     </div>
                   ))}
                 </div>
@@ -234,7 +235,7 @@ function BlockCard({ block, status, bullets, insightCount, onClick }) {
             {(bullets || []).slice(0, isWide ? 4 : 3).map((b, i) => (
               <div key={i} className="flex items-start gap-2">
                 <div className="mt-1.5 w-1.5 h-1.5 bg-orange-500 rotate-45 shrink-0" />
-                <span className="text-[13px] text-slate-700 leading-snug">{typeof b === "string" ? b : b.text}</span>
+                <span className="text-base text-slate-700 leading-snug">{typeof b === "string" ? b : b.text}</span>
               </div>
             ))}
             {(bullets || []).length === 0 && (
@@ -242,6 +243,12 @@ function BlockCard({ block, status, bullets, insightCount, onClick }) {
             )}
           </div>
         )}
+
+        {/* S1 design-systeem F12 — canvas-tegel-feedback (counts + quote per
+            pijler). summary-prop uit useCanvasState.canvasSummary; component
+            kiest zelf per blockId welke buckets te tonen + stub voor niet-
+            gebouwde werkbladen. */}
+        <CanvasTegelSummary blockId={block.id} summary={summary} appLabel={null} />
       </div>
 
       <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">

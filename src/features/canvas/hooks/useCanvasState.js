@@ -23,6 +23,7 @@ import { BLOCKS, EXAMPLE_BULLETS } from "../components/BlockCard";
 import { log, err } from "../../../shared/utils/logger";
 import { loadGuidelineCounts } from "../../richtlijnen/services/guidelines.service";
 import { loadStrategyCore, loadStrategicThemes, loadAnalysisItems } from "../../strategie/services/strategy.service";
+import { loadCanvasSummary } from "../../../shared/services/canvas.service";
 
 /**
  * @param {object} options
@@ -51,6 +52,10 @@ export function useCanvasState({ user, tenantId, lang, onCanvasSwitch }) {
   // ── Guideline counts per segment (voor Principles canvas block) ──────────────
   const [guidelineCounts, setGuidelineCounts] = useState({});
 
+  // S1 design-systeem — F12 canvas-tegel-feedback. summary uit RPC
+  // `get_canvas_summary`. Ververst bij canvas-switch + bij refresh-trigger.
+  const [canvasSummary, setCanvasSummary] = useState(null);
+
   // ── Autosave indicator ──────────────────────────────────────────────────────
   const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | saved | error
 
@@ -67,6 +72,14 @@ export function useCanvasState({ user, tenantId, lang, onCanvasSwitch }) {
     if (!canvasId) return;
     const { data } = await loadGuidelineCounts(canvasId);
     setGuidelineCounts(data || {});
+  }, []);
+
+  // S1 design-systeem — F12 canvas-tegel-feedback. Trigger-refresh na
+  // werkblad-mutaties (DeepDiveOverlay-onManualSaved-callback in App.js).
+  const refreshCanvasSummary = useCallback(async (canvasId) => {
+    if (!canvasId) return;
+    const { data } = await loadCanvasSummary(canvasId);
+    setCanvasSummary(data || null);
   }, []);
 
   // ── Helper: laad een canvas-record in state ─────────────────────────────────
@@ -95,8 +108,10 @@ export function useCanvasState({ user, tenantId, lang, onCanvasSwitch }) {
       loadStrategyCore(full.id),
       loadStrategicThemes(full.id),
       loadAnalysisItems(full.id),
-    ]).then(([{ data: counts }, { data: co }, { data: themes }, { data: analysisItems }]) => {
+      loadCanvasSummary(full.id),   // S1 — F12 canvas-tegel-feedback
+    ]).then(([{ data: counts }, { data: co }, { data: themes }, { data: analysisItems }, { data: summary }]) => {
       setGuidelineCounts(counts || {});
+      setCanvasSummary(summary || null);
       if (co || themes) {
         const swotCount = (analysisItems || []).filter(i => i.tag && i.tag !== "niet_relevant").length;
         setStrategyManual({
@@ -223,6 +238,7 @@ export function useCanvasState({ user, tenantId, lang, onCanvasSwitch }) {
     setDocs({}); setInsights({}); setBullets({});
     setStrategyManual(null);
     setGuidelineCounts({});
+    setCanvasSummary(null);   // S1 — vermijd ghost summary van vorige canvas
 
     // Race-guard (CLAUDE.md 4.3): bij snel achter elkaar twee canvases klikken kan de
     // tweede fetch eerder terugkomen dan de eerste. Capture de request-id en negeer
@@ -261,6 +277,7 @@ export function useCanvasState({ user, tenantId, lang, onCanvasSwitch }) {
       setScope("");
       setDocs({}); setInsights({}); setBullets({});
       setStrategyManual(null);
+      setCanvasSummary(null);
       onCanvasSwitch?.();
     }
     return { error: null };
@@ -352,6 +369,7 @@ export function useCanvasState({ user, tenantId, lang, onCanvasSwitch }) {
     bullets,
     strategyManual,
     guidelineCounts,
+    canvasSummary,           // S1 — F12 canvas-tegel-feedback
     saveStatus,
     multiTabWarning,
 
@@ -360,6 +378,7 @@ export function useCanvasState({ user, tenantId, lang, onCanvasSwitch }) {
     setMultiTabWarning,
     setStrategyManual,
     refreshGuidelineCounts,
+    refreshCanvasSummary,    // S1 — trigger na werkblad-mutatie
 
     // canvas handlers
     handleNewCanvas,
