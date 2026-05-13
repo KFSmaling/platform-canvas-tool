@@ -34,7 +34,9 @@
  */
 
 import React from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Languages } from "lucide-react";
+import LogoBrand from "./LogoBrand";
+import OverflowMenu from "./OverflowMenu";
 
 const CATEGORY_BORDER = {
   klanten:     "border-b-category-klanten",
@@ -85,6 +87,17 @@ export default function WerkbladHeader({
   saveStatus = null,
   rightExtra = null,
   onClose,
+  // S2 design-systeem laag 1 vol-vullen — designer §3.7 charcoal-strip met
+  // logo + brandName + versie-pill links, lang-switch + overflow rechts.
+  // Werkblad-laag-1 vervangt visueel de hoofdcanvas-header (DeepDiveOverlay
+  // rendert `fixed inset-0 z-50` over de canvas-header heen) — daarom
+  // moet de werkblad-strip dezelfde branding bevatten.
+  showLogo = false,
+  appTitle = null,           // optionele app-titel naast logo (bv. "Strategy Platform")
+  versie = null,             // optionele versie-string voor mono-pill
+  lang = null,               // "nl" | "en" | null (geen lang-switch)
+  onLangSwitch = null,       // () => void
+  overflowItems = null,      // Array<{ id, label, icon?, onClick, divider?, danger?, hidden? }>
 }) {
   const borderClass = CATEGORY_BORDER[categorie] || CATEGORY_BORDER.strategie;
   const tileClass   = CATEGORY_TILE_BG[categorie] || CATEGORY_TILE_BG.strategie;
@@ -93,10 +106,14 @@ export default function WerkbladHeader({
 
   return (
     <div data-testid="werkblad-header" className="flex-shrink-0">
-      {/* ── Laag 1 — Platform-strip ─────────────────────────────────────── */}
+      {/* ── Laag 1 — Platform-strip ─────────────────────────────────────────
+          Designer §3.7: charcoal-strip 50px met logo + brandName + versie-pill
+          links, breadcrumb center, save-status + lang + overflow rechts.
+          Werkblad-strip vervangt visueel hoofdcanvas-header (DeepDiveOverlay
+          rendert fixed inset-0 z-50). showLogo=false → minimal pre-S2-modus. */}
       <div
         data-testid="werkblad-header-laag-1"
-        className="flex items-center justify-between gap-3 px-6 h-10 bg-primary text-white"
+        className={`flex items-center justify-between gap-3 px-6 ${showLogo ? "h-[50px]" : "h-10"} bg-primary text-white`}
         style={{ backgroundColor: "var(--color-primary)" }}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -105,20 +122,69 @@ export default function WerkbladHeader({
               onClick={onClose}
               aria-label="Terug naar canvas"
               data-testid="werkblad-header-back"
-              className="text-white/60 hover:text-white transition-colors"
+              className="text-white/60 hover:text-white transition-colors shrink-0"
             >
               <ArrowLeft size={16} />
             </button>
           )}
+          {showLogo && (
+            <>
+              <div className="flex items-center h-full">
+                <LogoBrand
+                  variant="light"
+                  imgClassName="h-7 w-auto object-contain object-center"
+                  textClassName="text-white font-medium text-sm tracking-wide"
+                />
+              </div>
+              {appTitle && (
+                <div className="flex items-baseline gap-2 border-l border-white/10 pl-3">
+                  <span className="text-sm tracking-tight text-white leading-none">{appTitle}</span>
+                  {versie && (
+                    <span
+                      data-testid="werkblad-header-versie-pill"
+                      className="font-mono text-[10px] px-1.5 py-0.5 rounded text-[var(--color-accent)]"
+                      style={{ backgroundColor: "rgba(255,255,255,0.08)", fontFamily: "var(--font-mono)" }}
+                      title={`Versie ${versie}`}
+                    >
+                      v{versie}
+                    </span>
+                  )}
+                </div>
+              )}
+            </>
+          )}
           {breadcrumb && (
-            <div className="text-xs text-white/70 truncate">{breadcrumb}</div>
+            <div className="text-xs text-white/70 truncate border-l border-white/10 pl-3 ml-1">
+              {breadcrumb}
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {saveStatus && (
             <span className="text-[10px] font-medium text-white/60">{saveStatus}</span>
           )}
+          {lang && typeof onLangSwitch === "function" && (
+            <button
+              type="button"
+              onClick={onLangSwitch}
+              data-testid="werkblad-header-lang-switch"
+              title="Switch language"
+              className="flex items-center gap-1 text-white/60 hover:text-white border border-white/10 hover:border-white/30 px-2 py-1 rounded-md text-xs transition-colors"
+            >
+              <Languages size={12} />
+              <span className={lang === "nl" ? "text-white" : "text-white/40"}>NL</span>
+              <span className="text-white/20">|</span>
+              <span className={lang === "en" ? "text-white" : "text-white/40"}>EN</span>
+            </button>
+          )}
           {rightExtra}
+          {overflowItems && overflowItems.length > 0 && (
+            <OverflowMenu
+              items={overflowItems}
+              triggerClassName="text-white/60 hover:text-white"
+              size={16}
+            />
+          )}
         </div>
       </div>
 
