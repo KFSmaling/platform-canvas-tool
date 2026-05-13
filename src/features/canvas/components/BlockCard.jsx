@@ -4,6 +4,7 @@ import {
   Users, Route, HeartHandshake, Laptop, Crosshair, Compass, LayoutGrid,
 } from "lucide-react";
 import { useLang } from "../../../i18n";
+import CanvasTegelSummary from "./CanvasTegelSummary";
 
 // Fase 3 design-systeem §2.7 — Tabler-outline categorie-iconen.
 // Lucide-equivalenten (Tabler-migratie kan in latere fase):
@@ -162,7 +163,7 @@ const SEV_COLOR = { high: "border-l-red-400 bg-red-50", medium: "border-l-amber-
 const SEV_TEXT  = { high: "text-red-600", medium: "text-amber-700", low: "text-slate-500" };
 
 // ── Block Card (dashboard) ───────────────────────────────────────────────────
-function BlockCard({ block, status, bullets, insightCount, onClick }) {
+function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
   const { t } = useLang();
   const badgeDef = STATUS_BADGE_KEYS[status];
   const badge = badgeDef ? { label: t(badgeDef.labelKey), color: badgeDef.color } : null;
@@ -242,6 +243,12 @@ function BlockCard({ block, status, bullets, insightCount, onClick }) {
             )}
           </div>
         )}
+
+        {/* S1 design-systeem F12 — canvas-tegel-feedback (counts + quote per
+            pijler). summary-prop uit useCanvasState.canvasSummary; component
+            kiest zelf per blockId welke buckets te tonen + stub voor niet-
+            gebouwde werkbladen. */}
+        <CanvasTegelSummary blockId={block.id} summary={summary} appLabel={null} />
       </div>
 
       <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">

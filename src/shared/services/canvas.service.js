@@ -118,6 +118,21 @@ export async function loadCanvasById(id) {
  * Laad alle actieve blokdefinities gesorteerd op volgorde.
  * Vervangt hardcoded labels in de UI — IP protection.
  */
+/**
+ * S1 design-systeem — F12 canvas-tegel-feedback.
+ * Roept Postgres-RPC `get_canvas_summary(canvas_id)` aan voor counts +
+ * last-quote per werkblad-pijler. Eén round-trip per canvas-switch.
+ * Migration: 20260513200000_S1_get_canvas_summary_rpc.sql.
+ *
+ * Returns: { data: {klanten,strategie,richtlijnen} | null, error }
+ */
+export async function loadCanvasSummary(canvasId) {
+  if (!supabase) return { data: null, error: null };
+  if (!canvasId) return { data: null, error: new Error("canvasId is required") };
+  const { data, error } = await supabase.rpc("get_canvas_summary", { p_canvas_id: canvasId });
+  return { data: data || null, error };
+}
+
 export async function fetchBlockDefinitions() {
   if (!supabase) return { data: [], error: null };
   // Stap-7 fase-6: tenant-scoped lookup via RPC. Server-side DISTINCT ON

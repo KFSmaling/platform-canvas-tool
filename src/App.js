@@ -50,8 +50,8 @@ function AppInner() {
   // ── Canvas state + handlers (business logic in hook) ──────────────────────
   const {
     activeCanvasId, canvases, scope, meta, docs, insights, bullets,
-    strategyManual, guidelineCounts, saveStatus, multiTabWarning,
-    setMeta, setMultiTabWarning, setStrategyManual, refreshGuidelineCounts,
+    strategyManual, guidelineCounts, canvasSummary, saveStatus, multiTabWarning,
+    setMeta, setMultiTabWarning, setStrategyManual, refreshGuidelineCounts, refreshCanvasSummary,
     handleNewCanvas, handleSelectCanvas, handleRenameCanvas, handleDeleteCanvas,
     handleLoadExample, handleDocsChange, handleInsightAccept, handleInsightReject,
     handleMoveToBullets, handleDeleteBullet, handleAddBullet,
@@ -71,13 +71,18 @@ function AppInner() {
   const allDone     = BLOCKS.every(b => (bullets[b.id] || []).length > 0);
 
   // ── Herlaad guideline counts als gebruiker het richtlijnen werkblad sluit ────
+  // + S1 design-systeem F12: herlaad canvas-summary na elke werkblad-close
+  // zodat tegel-feedback up-to-date is na mutaties.
   const prevDeepDiveRef = useRef(null);
   useEffect(() => {
-    if (prevDeepDiveRef.current === "principles" && deepDiveBlockId === null) {
-      refreshGuidelineCounts(activeCanvasId);
+    if (prevDeepDiveRef.current !== null && deepDiveBlockId === null && activeCanvasId) {
+      if (prevDeepDiveRef.current === "principles") {
+        refreshGuidelineCounts(activeCanvasId);
+      }
+      refreshCanvasSummary(activeCanvasId);
     }
     prevDeepDiveRef.current = deepDiveBlockId;
-  }, [deepDiveBlockId, activeCanvasId, refreshGuidelineCounts]);
+  }, [deepDiveBlockId, activeCanvasId, refreshGuidelineCounts, refreshCanvasSummary]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[var(--color-primary)] font-sans flex flex-col">
@@ -285,6 +290,7 @@ function AppInner() {
                 status={getBlockStatus(block.id, docs, insights, bullets)}
                 bullets={bullets[block.id]}
                 insightCount={(insights[block.id] || []).filter(i => i.status === "pending").length}
+                summary={canvasSummary}
                 onClick={() => setDeepDiveBlockId(block.id)}
               />
             ))}
@@ -296,6 +302,7 @@ function AppInner() {
               status={getBlockStatus("portfolio", docs, insights, bullets)}
               bullets={bullets["portfolio"]}
               insightCount={(insights["portfolio"] || []).filter(i => i.status === "pending").length}
+              summary={canvasSummary}
               onClick={() => setDeepDiveBlockId("portfolio")}
             />
           </div>
