@@ -1,6 +1,39 @@
 import React from "react";
-import { ChevronRight } from "lucide-react";
+import {
+  ChevronRight,
+  Users, Route, HeartHandshake, Laptop, Crosshair, Compass, LayoutGrid,
+} from "lucide-react";
 import { useLang } from "../../../i18n";
+
+// Fase 3 design-systeem §2.7 — Tabler-outline categorie-iconen.
+// Lucide-equivalenten (Tabler-migratie kan in latere fase):
+//   ti-users         → Users
+//   ti-route         → Route
+//   ti-user-heart    → HeartHandshake (Lucide heeft geen user-heart)
+//   ti-device-laptop → Laptop
+//   ti-target-arrow  → Crosshair
+//   ti-compass       → Compass
+// Portfolio krijgt LayoutGrid als overzicht-icoon (geen explicit categorie).
+const BLOCK_ICON = {
+  strategy:   Crosshair,
+  principles: Compass,
+  customers:  Users,
+  processes:  Route,
+  people:     HeartHandshake,
+  technology: Laptop,
+  portfolio:  LayoutGrid,
+};
+
+// Categorie-tile-styling per categorie-token uit Fase 1.
+const BLOCK_ICON_STYLE = {
+  strategy:   { bg: "var(--neutral-100)",          color: "var(--category-strategie)" },
+  principles: { bg: "var(--neutral-100)",          color: "var(--category-richtlijnen)" },
+  customers:  { bg: "var(--category-klanten-light)",   color: "var(--category-klanten)" },
+  processes:  { bg: "var(--category-processen-light)", color: "var(--category-processen)" },
+  people:     { bg: "var(--category-mensen-light)",    color: "var(--category-mensen)" },
+  technology: { bg: "var(--category-it-light)",        color: "var(--category-it)" },
+  portfolio:  { bg: "var(--neutral-100)",          color: "var(--neutral-700)" },
+};
 
 // Sub-tab sets — pillar blocks use Current/To-Be/Change
 // Guiding Principles uses the 4 pillar names as subtabs
@@ -150,9 +183,22 @@ function BlockCard({ block, status, bullets, insightCount, onClick }) {
     >
       <div>
         <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="text-[var(--color-primary)] font-bold text-[13px] uppercase tracking-[0.12em] leading-tight" style={{fontFamily:"'Montserrat','Inter',sans-serif"}}>{title}</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5 tracking-wide">{sub}</p>
+          <div className="flex items-start gap-3">
+            {/* Fase 3 design-systeem §2.7 — categorie-icoon-tile per pijler */}
+            {BLOCK_ICON[block.id] && (
+              <span
+                className="inline-flex items-center justify-center w-9 h-9 rounded-lg shrink-0"
+                style={BLOCK_ICON_STYLE[block.id]}
+                aria-hidden="true"
+                data-testid={`block-card-icon-${block.id}`}
+              >
+                {React.createElement(BLOCK_ICON[block.id], { size: 18 })}
+              </span>
+            )}
+            <div>
+              <h3 className="text-[var(--color-primary)] font-bold text-[13px] uppercase tracking-[0.12em] leading-tight" style={{fontFamily:"'Montserrat','Inter',sans-serif"}}>{title}</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5 tracking-wide">{sub}</p>
+            </div>
           </div>
           {badge && (
             <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shrink-0 ml-2 ${badge.color}`}>
