@@ -10,10 +10,11 @@ import React, {
 } from "react";
 import {
   ArrowLeft, Plus, Trash2, Wand2, X, RefreshCw,
-  BookOpen, Link2, RotateCcw, ChevronDown, ChevronUp,
+  BookOpen, Link2, RotateCcw, ChevronDown, ChevronUp, Compass,
 } from "lucide-react";
 import AiIcon from "../../shared/components/AiIcon";
 import WerkbladActieknoppen from "../../shared/components/WerkbladActieknoppen";
+import WerkbladHeader from "../../shared/components/WerkbladHeader";
 import { apiFetch } from "../../shared/services/apiClient";
 import { useLang } from "../../i18n";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
@@ -660,36 +661,31 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
     <div className={`flex flex-col flex-1 min-h-0 bg-slate-50 transition-all duration-300 ease-out
       ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between px-8 py-4 bg-white border-t-4 border-t-[var(--color-accent)] border-b border-b-slate-200 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button onClick={onClose} className="text-slate-400 hover:text-[var(--color-primary)] transition-colors">
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">Werkblad</p>
-            <h2 className="text-lg font-bold text-[var(--color-primary)] leading-tight">
-              Richtlijnen &amp; Leidende Principes
-            </h2>
-          </div>
-        </div>
-        {/* Drie-knoppen-shell (Sprint C, issue #69): Analyse · Bekijken · Rapportage */}
-        <WerkbladActieknoppen
-          onAnalyse={handleAnalyze}
-          onBekijken={() => setShowAdvies(true)}
-          onRapportage={() => setShowOnePager(true)}
-          analyseLabel={
-            analysisLoading
-              ? appLabel("werkblad.action.analyseert", "Analyseren…")
-              : analysis
-                ? appLabel("werkblad.action.analyseer_opnieuw", "Opnieuw analyseren")
-                : appLabel("werkblad.action.analyseer", "Analyse draaien")
-          }
-          analysing={analysisLoading}
-          bekijkenDisabled={!analysis}
-          appLabel={appLabel}
-        />
-      </div>
+      {/* Fase 2 design-systeem — drie-lagen-hybride WerkbladHeader (geen laag 3) */}
+      <WerkbladHeader
+        categorie="richtlijnen"
+        icon={Compass}
+        capsLabel="Werkblad"
+        titel="Richtlijnen & Leidende Principes"
+        onClose={onClose}
+        actieknoppen={
+          <WerkbladActieknoppen
+            onAnalyse={handleAnalyze}
+            onBekijken={() => setShowAdvies(true)}
+            onRapportage={() => setShowOnePager(true)}
+            analyseLabel={
+              analysisLoading
+                ? appLabel("werkblad.action.analyseert", "Analyseren…")
+                : analysis
+                  ? appLabel("werkblad.action.analyseer_opnieuw", "Opnieuw analyseren")
+                  : appLabel("werkblad.action.analyseer", "Analyse draaien")
+            }
+            analysing={analysisLoading}
+            bekijkenDisabled={!analysis}
+            appLabel={appLabel}
+          />
+        }
+      />
 
       {/* ── Context strip — drie panelen ── */}
       <div className="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-5">

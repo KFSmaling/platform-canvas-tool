@@ -16,8 +16,10 @@
  */
 
 import React, { useState } from "react";
-import { ArrowLeft, Layout, FileText } from "lucide-react";
+import { Users } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
+import WerkbladHeader from "../../shared/components/WerkbladHeader";
+import WerkbladActieknoppen from "../../shared/components/WerkbladActieknoppen";
 import { useCanvasDimensions } from "./hooks/useCanvasDimensions";
 import { usePainPoints } from "./hooks/usePainPoints";
 import { usePatternSuggestions } from "./hooks/usePatternSuggestions";
@@ -30,6 +32,16 @@ import ItemModal from "./ItemModal";
 import DimensieModal from "./DimensieModal";
 import PijnpuntModal from "./PijnpuntModal";
 import PromoteToIntentModal from "./PromoteToIntentModal";
+
+// Fase 2 design-systeem — fase-tabs verhuisd uit WerkruimteView naar de
+// drie-lagen-header (laag 3) zodat de header-pattern consistent is met
+// Strategie/Richtlijnen. Stap 11.H: alle 4 fasen enabled.
+const FASE_TABS = [
+  { id: 1, num: 1, labelKey: "klanten.fase.1.titel", fallback: "Inventarisatie", enabled: true },
+  { id: 2, num: 2, labelKey: "klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: true },
+  { id: 3, num: 3, labelKey: "klanten.fase.3.titel", fallback: "Analyse",        enabled: true },
+  { id: 4, num: 4, labelKey: "klanten.fase.4.titel", fallback: "Verbeteracties", enabled: true },
+];
 
 export default function KlantenWerkblad({ canvasId, onClose }) {
   const { label: appLabel } = useAppConfig();
@@ -64,6 +76,9 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   } = useCanvasUploads(canvasId);
 
   const [view, setView] = useState("werkruimte"); // "werkruimte" | "rapport"
+  // Fase 2 — activeFase state gelift van WerkruimteView naar root zodat
+  // WerkbladHeader laag 3 de fase-tabs kan renderen (single source of truth).
+  const [activeFase, setActiveFase] = useState(1);
   const [modalCtx, setModalCtx] = useState(null); // { dimension, item } of null
   // dimModalState: { mode: "create" | "edit", dimension?: object } of null
   const [dimModalState, setDimModalState] = useState(null);
@@ -315,13 +330,26 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   // canvasName leeg zodat default "Canvas" zichtbaar is.)
   const canvasName = "";
 
+  // Fase 2 design-systeem — drie-lagen-header. Shared component over alle
+  // werkbladen. WERKRUIMTE/RAPPORT-toggle vervalt — Rapportage is een
+  // aparte knop in WerkbladActieknoppen (designer §7 punt 1).
+  const klantenTitel = appLabel("klanten.werkblad.titel", "Klanten & Dienstverlening");
+  const fasenTabs = FASE_TABS.map(t => ({
+    id: t.id,
+    label: appLabel(t.labelKey, t.fallback),
+    pillNum: t.num,
+  }));
+
   if (loading) {
     return (
       <div className="flex flex-col flex-1 min-h-0 bg-slate-50">
-        <div className="flex items-center gap-3 px-8 py-4 bg-[var(--color-primary)]">
-          <button onClick={onClose} aria-label="Terug naar canvas" className="text-white/60 hover:text-white"><ArrowLeft size={18} /></button>
-          <h2 className="text-lg font-bold text-white">{appLabel("klanten.werkblad.titel", "Klanten & Dienstverlening")}</h2>
-        </div>
+        <WerkbladHeader
+          categorie="klanten"
+          icon={Users}
+          capsLabel="Werkblad"
+          titel={klantenTitel}
+          onClose={onClose}
+        />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
         </div>
@@ -332,10 +360,13 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   if (error) {
     return (
       <div className="flex flex-col flex-1 min-h-0 bg-slate-50">
-        <div className="flex items-center gap-3 px-8 py-4 bg-[var(--color-primary)]">
-          <button onClick={onClose} aria-label="Terug naar canvas" className="text-white/60 hover:text-white"><ArrowLeft size={18} /></button>
-          <h2 className="text-lg font-bold text-white">{appLabel("klanten.werkblad.titel", "Klanten & Dienstverlening")}</h2>
-        </div>
+        <WerkbladHeader
+          categorie="klanten"
+          icon={Users}
+          capsLabel="Werkblad"
+          titel={klantenTitel}
+          onClose={onClose}
+        />
         <div className="flex-1 flex items-center justify-center text-center px-6">
           <div className="max-w-md">
             <p className="text-sm text-red-700 font-bold mb-2">Laden mislukt</p>
@@ -351,31 +382,24 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-slate-50">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-8 py-4 bg-[var(--color-primary)] flex-shrink-0">
-        <button onClick={onClose} aria-label="Terug naar canvas" className="text-white/60 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
-        <h2 className="text-lg font-bold text-white">{appLabel("klanten.werkblad.titel", "Klanten & Dienstverlening")}</h2>
-
-        {/* Werkruimte/Rapport-toggle */}
-        <div className="ml-6 flex items-center gap-1 bg-white/10 rounded-md p-0.5">
-          <button
-            onClick={() => setView("werkruimte")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors ${
-              view === "werkruimte" ? "bg-white text-[var(--color-primary)]" : "text-white/70 hover:text-white"
-            }`}
-          >
-            <Layout size={12} /> {appLabel("klanten.section.werkruimte", "Werkruimte")}
-          </button>
-          <button
-            onClick={() => setView("rapport")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors ${
-              view === "rapport" ? "bg-white text-[var(--color-primary)]" : "text-white/70 hover:text-white"
-            }`}
-          >
-            <FileText size={12} /> {appLabel("klanten.section.rapport", "Rapport")}
-          </button>
-        </div>
-      </div>
+      <WerkbladHeader
+        categorie="klanten"
+        icon={Users}
+        capsLabel="Werkblad"
+        titel={klantenTitel}
+        onClose={onClose}
+        tabs={view === "werkruimte" ? fasenTabs : null}
+        activeTabId={activeFase}
+        onTabClick={(id) => setActiveFase(id)}
+        actieknoppen={
+          <WerkbladActieknoppen
+            onBekijken={() => setActiveFase(3)}
+            onRapportage={() => setView("rapport")}
+            bekijkenDisabled={false}
+            appLabel={appLabel}
+          />
+        }
+      />
 
       {/* Stap 11.K dossier-actie-error-banner */}
       {dossierError && (
@@ -395,6 +419,8 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
       {view === "werkruimte" ? (
         <WerkruimteView
           canvasId={canvasId}
+          activeFase={activeFase}
+          onFaseChange={setActiveFase}
           dimensions={dimensions}
           items={items}
           painPoints={painPoints || []}

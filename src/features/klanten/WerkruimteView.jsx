@@ -10,7 +10,7 @@
  * Fase-tabs 2-4 zijn disabled met tooltip per instructie sectie 53.
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { Plus } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import DimensieKolom from "./DimensieKolom";
@@ -19,16 +19,16 @@ import PijnpuntenView from "./PijnpuntenView";
 import AnalyseView from "./AnalyseView";
 import VerbeterrichtingenView from "./VerbeterrichtingenView";
 
-// Stap 11.H: fase 4 enabled.
-const FASE_TABS = [
-  { num: 1, key: "label.klanten.fase.1.titel", fallback: "Inventarisatie", enabled: true },
-  { num: 2, key: "label.klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: true },
-  { num: 3, key: "label.klanten.fase.3.titel", fallback: "Analyse",        enabled: true },
-  { num: 4, key: "label.klanten.fase.4.titel", fallback: "Verbeteracties", enabled: true },
-];
+// Fase 2 design-systeem — FASE_TABS verhuisd naar KlantenWerkblad.jsx voor
+// rendering in WerkbladHeader laag 3 (single source of truth).
 
 export default function WerkruimteView({
   canvasId,
+  // Fase 2 design-systeem — activeFase gelift naar KlantenWerkblad voor
+  // single source of truth (fase-tabs rendert in WerkbladHeader laag 3).
+  // WerkruimteView is nu pure body-renderer per fase.
+  activeFase = 1,
+  onFaseChange,            // eslint-disable-line no-unused-vars
   dimensions,
   items,
   painPoints,
@@ -64,7 +64,6 @@ export default function WerkruimteView({
   onPromoteSuggestion,
 }) {
   const { label: appLabel } = useAppConfig();
-  const [activeFase, setActiveFase] = useState(1);
 
   const itemsByDim = (dimId) => items.filter(i => i.dimension_id === dimId);
 
@@ -104,39 +103,9 @@ export default function WerkruimteView({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50">
-      {/* Fase-tabs */}
-      <div className="px-8 py-4 bg-white border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            {FASE_TABS.map(tab => {
-              const isActive = activeFase === tab.num;
-              const tooltip = tab.enabled ? null : appLabel("klanten.fase.disabled.tooltip", "komt in latere sprint");
-              return (
-                <button
-                  key={tab.num}
-                  type="button"
-                  onClick={() => tab.enabled && setActiveFase(tab.num)}
-                  disabled={!tab.enabled}
-                  title={tooltip || undefined}
-                  className={`px-4 py-2 text-[11px] font-bold uppercase tracking-widest rounded-sm border transition-all ${
-                    isActive
-                      ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                      : tab.enabled
-                        ? "border-slate-300 text-slate-600 hover:border-slate-500"
-                        : "border-slate-200 text-slate-300 cursor-not-allowed opacity-60"
-                  }`}
-                >
-                  <span className="mr-1.5">{tab.num} ·</span>
-                  {appLabel(tab.key, tab.fallback)}
-                </button>
-              );
-            })}
-          </div>
-          <span className="text-[10px] text-slate-400 italic uppercase tracking-widest">
-            {appLabel("klanten.helper.fase.geen_volgorde", "geen verplichte volgorde")}
-          </span>
-        </div>
-      </div>
+      {/* Fase 2 design-systeem — fase-tabs rendert in WerkbladHeader laag 3
+          (KlantenWerkblad). "Geen verplichte volgorde"-tekst (C6) verwijderd
+          per designer §7. */}
 
       {/* Fase-content */}
       {activeFase === 4 ? (
