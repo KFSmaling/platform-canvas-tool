@@ -3,7 +3,10 @@ import { LangProvider, useLang } from "./i18n";
 import {
   Zap, X, LogOut, Save, AlertOctagon,
   SlidersHorizontal, Database, ShieldCheck, Maximize2,
+  Info, Languages, Settings, FolderClock,
 } from "lucide-react";
+import OverflowMenu from "./shared/components/OverflowMenu";
+import OverDialog from "./shared/components/OverDialog";
 import { AuthProvider, useAuth } from "./shared/services/auth.service";
 import ThemeProvider from "./shared/context/ThemeProvider";
 import LoginScreen from "./LoginScreen";
@@ -42,6 +45,7 @@ function AppInner() {
   const [showImporter,    setShowImporter]    = useState(false);
   const [tipsSection,     setTipsSection]     = useState("algemeen");
   const [showInfoSidebar, setShowInfoSidebar] = useState(false);
+  const [showOverDialog,  setShowOverDialog]  = useState(false);
 
   // ── Canvas state + handlers (business logic in hook) ──────────────────────
   const {
@@ -81,7 +85,7 @@ function AppInner() {
       {/* Header */}
       <header className="h-20 bg-[var(--color-primary)] flex items-center justify-between z-20 border-b-2 border-[var(--color-accent)] shrink-0 shadow-lg">
 
-        {/* Left: logo + app title */}
+        {/* Left: logo + app title + versie-pill (designer §7 punt 11) */}
         <div className="flex items-center h-full shrink-0">
           <div className="px-6 flex items-center justify-center h-full shrink-0 border-r border-white/10">
             <LogoBrand
@@ -91,10 +95,20 @@ function AppInner() {
             />
           </div>
           <div className="px-6 border-r border-white/10 h-full flex flex-col justify-center">
-            <h1 className="text-[15px] font-bold tracking-[0.14em] uppercase text-white leading-none">
-              {appLabel("app.title", "Strategy Platform")}
-            </h1>
-            <p className="text-[10px] tracking-[0.12em] text-[var(--color-accent)] mt-1.5 uppercase font-semibold">
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-md tracking-tight text-white leading-none">
+                {appLabel("app.title", "Strategy Platform")}
+              </h1>
+              <span
+                data-testid="header-versie-pill"
+                className="font-mono text-[10px] px-1.5 py-0.5 rounded text-[var(--color-accent)]"
+                style={{ backgroundColor: "rgba(255,255,255,0.08)", fontFamily: "var(--font-mono)" }}
+                title={`Versie ${process.env.REACT_APP_VERSION || "0.1.0"}`}
+              >
+                v{process.env.REACT_APP_VERSION || "0.1.0"}
+              </span>
+            </div>
+            <p className="text-xs tracking-wide text-[var(--color-accent)] mt-1.5">
               {appLabel("app.subtitle", "From strategy to execution")}
             </p>
           </div>
@@ -114,84 +128,105 @@ function AppInner() {
           />
         </div>
 
-        {/* Right: autosave + lang + dossier + tips + consistency + sidebar + logout */}
-        <div className="flex items-center gap-3 px-6 shrink-0">
+        {/* Right: save-status + Dossier + Tips + overflow-menu (designer §7 punt 9+10).
+            Dossier + Tips zijn canvas-niveau-tools (niet werkblad-niveau).
+            Lang-switch + Consistency-check + Project-info + Admin + Uitloggen + Over
+            verhuizen naar overflow-menu (was 2x hamburger + losse logout). */}
+        <div className="flex items-center gap-2 px-6 shrink-0">
 
           {saveStatus === "saving" && (
-            <span className="flex items-center gap-1 text-[10px] text-white/50 font-medium">
+            <span className="flex items-center gap-1 text-xs text-white/50">
               <Save size={10} className="animate-pulse" /> Opslaan…
             </span>
           )}
           {saveStatus === "saved" && (
-            <span className="flex items-center gap-1 text-[10px] text-[var(--color-accent)] font-medium">
+            <span className="flex items-center gap-1 text-xs text-[var(--color-accent)]">
               <Zap size={10} /> Opgeslagen
             </span>
           )}
           {saveStatus === "error" && (
-            <span className="flex items-center gap-1 text-[10px] text-red-400 font-medium">
+            <span className="flex items-center gap-1 text-xs text-red-400">
               <AlertOctagon size={10} /> Opslaan mislukt
             </span>
           )}
 
-          <button
-            onClick={() => setLang(lang === "nl" ? "en" : "nl")}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white border border-white/20 hover:border-white/40 px-3 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all"
-            title="Switch language"
-          >
-            <span className={lang === "nl" ? "text-white font-black" : "text-white/30"}>NL</span>
-            <span className="text-white/20">|</span>
-            <span className={lang === "en" ? "text-white font-black" : "text-white/30"}>EN</span>
-          </button>
-
+          {/* Dossier — canvas-niveau-tool */}
           <button
             onClick={() => setShowImporter(true)}
-            className="flex items-center gap-2 text-white/70 hover:text-white border border-white/20 hover:border-white/40 px-4 py-2.5 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all"
+            data-testid="header-tool-dossier"
+            className="flex items-center gap-2 text-white/70 hover:text-white border border-white/20 hover:border-white/40 px-3 py-2 rounded-md text-sm transition-all"
             title="Het Dossier — documenten importeren"
           >
             <Database size={14} /> Dossier
           </button>
 
+          {/* Tips — canvas-niveau-tool */}
           <button
             onClick={() => { setTipsSection("algemeen"); setShowTips(true); }}
-            className="flex items-center gap-2 text-white/70 hover:text-white border border-white/20 hover:border-white/40 px-4 py-2.5 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all"
+            data-testid="header-tool-tips"
+            className="flex items-center gap-2 text-white/70 hover:text-white border border-white/20 hover:border-white/40 px-3 py-2 rounded-md text-sm transition-all"
             title={t("tips.title")}
           >
             <Maximize2 size={14} /> {t("header.tips")}
           </button>
 
+          {/* Consistency-check — primary action, behoudt prominentie */}
           <button
             onClick={() => setShowConsistency(true)}
-            className="flex items-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] px-5 py-2.5 rounded-sm font-bold text-[10px] shadow-sm transition-all uppercase tracking-widest"
+            data-testid="header-tool-consistency"
+            className="flex items-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] px-3 py-2 rounded-md text-sm transition-all"
+            style={{ color: "var(--color-primary)" }}
           >
             <ShieldCheck size={14} /> {t("header.consistency")}
           </button>
 
-          <button
-            onClick={() => setShowInfoSidebar(s => !s)}
-            className={`flex items-center gap-1.5 transition-colors ml-1 ${showInfoSidebar ? "text-[var(--color-accent)]" : "text-white/40 hover:text-white"}`}
-            title="Project details"
-          >
-            <SlidersHorizontal size={15} />
-          </button>
-
-          {/* Admin link — alleen zichtbaar voor beheerder */}
-          {user?.email === process.env.REACT_APP_ADMIN_EMAIL && (
-            <a
-              href="/admin"
-              className="flex items-center gap-1.5 text-white/40 hover:text-[var(--color-accent)] transition-colors ml-1"
-              title="App Config beheren"
-            >
-              <SlidersHorizontal size={13} />
-            </a>
-          )}
-
-          <button
-            onClick={signOut}
-            className="flex items-center gap-1.5 text-white/40 hover:text-white transition-colors ml-1"
-            title="Uitloggen"
-          >
-            <LogOut size={15} />
-          </button>
+          {/* Overflow-menu — vervangt 2x hamburger-icoon + losse logout */}
+          <OverflowMenu
+            items={[
+              {
+                id: "lang",
+                label: lang === "nl" ? "Switch to English" : "Schakel naar Nederlands",
+                icon: Languages,
+                onClick: () => setLang(lang === "nl" ? "en" : "nl"),
+              },
+              {
+                id: "project-details",
+                label: showInfoSidebar ? "Verberg project-details" : "Project-details",
+                icon: SlidersHorizontal,
+                onClick: () => setShowInfoSidebar(s => !s),
+                divider: true,
+              },
+              {
+                id: "canvas-historie",
+                label: "Canvas-historie",
+                icon: FolderClock,
+                onClick: () => {},  // placeholder — designer-spec, geen impl yet
+                hidden: true,        // verborgen tot impl er is (latere fase)
+              },
+              {
+                id: "admin",
+                label: "App config",
+                icon: Settings,
+                onClick: () => { window.location.href = "/admin"; },
+                hidden: user?.email !== process.env.REACT_APP_ADMIN_EMAIL,
+              },
+              {
+                id: "over",
+                label: "Over Platform Workbench",
+                icon: Info,
+                onClick: () => setShowOverDialog(true),
+                divider: true,
+              },
+              {
+                id: "uitloggen",
+                label: "Uitloggen",
+                icon: LogOut,
+                onClick: signOut,
+                divider: true,
+                danger: true,
+              },
+            ]}
+          />
         </div>
       </header>
 
@@ -325,6 +360,11 @@ function AppInner() {
           userId={user?.id}
           onClose={() => setShowImporter(false)}
         />
+      )}
+
+      {/* Over Platform Workbench dialog (Fase 3 design-systeem §7 punt 11) */}
+      {showOverDialog && (
+        <OverDialog onClose={() => setShowOverDialog(false)} />
       )}
 
       {/* Deep Dive Overlay — werkblad per blok via registry */}
