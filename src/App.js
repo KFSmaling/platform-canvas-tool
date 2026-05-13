@@ -87,8 +87,9 @@ function AppInner() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[var(--color-primary)] font-sans flex flex-col">
 
-      {/* Header */}
-      <header className="h-20 bg-[var(--color-primary)] flex items-center justify-between z-20 border-b-2 border-[var(--color-accent)] shrink-0 shadow-lg">
+      {/* Header — S1 design-systeem §3.7: 68px charcoal-strip op canvas-niveau
+          (50px op werkblad). border-b-2 accent-line behouden voor brand-anker. */}
+      <header className="h-[68px] bg-[var(--color-primary)] flex items-center justify-between z-20 border-b-2 border-[var(--color-accent)] shrink-0 shadow-lg">
 
         {/* Left: logo + app title + versie-pill (designer §7 punt 11) */}
         <div className="flex items-center h-full shrink-0">
