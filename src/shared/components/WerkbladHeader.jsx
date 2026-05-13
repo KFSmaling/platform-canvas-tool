@@ -158,6 +158,12 @@ export default function WerkbladHeader({
         >
           {tabs.map((tab) => {
             const isActive = activeTabId === tab.id;
+            // Accessible-name "N · Label" houdt backwards-compat met bestaande
+            // RTL-tests (`findByRole("button", { name: /^3 · Analyse$/i })`)
+            // ondanks visuele pill-rendering.
+            const ariaLabel = tab.pillNum != null
+              ? `${tab.pillNum} · ${tab.label}`
+              : tab.label;
             return (
               <button
                 key={tab.id}
@@ -165,6 +171,7 @@ export default function WerkbladHeader({
                 onClick={() => onTabClick && onTabClick(tab.id)}
                 data-testid={`werkblad-header-tab-${tab.id}`}
                 data-active={isActive ? "true" : "false"}
+                aria-label={ariaLabel}
                 className={`relative flex items-center gap-2 px-4 h-full text-sm transition-colors ${
                   isActive
                     ? `text-primary border-b-2 ${activeUnderlineClass}`
@@ -177,13 +184,14 @@ export default function WerkbladHeader({
                     className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-medium leading-none ${
                       isActive ? activePillClass : "bg-neutral-100 text-neutral-600"
                     }`}
+                    aria-hidden="true"
                   >
                     {tab.pillNum}
                   </span>
                 )}
-                <span>{tab.label}</span>
+                <span aria-hidden={tab.pillNum != null ? "true" : undefined}>{tab.label}</span>
                 {tab.pillCount != null && (
-                  <span className="text-[10px] text-neutral-500 ml-0.5">({tab.pillCount})</span>
+                  <span className="text-[10px] text-neutral-500 ml-0.5" aria-hidden="true">({tab.pillCount})</span>
                 )}
               </button>
             );
