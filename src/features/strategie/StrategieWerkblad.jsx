@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
-import { Wand2, Trash2, Plus, X, ArrowLeft, Zap } from "lucide-react";
+import { Wand2, Trash2, Plus, X, ArrowLeft, Zap, Crosshair } from "lucide-react";
 import AiIcon from "../../shared/components/AiIcon";
 import WerkbladActieknoppen from "../../shared/components/WerkbladActieknoppen";
+import WerkbladHeader from "../../shared/components/WerkbladHeader";
 import { apiFetch } from "../../shared/services/apiClient";
 import { useLang } from "../../i18n";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
@@ -1079,45 +1080,53 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
     <div className={`flex flex-col flex-1 min-h-0 bg-slate-50 transition-all duration-300 ease-out
       ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between px-8 py-4 bg-white border-t-4 border-t-[var(--color-accent)] border-b border-b-slate-200 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button onClick={handleClose} className="text-slate-400 hover:text-[var(--color-primary)] transition-colors">
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">De Werkkamer</p>
-            <h2 className="text-lg font-bold text-[var(--color-primary)] leading-tight">Strategie Werkblad</h2>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {saveLabel && <span className={`text-[10px] font-semibold ${saveColor}`}>{saveLabel}</span>}
-          {/* Drie-knoppen-shell (Sprint C, issue #69): Analyse · Bekijken · Rapportage */}
-          <WerkbladActieknoppen
-            onAnalyse={handleAnalyze}
-            onBekijken={() => setShowAdvies(true)}
-            onRapportage={() => setShowOnePager(true)}
-            analyseLabel={
-              analysisLoading
-                ? appLabel("werkblad.action.analyseert", "Analyseren…")
-                : analysis
-                  ? appLabel("werkblad.action.analyseer_opnieuw", "Opnieuw analyseren")
-                  : appLabel("werkblad.action.analyseer", "Analyse draaien")
-            }
-            analysing={analysisLoading}
-            bekijkenDisabled={!analysis}
-            appLabel={appLabel}
-          />
-          {/* Full Draft */}
-          <button
-            onClick={() => setAutoDraftOpen(true)}
-            disabled={autoDraftRunning}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
-            <Zap size={13} />
-            {autoDraftRunning ? "Bezig…" : "Creëer Full Draft"}
-          </button>
-        </div>
-      </div>
+      {/* Fase 2 design-systeem — drie-lagen-hybride WerkbladHeader */}
+      <WerkbladHeader
+        categorie="strategie"
+        icon={Crosshair}
+        capsLabel="Werkblad"
+        titel="Strategie Werkblad"
+        onClose={handleClose}
+        saveStatus={saveLabel || null}
+        tabs={[
+          { id: "identiteit", label: "Identiteit" },
+          { id: "analyse",    label: "Analyse · SWOT" },
+          { id: "executie",   label: "Executie · 7·3·3" },
+        ]}
+        activeTabId={null}
+        onTabClick={(id) => {
+          const el = document.getElementById(`strat-section-${id}`);
+          if (el?.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        actieknoppen={
+          <>
+            <WerkbladActieknoppen
+              onAnalyse={handleAnalyze}
+              onBekijken={() => setShowAdvies(true)}
+              onRapportage={() => setShowOnePager(true)}
+              analyseLabel={
+                analysisLoading
+                  ? appLabel("werkblad.action.analyseert", "Analyseren…")
+                  : analysis
+                    ? appLabel("werkblad.action.analyseer_opnieuw", "Opnieuw analyseren")
+                    : appLabel("werkblad.action.analyseer", "Analyse draaien")
+              }
+              analysing={analysisLoading}
+              bekijkenDisabled={!analysis}
+              appLabel={appLabel}
+            />
+            <button
+              onClick={() => setAutoDraftOpen(true)}
+              disabled={autoDraftRunning}
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors disabled:opacity-50"
+              style={{ background: "var(--color-accent)", color: "var(--color-primary)" }}
+            >
+              <Zap size={13} />
+              {autoDraftRunning ? "Bezig…" : "Full Draft"}
+            </button>
+          </>
+        }
+      />
 
       {/* Full Draft bevestiging */}
       {autoDraftOpen && (
@@ -1137,7 +1146,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
       <div className="flex-1 overflow-y-auto px-8 py-12 space-y-10">
 
         {/* SECTIE 1: IDENTITEIT */}
-        <section className="space-y-6">
+        <section id="strat-section-identiteit" className="space-y-6 scroll-mt-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] text-white text-xs font-black flex items-center justify-center flex-shrink-0">1</div>
             <h3 className="text-2xl font-bold text-[var(--color-primary)]">{appLabel("strat.section.identiteit", "Identiteit")}</h3>
@@ -1256,7 +1265,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
         </section>
 
         {/* SECTIE 2: ANALYSE */}
-        <section className="space-y-6 pb-6">
+        <section id="strat-section-analyse" className="space-y-6 pb-6 scroll-mt-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[var(--color-analysis)] text-white text-xs font-black flex items-center justify-center flex-shrink-0">2</div>
             <h3 className="text-2xl font-bold text-[var(--color-analysis)]">{appLabel("strat.section.analyse", "Analyse")}</h3>
@@ -1301,7 +1310,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
         </section>
 
         {/* SECTIE 3: EXECUTIE 7-3-3 */}
-        <section className="space-y-6 pb-8">
+        <section id="strat-section-executie" className="space-y-6 pb-8 scroll-mt-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[var(--color-accent)] text-white text-xs font-black flex items-center justify-center flex-shrink-0">3</div>
             <h3 className="text-2xl font-bold text-[var(--color-success)]">{appLabel("strat.section.executie", "Executie — 7·3·3 Regel")}</h3>
