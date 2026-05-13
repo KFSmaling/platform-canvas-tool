@@ -20,6 +20,7 @@
 import React, { useState } from "react";
 import { Minus, AlertTriangle, TrendingUp, CheckCircle } from "lucide-react";
 import InzichtItem, { TYPE_CONFIG, FALLBACK_TYPE } from "./InzichtItem";
+import AiIcon from "../../../shared/components/AiIcon";
 
 // Datum formatteren als "22 april 2026, 14:08" (NL-locale)
 function formatNlDate(isoString) {
@@ -85,7 +86,15 @@ function TocEntry({ insight }) {
 }
 
 // ── Hoofdcomponent ────────────────────────────────────────────────────────────
-export default function InzichtenOverlay({ insights, loading, error, onClose, appLabel, canvasName, generatedAt, canvasId, worksheetName }) {
+export default function InzichtenOverlay({
+  insights, loading, error, onClose, appLabel, canvasName, generatedAt, canvasId, worksheetName,
+  // S2 instructie B — Analyse-knop verhuisd van werkblad-header naar
+  // Inzichten-scherm als hoofdactie. Optionele props (default null → geen
+  // knop) zodat Richtlijnen/andere overlays niet-breaking blijven tot S3.
+  onAnalyse = null,
+  analysing = false,
+  analyseLabel = null,
+}) {
   // Alle filters standaard actief
   const [activeFilters, setActiveFilters] = useState(
     new Set(["ontbreekt", "zwak", "kans", "sterk"])
@@ -175,7 +184,7 @@ export default function InzichtenOverlay({ insights, loading, error, onClose, ap
         {/* max-w weggelaten — card (960px - 240px TOC = 720px) bepaalt breedte */}
         <article className="px-14 pt-10 pb-28">
 
-            {/* ── Document-header: eyebrow + h1 + meta + filters ── */}
+            {/* ── Document-header: eyebrow + h1 + Analyse-knop + meta + filters ── */}
             <header className="pb-6 mb-10 border-b border-slate-200">
 
               {/* Eyebrow: text-slate-500 (var(--muted) in proto) — bewust neutraal, niet brand */}
@@ -183,10 +192,25 @@ export default function InzichtenOverlay({ insights, loading, error, onClose, ap
                 {lbl("analysis.kicker", "Inzichten")}
               </p>
 
-              {/* H1: brand-primair via CSS-variabele — verschuift per tenant */}
-              <h1 className="text-[28px] font-semibold text-[var(--color-primary)] tracking-[-0.015em] leading-tight m-0 mb-2.5">
-                {docTitle}
-              </h1>
+              {/* H1 + Analyse-hoofdactie naast elkaar — S2 instructie B */}
+              <div className="flex items-start justify-between gap-4 mb-2.5">
+                <h1 className="text-[28px] font-semibold text-[var(--color-primary)] tracking-[-0.015em] leading-tight m-0">
+                  {docTitle}
+                </h1>
+                {typeof onAnalyse === "function" && (
+                  <button
+                    type="button"
+                    onClick={analysing ? undefined : onAnalyse}
+                    disabled={analysing}
+                    data-testid="inzichten-actie-analyse"
+                    className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: "var(--color-accent)", color: "var(--color-primary)" }}
+                  >
+                    <AiIcon variant="generate" size={14} colorClass="text-[var(--color-primary)]" />
+                    {analyseLabel || lbl("werkblad.action.analyseer", "Analyse draaien")}
+                  </button>
+                )}
+              </div>
 
               {/* Meta-regel: canvas · gegenereerd datum · n bevindingen
                   Als generatedAt null: datum weglaten, alleen count tonen.
