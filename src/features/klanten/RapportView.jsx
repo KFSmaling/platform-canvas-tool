@@ -194,8 +194,9 @@ export default function RapportView({
 
   return (
     <div className="fixed inset-0 z-[55] bg-slate-200 flex flex-col">
-      {/* Toolbar */}
-      <div className="bg-[var(--color-primary)] text-white flex items-center justify-between px-6 py-3 no-print">
+      {/* Toolbar — sticky per designer §8 punt 3 zodat lange rapporten de
+          toolbar niet wegduwen (B6 + A7 uit findings). */}
+      <div className="sticky top-0 z-20 bg-[var(--color-primary)] text-white flex items-center justify-between px-6 py-3 no-print shadow-card">
         <div className="flex items-center gap-3">
           <button onClick={onClose} className="text-white/60 hover:text-white"><X size={18} /></button>
           <h2 className="text-sm font-bold uppercase tracking-widest">
