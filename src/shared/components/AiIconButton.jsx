@@ -2,9 +2,9 @@
  * AiIconButton — canoniek button-component voor AI-affordances.
  *
  * Past de visuele standaard automatisch toe (zie CLAUDE.md sectie 3B):
- *   - Default (clickable, idle): text-[var(--color-accent)]/70
- *   - Hover:                     text-[var(--color-accent)] + bg-[var(--color-accent)]/8
- *   - Active/loading:            text-[var(--color-accent)] (+ animate-spin spinner)
+ *   - Default (clickable, idle): text-[var(--color-ai-accent)]/70
+ *   - Hover:                     text-[var(--color-ai-accent)] + bg-[var(--color-ai-accent)]/8
+ *   - Active/loading:            text-[var(--color-ai-accent)] (+ animate-spin spinner)
  *   - Disabled:                  text-slate-400 opacity-60 cursor-not-allowed
  *
  * Props:
@@ -37,8 +37,8 @@ export default function AiIconButton({
   const stateCls = isBlocked
     ? (disabled
         ? "text-slate-400 opacity-60 cursor-not-allowed"
-        : "text-[var(--color-accent)] cursor-default")
-    : "text-[var(--color-accent)]/70 hover:text-[var(--color-accent)] hover:bg-[var(--color-accent)]/8 cursor-pointer";
+        : "text-[var(--color-ai-accent)] cursor-default")
+    : "text-[var(--color-ai-accent)]/70 hover:text-[var(--color-ai-accent)] hover:bg-[var(--color-ai-accent)]/8 cursor-pointer";
 
   return (
     <button

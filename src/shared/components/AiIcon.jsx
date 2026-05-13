@@ -7,7 +7,7 @@
  * Voor stand-alone AI-knoppen: gebruik <AiIconButton>.
  *
  * Visuele standaard (zie CLAUDE.md sectie 3B):
- *   - Default kleur: text-[var(--color-accent)]/70  (overrideable via colorClass)
+ *   - Default kleur: text-[var(--color-ai-accent)]/70  (overrideable via colorClass)
  *   - variant="improve"  → Wand2     (verbeter op basis van bestaande context)
  *   - variant="generate" → Sparkles  (genereer nieuw / vrije AI-actie)
  */
@@ -24,7 +24,7 @@ export default function AiIcon({
   size      = 12,
   loading   = false,
   className = "",
-  colorClass = "text-[var(--color-accent)]/70",
+  colorClass = "text-[var(--color-ai-accent)]/70",
 }) {
   const Icon = loading ? Loader2 : (VARIANT_ICON[variant] ?? Wand2);
   const animation = loading ? "animate-spin" : "";

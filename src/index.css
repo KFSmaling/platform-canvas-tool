@@ -2,27 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Theming defaults ────────────────────────────────────────────────────────
-   ThemeProvider overschrijft deze variabelen op document.documentElement
-   zodra tenant theme_config geladen is. Zolang dat niet het geval is
-   (login-scherm, laden) gelden deze generieke defaults.
-   ────────────────────────────────────────────────────────────────────────── */
+/* ============================================================================
+   DESIGN-SYSTEEM TOKENS — Fase 1 fundament (2026-05-13)
+   Designer-output: platform/handoff/to-reviewer/archive/
+                    2026-05-13-1230-result-design-systeem-platform.md §2
+   ============================================================================
+   Discipline:
+   - Tenant-overridable kleuren (--color-primary, --color-accent, etc.) worden
+     door ThemeProvider per tenant uit tenants.theme_config geladen.
+   - Categorie-kleuren, neutrals, SWOT, pattern, AI-accent, flow-accent zijn
+     platform-vast (NIET tenant-overridable).
+   - Tokens worden gebruikt via Tailwind utilities (theme.extend in
+     tailwind.config.js) of via direct `var(--token)` in inline-style waar
+     Tailwind-class niet bestaat.
+   ============================================================================ */
+
 :root {
-  --color-primary:       #1a365d;
-  --color-accent:        #8dc63f;
-  --color-accent-hover:  #7ab52e;
+  /* ── 2.1 Typografie ─────────────────────────────────────────────────────── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', Menlo, monospace;
+
+  --text-xs:   11px;    /* labels, captions, meta */
+  --text-sm:   12px;    /* body small, sub-tekst */
+  --text-base: 13px;    /* body default */
+  --text-md:   15px;    /* sub-headers, pijler-titels */
+  --text-lg:   18px;    /* sectie-titels (h2) */
+  --text-xl:   24px;    /* werkblad-titel (h1) */
+
+  --leading-tight:   1.2;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.7;
+
+  --tracking-tight:  -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.06em;
+  --tracking-caps:   0.1em;
+
+  /* ── 2.3 Border-radius ──────────────────────────────────────────────────── */
+  --radius-sm:   4px;     /* pills, tags, small badges */
+  --radius-md:   6px;     /* knoppen, inputs */
+  --radius-lg:   8px;     /* logo-tile, item-cards-rij-elementen */
+  --radius-xl:   10px;    /* grote cards */
+  --radius-full: 999px;   /* genummerde bolletjes */
+
+  /* ── 2.4 Icon-sizes ────────────────────────────────────────────────────────
+     Drie maten — Lucide outline-style (Tabler-alternatief, MVP gebruikt Lucide
+     vanwege bestaande imports — eventuele Tabler-migratie in latere fase). */
+  --icon-xs: 12px;        /* in pijlen, sub-iconen */
+  --icon-sm: 14px;        /* in knoppen, action-bar */
+  --icon-md: 18px;        /* in headers, pijler-cards, sectie-headers */
+
+  /* ── 2.5 Shadow-levels ──────────────────────────────────────────────────── */
+  --shadow-none:   none;
+  --shadow-subtle: 0 1px 2px rgba(31, 32, 39, 0.04);
+  --shadow-card:   0 2px 8px rgba(31, 32, 39, 0.06);
+  --shadow-modal:  0 8px 24px rgba(31, 32, 39, 0.12);
+
+  /* ── 2.6 Platform-default-thema (overridable per tenant via theme_config) ──
+     Tenant-override-flow:
+        ThemeProvider leest tenants.theme_config → setProperty op :root.
+     Pre-login state of ontbrekend tenant-thema: Platform-defaults gelden.
+     Designer-output §2.6: charcoal + amber voor Platform-tenant. */
+  --color-primary:       #1F2027;   /* charcoal — header bg */
+  --color-accent:        #EF9F27;   /* amber — accent-line, AI-icoon, status-check */
+  --color-accent-hover:  #D88817;
+  --color-accent-light:  #FAEEDA;
+  --color-primary-text:  #ffffff;
   --color-success:       #2c7a4b;
   --color-analysis:      #00AEEF;
   --color-overlay:       #001f33;
-  --color-accent-light:  #edf7e0;
   --logo-url:            /kf-logo.png;
   --logo-white-url:      /kf-logo-white.png;
   --brand-name:          Platform;
+
+  /* ── 2.7 Categorie-kleuren (platform-vast, NIET tenant-overridable) ───────
+     Eén kleur per werkblad-categorie. Niet hergebruiken voor andere semantiek. */
+  --category-klanten:         #BA7517;   /* amber */
+  --category-klanten-light:   #FAEEDA;
+  --category-processen:       #639922;   /* groen */
+  --category-processen-light: #EAF3DE;
+  --category-mensen:          #534AB7;   /* paars */
+  --category-mensen-light:    #EEEDFE;
+  --category-it:              #185FA5;   /* blauw */
+  --category-it-light:        #E6F1FB;
+  --category-strategie:       #1F2027;   /* charcoal — neutraal, fundament */
+  --category-richtlijnen:     #5F5E5A;   /* leigrijs — neutraal */
+
+  /* ── 2.8 AI-accent (apart van tenant-accent — anti-conflict met danger) ───
+     Discipline: gebruikt in AiIconButton + AI-magic-pills + AI-suggestion-
+     cards. Niet hergebruiken voor primary actions. */
+  --color-ai-accent: var(--color-accent);   /* default valt op tenant-accent */
+
+  /* ── 2.8b Flow-accent voor klantreis-chevrons (platform-vast) ─────────────
+     Reden: chevrons zijn semantisch (volgorde-as), niet brand-uitdrukkingen.
+     F26-bevinding 2026-05-12: hardcoded #7F77DD vervangen door token. */
+  --color-flow-accent:           #7F77DD;
+  --color-flow-accent-pain:      #534AB7;   /* donkerder bij pijn-overlay */
+  --color-flow-accent-asymmetrie:#3C3489;   /* donkerste bij MoT/Silent/weight>1.0 */
+
+  /* ── 2.9 SWOT-palet (apart van categorie-kleuren) ───────────────────────── */
+  --swot-kans:             #1D9E75;   /* teal */
+  --swot-kans-light:       #E1F5EE;
+  --swot-sterkte:          #D85A30;   /* coral */
+  --swot-sterkte-light:    #FAECE7;
+  --swot-bedreiging:       #E24B4A;   /* rood — universele danger */
+  --swot-bedreiging-light: #FCEBEB;
+  --swot-zwakte:           #D4537E;   /* roze */
+  --swot-zwakte-light:     #FBEAF0;
+
+  /* ── 2.10 Pattern-typestyle-palet (Klanten-Inzichten) ───────────────────── */
+  --pattern-cluster:             #D4537E;   /* roze — assert relationship */
+  --pattern-cluster-light:       #FBEAF0;
+  --pattern-paradox:             #D85A30;   /* coral — tension */
+  --pattern-paradox-light:       #FAECE7;
+  --pattern-positionering:       #1D9E75;   /* teal — fit/match */
+  --pattern-positionering-light: #E1F5EE;
+  --pattern-overstijgend:        #475569;   /* slate — neutraal/overkoepelend */
+  --pattern-overstijgend-light:  #F1F5F9;
+
+  /* ── 2.11 Denkdwang-asymmetrie (80/20-cues: MoT, Silent, weight) ──────────
+     Toegepast op klantreis-stage bepalend-moment-vlag + pijnpunt-card-bg. */
+  --asymmetrie-accent:     #3C3489;
+  --asymmetrie-light:      rgba(60, 52, 137, 0.1);
+  --asymmetrie-card-tint:  rgba(220, 38, 38, 0.03);
+
+  /* ── 2.12 Semantische kleuren (status, niet categorie) ────────────────────
+     Discipline: alleen voor status-feedback (success-check, error-bordering,
+     warning-banner). Niet voor categorisering. Bij conflict met werkblad-
+     categorie: status wint (zeldzaam, contextueel anders). */
+  --color-success-light: #EAF3DE;
+  --color-warning:       #BA7517;    /* let op: BOTST met klanten-categorie */
+  --color-warning-light: #FAEEDA;
+  --color-danger:        #dc2626;
+  --color-danger-light:  #FCEBEB;
+  --color-info:          #185FA5;    /* let op: BOTST met IT-categorie */
+  --color-info-light:    #E6F1FB;
+
+  /* ── 2.13 Neutrale grijs-schaal ───────────────────────────────────────────
+     Eén schaal voor alle borders, text-tinten, surfaces. */
+  --neutral-50:  #FAFAF7;   /* page bg */
+  --neutral-100: #F5F4EE;   /* surface, item-bg */
+  --neutral-200: #E5E4DC;   /* border-tertiary */
+  --neutral-300: #D8D6CC;   /* border-secondary */
+  --neutral-400: #B4B2A9;
+  --neutral-500: #9B9A93;   /* text-tertiary */
+  --neutral-600: #6B6A60;   /* text-secondary */
+  --neutral-700: #5F5E5A;   /* richtlijnen-categorie */
+  --neutral-800: #2C2C2A;
+  --neutral-900: #1F2027;   /* text-primary, charcoal */
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #ffffff;
