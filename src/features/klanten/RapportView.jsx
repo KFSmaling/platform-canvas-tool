@@ -263,7 +263,7 @@ export default function RapportView({
                 {verstuurdIntents.length}{" "}
                 {appLabel(
                   "klanten.rapport.counter.naar_roadmap",
-                  verstuurdIntents.length === 1 ? "verbeteractie naar Roadmap" : "verbeteracties naar Roadmap"
+                  verstuurdIntents.length === 1 ? "definitieve verbeteractie" : "definitieve verbeteracties"
                 )}.
                 {includeInPrint && acceptedCount + conceptIntents.length > 0 && (
                   <span style={{ color: "#94a3b8" }}>
@@ -393,13 +393,13 @@ export default function RapportView({
                 "Toon proces-info"-toggle in aparte sectie verderop. */}
             <section data-testid="rapport-section-naar-roadmap">
               <div style={sectionLabelStyle}>
-                {appLabel("klanten.rapport.section.naar_roadmap", "Verbeteracties → Roadmap")}
+                {appLabel("klanten.rapport.section.naar_roadmap", "Definitieve verbeteracties")}
               </div>
               {verstuurdIntents.length === 0 ? (
                 <p style={{ fontSize: "9px", color: "#94a3b8", fontStyle: "italic" }}>
                   {appLabel(
                     "klanten.rapport.naar_roadmap.leeg",
-                    "Nog geen verbeteracties naar Roadmap doorgezet."
+                    "Nog geen definitieve verbeteracties."
                   )}
                 </p>
               ) : (
@@ -432,7 +432,7 @@ export default function RapportView({
                         color: C.navy,
                         marginBottom: "3px",
                       }}>
-                        {appLabel("klanten.verbeterrichting.status.verstuurd", "in roadmap")}
+                        {appLabel("klanten.verbeterrichting.status.verstuurd", "definitief")}
                       </div>
                       <div style={{
                         fontSize: "9.5px",
@@ -468,7 +468,7 @@ export default function RapportView({
                 <p style={{ fontSize: "8px", color: "#94a3b8", marginBottom: "4px", fontStyle: "italic" }}>
                   {appLabel(
                     "klanten.rapport.concept_intents.toelichting",
-                    "Verbeteracties in concept-status — nog niet doorgezet naar Roadmap."
+                    "Verbeteracties in concept-status — nog niet definitief."
                   )}
                 </p>
                 <div

@@ -65,7 +65,7 @@ export default function IntentCard({
                 style={{ background: "var(--color-primary)" }}
                 title={appLabel("klanten.verbeterrichting.status.in_roadmap.tooltip", "Doorgezet naar Roadmap-werkblad")}
               >
-                {appLabel("klanten.verbeterrichting.status.verstuurd", "in roadmap")}
+                {appLabel("klanten.verbeterrichting.status.verstuurd", "definitief")}
                 {intent.handover_to_roadmap_at && (
                   <span className="font-normal opacity-80">
                     · {appLabel("klanten.verbeterrichting.handover.datum", "in roadmap sinds")} {formatDate(intent.handover_to_roadmap_at)}
@@ -143,7 +143,7 @@ export default function IntentCard({
             data-testid={`intent-actie-terugtrekken-${intent.id}`}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors border border-slate-400 text-slate-700 hover:border-slate-600 disabled:opacity-50"
           >
-            {appLabel("klanten.verbeterrichting.actie.terugtrekken", "Haal uit roadmap")}
+            {appLabel("klanten.verbeterrichting.actie.terugtrekken", "Terug naar concept")}
           </button>
         )}
         {!isVerstuurd && typeof onHandover === "function" && (
@@ -155,7 +155,7 @@ export default function IntentCard({
             title={appLabel("klanten.verbeterrichting.actie.markeer.tooltip", "Zet deze verbeteractie in het Roadmap-werkblad voor concrete acties, eigenaars en planning")}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {appLabel("klanten.verbeterrichting.actie.markeer", "Naar roadmap")}
+            {appLabel("klanten.verbeterrichting.actie.markeer", "Maak definitief")}
           </button>
         )}
       </div>
