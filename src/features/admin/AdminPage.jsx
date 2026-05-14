@@ -97,7 +97,7 @@ const LABEL_GROUPS = [
     icon: Layers,
     desc: "Helper-teksten en uitgebreide tips per blok (Missie / Visie / Ambitie / Kernwaarden / Samenvatting)",
     headerCls: "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/15 text-[var(--color-primary)]",
-    match: k => k.startsWith("tips.strategie."),
+    match: k => k.startsWith("label.tips.strategie."),
   },
   {
     id: "guideline",
