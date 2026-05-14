@@ -16,10 +16,13 @@
  */
 
 import React, { useState } from "react";
-import { Users } from "lucide-react";
+import { Users, Info, LogOut, Settings } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
+import { useAuth } from "../../shared/services/auth.service";
+import { useLang } from "../../i18n";
 import WerkbladHeader from "../../shared/components/WerkbladHeader";
 import WerkbladActieknoppen from "../../shared/components/WerkbladActieknoppen";
+import OverDialog from "../../shared/components/OverDialog";
 import { useCanvasDimensions } from "./hooks/useCanvasDimensions";
 import { usePainPoints } from "./hooks/usePainPoints";
 import { usePatternSuggestions } from "./hooks/usePatternSuggestions";
@@ -33,18 +36,19 @@ import DimensieModal from "./DimensieModal";
 import PijnpuntModal from "./PijnpuntModal";
 import PromoteToIntentModal from "./PromoteToIntentModal";
 
-// Fase 2 design-systeem — fase-tabs verhuisd uit WerkruimteView naar de
-// drie-lagen-header (laag 3) zodat de header-pattern consistent is met
-// Strategie/Richtlijnen. Stap 11.H: alle 4 fasen enabled.
+// S4 design-systeem — RFC-007 C1: 3 fase-tabs ipv 4. Analyse-fase merged in
+// Verbeteracties (concept→definitief-flow). Pijnpunten blijft fase 2.
 const FASE_TABS = [
   { id: 1, num: 1, labelKey: "klanten.fase.1.titel", fallback: "Inventarisatie", enabled: true },
   { id: 2, num: 2, labelKey: "klanten.fase.2.titel", fallback: "Pijnpunten",     enabled: true },
-  { id: 3, num: 3, labelKey: "klanten.fase.3.titel", fallback: "Analyse",        enabled: true },
-  { id: 4, num: 4, labelKey: "klanten.fase.4.titel", fallback: "Verbeteracties", enabled: true },
+  { id: 3, num: 3, labelKey: "klanten.fase.3.titel", fallback: "Verbeteracties", enabled: true },
 ];
 
 export default function KlantenWerkblad({ canvasId, onClose }) {
   const { label: appLabel } = useAppConfig();
+  const { user, signOut } = useAuth();
+  const { lang, setLang } = useLang();
+  const [showOverDialog, setShowOverDialog] = useState(false);
   const { loading, error, dimensions, items, reload } = useCanvasDimensions(canvasId);
   const { painPoints, couplings, reload: reloadPains } = usePainPoints(canvasId);
   // Stap 11.G.4 F11-fix: single source of truth voor suggestions. AnalyseView
@@ -349,6 +353,11 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           capsLabel="Werkblad"
           titel={klantenTitel}
           onClose={onClose}
+          showLogo
+          appTitle={appLabel("app.title", "Strategy Platform")}
+          versie={process.env.REACT_APP_VERSION || "0.1.0"}
+          lang={lang}
+          onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}
         />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
@@ -366,6 +375,11 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           capsLabel="Werkblad"
           titel={klantenTitel}
           onClose={onClose}
+          showLogo
+          appTitle={appLabel("app.title", "Strategy Platform")}
+          versie={process.env.REACT_APP_VERSION || "0.1.0"}
+          lang={lang}
+          onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}
         />
         <div className="flex-1 flex items-center justify-center text-center px-6">
           <div className="max-w-md">
@@ -388,6 +402,35 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
         capsLabel="Werkblad"
         titel={klantenTitel}
         onClose={onClose}
+        showLogo
+        appTitle={appLabel("app.title", "Strategy Platform")}
+        versie={process.env.REACT_APP_VERSION || "0.1.0"}
+        lang={lang}
+        onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}
+        overflowItems={[
+          {
+            id: "admin",
+            label: "App config",
+            icon: Settings,
+            onClick: () => { window.location.href = "/admin"; },
+            hidden: user?.email !== process.env.REACT_APP_ADMIN_EMAIL,
+          },
+          {
+            id: "over",
+            label: "Over Platform Workbench",
+            icon: Info,
+            onClick: () => setShowOverDialog(true),
+            divider: true,
+          },
+          {
+            id: "uitloggen",
+            label: "Uitloggen",
+            icon: LogOut,
+            onClick: signOut,
+            divider: true,
+            danger: true,
+          },
+        ]}
         tabs={view === "werkruimte" ? fasenTabs : null}
         activeTabId={activeFase}
         onTabClick={(id) => setActiveFase(id)}
@@ -523,6 +566,11 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           onClose={closePromoteModal}
           onSubmit={handlePromoteSave}
         />
+      )}
+
+      {/* S4 — OverDialog vanuit laag-1 overflow-menu */}
+      {showOverDialog && (
+        <OverDialog onClose={() => setShowOverDialog(false)} />
       )}
     </div>
   );

@@ -84,6 +84,15 @@ jest.mock("../../../shared/hooks/useTheme", () => ({
 
 jest.mock("../../../shared/components/AiIcon", () => ({ __esModule: true, default: () => null }));
 
+// ── S4: useAuth + useLang gebruikt door KlantenWerkblad voor laag-1 ──
+jest.mock("../../../shared/services/auth.service", () => ({
+  useAuth: () => ({ user: { email: "test@example.com" }, signOut: jest.fn() }),
+}));
+jest.mock("../../../i18n", () => ({
+  useLang: () => ({ t: (k) => k, lang: "nl", setLang: jest.fn() }),
+}));
+
+
 const TEST_CANVAS_ID = "test-canvas-uuid-k";
 
 const sampleDimension = {

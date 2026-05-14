@@ -16,8 +16,7 @@ import { useAppConfig } from "../../shared/context/AppConfigContext";
 import DimensieKolom from "./DimensieKolom";
 import KlantreisChevronOverview from "./KlantreisChevronOverview";
 import PijnpuntenView from "./PijnpuntenView";
-import AnalyseView from "./AnalyseView";
-import VerbeterrichtingenView from "./VerbeterrichtingenView";
+import VerbeteractiesView from "./VerbeteractiesView";
 
 // Fase 2 design-systeem — FASE_TABS verhuisd naar KlantenWerkblad.jsx voor
 // rendering in WerkbladHeader laag 3 (single source of truth).
@@ -107,31 +106,24 @@ export default function WerkruimteView({
           (KlantenWerkblad). "Geen verplichte volgorde"-tekst (C6) verwijderd
           per designer §7. */}
 
-      {/* Fase-content */}
-      {activeFase === 4 ? (
+      {/* Fase-content — S4 RFC-007 C1: 3 fasen ipv 4. Analyse merged in
+          Verbeteracties (fase 3). */}
+      {activeFase === 3 ? (
         <div className="flex-1 overflow-hidden flex flex-col">
-          <VerbeterrichtingenView
-            canvasId={canvasId}
-            intents={intents}
-            loading={intentsLoading}
-            error={intentsError}
-            reload={reloadIntents}
-          />
-        </div>
-      ) : activeFase === 3 ? (
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <AnalyseView
+          <VerbeteractiesView
             canvasId={canvasId}
             dimensions={dimensions}
             items={items}
             painPoints={painPoints || []}
             couplings={couplings || []}
             suggestions={suggestions}
-            loading={suggestionsLoading}
-            error={suggestionsError}
-            reload={reloadSuggestions}
-            onPromoteSuggestion={onPromoteSuggestion}
+            suggestionsLoading={suggestionsLoading}
+            suggestionsError={suggestionsError}
+            reloadSuggestions={reloadSuggestions}
             intents={intents}
+            intentsLoading={intentsLoading}
+            intentsError={intentsError}
+            reloadIntents={reloadIntents}
           />
         </div>
       ) : activeFase === 2 ? (

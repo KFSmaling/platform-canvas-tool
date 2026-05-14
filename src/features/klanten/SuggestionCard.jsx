@@ -135,16 +135,21 @@ export default function SuggestionCard({
 
         {/* Acties */}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/70">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onAccept(suggestion)}
-            data-testid={`actie-accept-${suggestion.id}`}
-            title={appLabel("klanten.analyse.actie.accept.tooltip", "Dit patroon doorbouwen naar fase 4 als verbeteractie")}
-            className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {appLabel("klanten.analyse.actie.accept", "Markeer als richting")}
-          </button>
+          {/* S4 (RFC-007 C1): "Markeer als richting"-knop conditional op onAccept-prop.
+              In nieuwe VerbeteractiesView-flow obsoleet — "Maak definitief"-knop
+              vervangt deze (rendered door VerbeteractiesView naast de card). */}
+          {typeof onAccept === "function" && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onAccept(suggestion)}
+              data-testid={`actie-accept-${suggestion.id}`}
+              title={appLabel("klanten.analyse.actie.accept.tooltip", "Dit patroon doorbouwen naar fase 4 als verbeteractie")}
+              className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {appLabel("klanten.analyse.actie.accept", "Markeer als richting")}
+            </button>
+          )}
           <button
             type="button"
             disabled={busy}

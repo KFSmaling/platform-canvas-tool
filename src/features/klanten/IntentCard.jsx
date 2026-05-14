@@ -130,7 +130,12 @@ export default function IntentCard({
         >
           {appLabel("klanten.actie.verwijder", "Verwijder")}
         </button>
-        {isVerstuurd ? (
+        {/* S4 (RFC-007 C1): handover/unsend-acties zijn conditional zodat
+            VerbeteractiesView ze kan onderdrukken voor de overflow-menu-pad
+            op definitief-entries (RFC §3.3 — "Terug naar concept" overflow,
+            niet primary). Concept-intents tonen handover als primary
+            ("Maak definitief"). */}
+        {isVerstuurd && typeof onUnsend === "function" && (
           <button
             type="button"
             disabled={busy}
@@ -140,7 +145,8 @@ export default function IntentCard({
           >
             {appLabel("klanten.verbeterrichting.actie.terugtrekken", "Haal uit roadmap")}
           </button>
-        ) : (
+        )}
+        {!isVerstuurd && typeof onHandover === "function" && (
           <button
             type="button"
             disabled={busy}
