@@ -89,6 +89,17 @@ const LABEL_GROUPS = [
       k.startsWith("label.section."),
   },
   {
+    // T2 A3 — Strategie-werkblad invultips (5 kort + 5 uitgebreid + 3 voorbeeld)
+    // Eigen groep voor zichtbaarheid; volgorde direct onder Strategie Werkblad-
+    // groep zodat consultants ze visueel samen vinden.
+    id: "strategy-tips",
+    label: "Strategie — Invultips",
+    icon: Layers,
+    desc: "Helper-teksten en uitgebreide tips per blok (Missie / Visie / Ambitie / Kernwaarden / Samenvatting)",
+    headerCls: "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/15 text-[var(--color-primary)]",
+    match: k => k.startsWith("tips.strategie."),
+  },
+  {
     id: "guideline",
     label: "Richtlijnen Werkblad",
     icon: Layers,

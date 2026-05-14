@@ -3,6 +3,7 @@ import { Wand2, Trash2, Plus, X, ArrowLeft, Zap, Crosshair, Info, Settings, LogO
 import AiIcon from "../../shared/components/AiIcon";
 import WerkbladActieknoppen from "../../shared/components/WerkbladActieknoppen";
 import WerkbladHeader from "../../shared/components/WerkbladHeader";
+import WerkbladTipsModal from "../../shared/components/WerkbladTipsModal";
 import OverDialog from "../../shared/components/OverDialog";
 import { apiFetch } from "../../shared/services/apiClient";
 import { useLang } from "../../i18n";
@@ -396,8 +397,10 @@ function AnalyseSection({ title, type, items, onAdd, onDelete, onTagChange, onMa
   );
 }
 
-/** Tekstveld met Draft-modus, Magic Staff en Improve-menu */
-function WerkbladTextField({ label, fieldKey, value, draft, onChange, onMagic, onImprove, onAcceptDraft, onEditDraft, onRejectDraft, placeholder, multiline = true, rows = 5, magicResult }) {
+/** Tekstveld met Draft-modus, Magic Staff en Improve-menu.
+ *  T2 A1: optionele `helper`-prop rendert subtle hint-tekst onder het veld
+ *  (invultips uit `tips.strategie.<blok>.kort`-DB-keys). */
+function WerkbladTextField({ label, fieldKey, value, draft, onChange, onMagic, onImprove, onAcceptDraft, onEditDraft, onRejectDraft, placeholder, multiline = true, rows = 5, magicResult, helper }) {
   const hasDraft = draft !== null && draft !== undefined;
   const [improveOpen, setImproveOpen] = useState(false);
   const IMPROVE_PRESETS = [
@@ -459,6 +462,16 @@ function WerkbladTextField({ label, fieldKey, value, draft, onChange, onMagic, o
         />
       )}
 
+      {/* T2 A1: helper-tekst onder veld (subtle hint, invultips per blok) */}
+      {helper && (
+        <p
+          className="text-xs text-neutral-500 leading-relaxed pl-1"
+          data-testid={fieldKey ? `strat-helper-${fieldKey}` : undefined}
+        >
+          {helper}
+        </p>
+      )}
+
       {/* Magic Staff result — alleen bij error of geen chunks */}
       {(magicResult?.error || magicResult?.noChunks) && <MagicResult result={magicResult} onAccept={() => { onChange(magicResult.suggestion); onRejectDraft && onRejectDraft(); }} onReject={() => onRejectDraft && onRejectDraft()} />}
 
@@ -517,6 +530,8 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
   const [autoDraftOpen, setAutoDraftOpen]       = useState(false);
   const [showOnePager,   setShowOnePager]       = useState(false);
   const [showAdvies,       setShowAdvies]       = useState(false);
+  // T2 A2 — invultips-modal voor Strategie-werkblad
+  const [showInvultips,  setShowInvultips]      = useState(false);
   const [analysis,         setAnalysis]         = useState(null);
   const [analysisLoading,  setAnalysisLoading]  = useState(false);
   const [analysisError,    setAnalysisError]    = useState(null);
@@ -1145,6 +1160,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
         actieknoppen={
           <>
             <WerkbladActieknoppen
+              onTips={() => setShowInvultips(true)}
               onBekijken={() => setShowAdvies(true)}
               onRapportage={() => setShowOnePager(true)}
               bekijkenDisabled={false}
@@ -1203,6 +1219,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
               onRejectDraft={() => clearDraft("missie")}
               magicResult={magic.missie}
               placeholder="Waarom bestaan wij?"
+              helper={appLabel("tips.strategie.missie.kort", "Waarom bestaat de organisatie? Tijdloos, verandert niet bij een nieuwe strategie.")}
             />
             <WerkbladTextField
               label={appLabel("strat.field.visie", "Visie")}
@@ -1217,6 +1234,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
               onRejectDraft={() => clearDraft("visie")}
               magicResult={magic.visie}
               placeholder="Waar staan wij over 5 jaar?"
+              helper={appLabel("tips.strategie.visie.kort", "Hoe ziet de wereld — of jullie rol daarin — eruit als de missie slaagt? Een beeld, geen doel.")}
             />
             <WerkbladTextField
               label={appLabel("strat.field.ambitie", "Ambitie (BHAG)")}
@@ -1231,6 +1249,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
               onRejectDraft={() => clearDraft("ambitie")}
               magicResult={magic.ambitie}
               placeholder="Onze grote, haast onmogelijke doelstelling…"
+              helper={appLabel("tips.strategie.ambitie.kort", "Waar wil de organisatie concreet naartoe? Tijdsgebonden, met horizon, in principe toetsbaar.")}
             />
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -1268,6 +1287,13 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
                   className="text-sm bg-transparent border-none focus:outline-none placeholder:text-slate-300 text-slate-600 min-w-[180px] flex-1"
                 />
               </div>
+              {/* T2 A1: helper-tekst voor Kernwaarden (eigen UI buiten WerkbladTextField) */}
+              <p
+                className="text-xs text-neutral-500 leading-relaxed pl-1"
+                data-testid="strat-helper-kernwaarden"
+              >
+                {appLabel("tips.strategie.kernwaarden.kort", "Welke principes sturen gedrag en keuzes? Niet wat je doet, maar hoe je het doet.")}
+              </p>
               {/* Draft voor kernwaarden */}
               {drafts.kernwaarden && (
                 <div className="border border-amber-200 bg-amber-50 rounded-lg overflow-hidden">
@@ -1304,6 +1330,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
               magicResult={magic.samenvatting}
               rows={3}
               placeholder="Schrijf in max. 2 zinnen waar de organisatie over 3 jaar staat en wat de belangrijkste richting is…"
+              helper={appLabel("tips.strategie.samenvatting.kort", "Vat missie, visie, ambitie en kernwaarden samen in een paar zinnen die als geheel kloppen.")}
             />
           </div>
         </section>
@@ -1508,6 +1535,35 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
       {/* Over Platform Workbench dialog — via OverflowMenu in WerkbladHeader laag 1 */}
       {showOverDialog && (
         <OverDialog onClose={() => setShowOverDialog(false)} />
+      )}
+
+      {/* T2 A2 — Strategie-invultips modal. Sections-prop bouwt 5 blokken op
+          uit DB-keys; voorbeeld-keys mogen leeg zijn (alleen Missie/Visie/
+          Ambitie hebben voorbeelden, Kernwaarden/Samenvatting niet — Kees-keuze).
+          WerkbladTipsModal rendert voorbeeld-blok alleen als value niet-leeg. */}
+      {showInvultips && (
+        <WerkbladTipsModal
+          title={appLabel("tips.strategie.modal.titel", "Invultips Strategie")}
+          testIdPrefix="strat-tips"
+          onClose={() => setShowInvultips(false)}
+          sections={[
+            { id: "missie",      titel: appLabel("strat.field.missie", "Missie"),
+              tekst: appLabel("tips.strategie.missie.uitgebreid", ""),
+              voorbeeld: appLabel("tips.strategie.missie.voorbeeld", "") },
+            { id: "visie",       titel: appLabel("strat.field.visie", "Visie"),
+              tekst: appLabel("tips.strategie.visie.uitgebreid", ""),
+              voorbeeld: appLabel("tips.strategie.visie.voorbeeld", "") },
+            { id: "ambitie",     titel: appLabel("strat.field.ambitie", "Ambitie (BHAG)"),
+              tekst: appLabel("tips.strategie.ambitie.uitgebreid", ""),
+              voorbeeld: appLabel("tips.strategie.ambitie.voorbeeld", "") },
+            { id: "kernwaarden", titel: appLabel("strat.field.kernwaarden", "Kernwaarden"),
+              tekst: appLabel("tips.strategie.kernwaarden.uitgebreid", ""),
+              voorbeeld: appLabel("tips.strategie.kernwaarden.voorbeeld", "") },
+            { id: "samenvatting",titel: appLabel("strat.field.samenvatting", "Strategische Samenvatting"),
+              tekst: appLabel("tips.strategie.samenvatting.uitgebreid", ""),
+              voorbeeld: appLabel("tips.strategie.samenvatting.voorbeeld", "") },
+          ]}
+        />
       )}
     </div>
   );
