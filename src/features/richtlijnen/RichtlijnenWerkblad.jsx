@@ -130,7 +130,7 @@ const GuidelineKaart = React.memo(function GuidelineKaart({
           value={guideline.title}
           onChange={e => onChangeField("title", e.target.value)}
           placeholder="Principe titel…"
-          className="flex-1 text-[15px] font-semibold text-slate-800 bg-transparent border-none focus:outline-none placeholder:text-slate-300 leading-snug"
+          className="flex-1 text-md font-semibold text-slate-800 bg-transparent border-none focus:outline-none placeholder:text-slate-300 leading-snug"
         />
         {/* Thema-badges altijd zichtbaar in de titelbalk */}
         {themas.length > 0 && (
@@ -154,7 +154,7 @@ const GuidelineKaart = React.memo(function GuidelineKaart({
 
           {/* ── Toelichting & Motivatie ── */}
           <div className="px-4 pb-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
               Toelichting &amp; Motivatie
             </p>
             <textarea
@@ -169,7 +169,7 @@ const GuidelineKaart = React.memo(function GuidelineKaart({
           {/* ── Stop · Start · Continue ── */}
           <div className="px-4 pb-5">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
                 Stop · Start · Continue
               </p>
               {guideline.title?.trim() && (
@@ -217,7 +217,7 @@ function GenerateDraftPanel({ draft, onAcceptOne, onAcceptAll, onReject }) {
   return (
     <div className="mx-4 mt-4 border border-amber-300 rounded-2xl overflow-hidden">
       <div className="flex items-center justify-between bg-amber-50 px-4 py-2.5 border-b border-amber-200">
-        <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">
+        <span className="text-xs font-black uppercase tracking-widest text-amber-700">
           {draft.loading
             ? `🪄 ${draft.msg}`
             : `🪄 ${(draft.guidelines || []).length} principes voorgesteld`}
@@ -225,11 +225,11 @@ function GenerateDraftPanel({ draft, onAcceptOne, onAcceptAll, onReject }) {
         {!draft.loading && (
           <div className="flex gap-1.5">
             <button onClick={onAcceptAll}
-              className="text-[10px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-md px-2.5 py-1 transition-colors">
+              className="text-xs font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-md px-2.5 py-1 transition-colors">
               Alle toevoegen
             </button>
             <button onClick={onReject}
-              className="text-[10px] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-md px-2.5 py-1 transition-colors">
+              className="text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-md px-2.5 py-1 transition-colors">
               Weggooien
             </button>
           </div>
@@ -251,11 +251,11 @@ function GenerateDraftPanel({ draft, onAcceptOne, onAcceptAll, onReject }) {
               </div>
               <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">
                 <button onClick={() => onAcceptOne(i)}
-                  className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-md px-2 py-1 transition-colors">
+                  className="text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-md px-2 py-1 transition-colors">
                   ✓
                 </button>
                 <button onClick={() => onReject(i)}
-                  className="text-[10px] text-slate-400 hover:text-red-400 bg-slate-50 hover:bg-red-50 rounded-md px-1.5 py-1 transition-colors">
+                  className="text-xs text-slate-400 hover:text-red-400 bg-slate-50 hover:bg-red-50 rounded-md px-1.5 py-1 transition-colors">
                   ×
                 </button>
               </div>
@@ -287,7 +287,7 @@ function SwimLane({
             onClick={onGenerate}
             disabled={generateDraft?.loading}
             title={`AI principes genereren voor ${segment.label}`}
-            className="flex items-center gap-1.5 text-[10px] font-bold text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs font-bold text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
           >
             <AiIcon variant="improve" size={11} />
             {generateDraft?.loading ? "…" : "Genereer"}
@@ -738,7 +738,7 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
               </p>
             )}
             {core.kernwaarden?.length > 0 && (
-              <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-100 flex-shrink-0 truncate">
+              <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-100 flex-shrink-0 truncate">
                 {core.kernwaarden.slice(0, 4).join(" · ")}
               </p>
             )}
@@ -768,7 +768,7 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
               <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
                 {themas.map((th, i) => (
                   <div key={th.id} className="flex items-center gap-2 min-w-0">
-                    <span className="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-xs font-black flex items-center justify-center flex-shrink-0">
                       {i + 1}
                     </span>
                     <span className="text-xs text-slate-700 font-medium leading-tight">{th.title}</span>
@@ -799,7 +799,7 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
                   </div>
                   <div>
                     <span className="text-[11px] font-bold text-slate-700">{title}</span>
-                    <span className="text-[10px] text-slate-400 ml-1.5">{desc}</span>
+                    <span className="text-xs text-slate-400 ml-1.5">{desc}</span>
                   </div>
                 </div>
               ))}
@@ -848,7 +848,7 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
           <div className="flex items-center justify-between px-6 py-3 bg-[var(--color-primary)] flex-shrink-0">
             <div className="flex items-center gap-2">
               <AiIcon variant="generate" size={12} colorClass="text-[var(--color-accent)]" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-white">
+              <span className="text-xs font-bold uppercase tracking-widest text-white">
                 Richtlijnen Advies
               </span>
             </div>
@@ -856,7 +856,7 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
               <button
                 onClick={handleAnalyze}
                 disabled={analysisLoading}
-                className="flex items-center gap-2 px-5 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] text-[10px] font-black uppercase tracking-widest rounded-md transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] text-xs font-black uppercase tracking-widest rounded-md transition-colors disabled:opacity-50"
               >
                 {analysisLoading ? <RefreshCw size={13} className="animate-spin" /> : <AiIcon variant="generate" size={13} />}
                 {analysisLoading ? "Analyseren…" : analysis ? "Opnieuw analyseren" : "Analyseer richtlijnen"}
@@ -886,7 +886,7 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
                     const c = cm[rec.type] || cm.info;
                     return (
                       <div key={i} className={`rounded-xl border ${c.border} border-l-4 p-5 bg-white shadow-sm`}>
-                        <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${c.title}`}>
+                        <p className={`text-xs font-black uppercase tracking-widest mb-2 ${c.title}`}>
                           {rec.title}
                         </p>
                         <p className={`text-sm leading-relaxed ${c.text}`}>{rec.text}</p>
