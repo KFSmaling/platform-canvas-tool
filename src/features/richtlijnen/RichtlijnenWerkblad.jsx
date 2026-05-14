@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import {
   ArrowLeft, Plus, Trash2, Wand2, X, RefreshCw,
-  BookOpen, Link2, RotateCcw, ChevronDown, ChevronUp, Compass,
+  BookOpen, Link2, RotateCcw, ChevronDown, ChevronRight, Compass,
   Info, Settings, LogOut,
 } from "lucide-react";
 import AiIcon from "../../shared/components/AiIcon";
@@ -33,42 +33,50 @@ import { loadCanvasById } from "../../shared/services/canvas.service";
 const GuidelinesOnePager = lazy(() => import("./GuidelinesOnePager"));
 
 // ── Segment definities ────────────────────────────────────────────────────────
+// T3: 5-segmenten-architectuur — gebruikt Fase-1 category-tokens. Kleur-CSS-vars
+// via inline-style (Tailwind kent geen `border-l-[var(--category-X)]`-pattern).
+// `colorVar` = CSS-variable-naam (e.g. "--category-klanten"), wordt in JSX als
+// `style={{ borderLeftColor: 'var(' + colorVar + ')' }}` toegepast.
 const SEGMENTS = [
   {
-    key:        "generiek",
-    label:      "Generiek",
-    sublabel:   "Strategie & Governance",
-    headerBg:   "bg-[var(--color-primary)]",
-    borderL:    "border-l-[var(--color-primary)]",
-    badgeActive:"bg-[var(--color-primary)] text-white",
-    focusRing:  "focus:border-[var(--color-primary)]/40",
+    key:      "generiek",
+    label:    "Generiek",
+    short:    "Generiek",
+    sublabel: "Strategie & Governance",
+    colorVar: "--color-primary",
+    lightVar: "--neutral-100",
   },
   {
-    key:        "klanten",
-    label:      "Klanten",
-    sublabel:   "Markt & Dienstverlening",
-    headerBg:   "bg-orange-600",
-    borderL:    "border-l-orange-500",
-    badgeActive:"bg-orange-500 text-white",
-    focusRing:  "focus:border-orange-400/40",
+    key:      "klanten",
+    label:    "Klanten & dienstverlening",
+    short:    "Klanten",
+    sublabel: "Markt & Dienstverlening",
+    colorVar: "--category-klanten",
+    lightVar: "--category-klanten-light",
   },
   {
-    key:        "organisatie",
-    label:      "Organisatie",
-    sublabel:   "Mens & Proces",
-    headerBg:   "bg-[var(--color-success)]",
-    borderL:    "border-l-[var(--color-success)]",
-    badgeActive:"bg-[var(--color-success)] text-white",
-    focusRing:  "focus:border-[var(--color-success)]/40",
+    key:      "processen",
+    label:    "Processen & organisatie",
+    short:    "Processen",
+    sublabel: "Werkstromen, governance, samenwerking",
+    colorVar: "--category-processen",
+    lightVar: "--category-processen-light",
   },
   {
-    key:        "it",
-    label:      "IT",
-    sublabel:   "Technologie & Data",
-    headerBg:   "bg-purple-700",
-    borderL:    "border-l-purple-600",
-    badgeActive:"bg-purple-600 text-white",
-    focusRing:  "focus:border-purple-400/40",
+    key:      "mensen",
+    label:    "Mensen & competenties",
+    short:    "Mensen",
+    sublabel: "Leiderschap, cultuur, vaardigheden",
+    colorVar: "--category-mensen",
+    lightVar: "--category-mensen-light",
+  },
+  {
+    key:      "it",
+    label:    "Informatie & Technologie",
+    short:    "IT",
+    sublabel: "Technologie & Data",
+    colorVar: "--category-it",
+    lightVar: "--category-it-light",
   },
 ];
 
@@ -93,15 +101,22 @@ const GuidelineKaart = React.memo(function GuidelineKaart({
   const impl   = guideline.implications || EMPTY_IMPL;
 
   // Thema badge met custom tooltip
+  // T3: badge-active-styling via inline-style met categorie-CSS-variabele
+  // (segment.colorVar uit nieuwe SEGMENTS-shape).
   const ThemaBadge = ({ t, i }) => {
     const isActive = linked.includes(t.id);
     return (
       <div className="relative group/badge">
         <button
           onClick={() => onToggleTheme(t.id)}
+          data-testid={`richtl-thema-badge-${guideline.id}-${t.id}`}
+          data-active={isActive ? "true" : "false"}
+          style={isActive && segment.colorVar
+            ? { backgroundColor: `var(${segment.colorVar})`, color: "#fff" }
+            : undefined}
           className={`text-xs font-black rounded-full w-7 h-7 flex items-center justify-center transition-all
             ${isActive
-              ? segment.badgeActive + " shadow-sm ring-2 ring-white"
+              ? "shadow-sm ring-2 ring-white"
               : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
         >
           {i + 1}
@@ -115,22 +130,30 @@ const GuidelineKaart = React.memo(function GuidelineKaart({
   };
 
   return (
-    <div className={`bg-white rounded-2xl border border-slate-200 border-l-4 ${segment.borderL} shadow-sm overflow-hidden`}>
+    <div
+      data-testid={`richtl-card-${guideline.id}`}
+      className="bg-white rounded-2xl border border-slate-200 border-l-4 shadow-sm overflow-hidden"
+      style={segment.colorVar ? { borderLeftColor: `var(${segment.colorVar})` } : undefined}
+    >
 
-      {/* ── Titel + collapse toggle ── */}
+      {/* ── T3 B1+B2: Titel + collapse toggle (chevron-right collapsed,
+          chevron-down expanded) + kleinere title-lettertype ── */}
       <div className="flex items-center gap-2 px-4 pt-4 pb-3">
         <button
           onClick={() => setCollapsed(c => !c)}
-          className="text-slate-300 hover:text-slate-500 transition-colors flex-shrink-0"
+          data-testid={`richtl-card-toggle-${guideline.id}`}
+          aria-expanded={collapsed ? "false" : "true"}
+          className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
           title={collapsed ? "Uitklappen" : "Inklappen"}
         >
-          {collapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+          {collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
         </button>
         <input
           value={guideline.title}
           onChange={e => onChangeField("title", e.target.value)}
+          onFocus={() => setCollapsed(false)}
           placeholder="Principe titel…"
-          className="flex-1 text-md font-semibold text-slate-800 bg-transparent border-none focus:outline-none placeholder:text-slate-300 leading-snug"
+          className="flex-1 text-sm font-medium text-slate-800 bg-transparent border-none focus:outline-none placeholder:text-slate-300 leading-snug"
         />
         {/* Thema-badges altijd zichtbaar in de titelbalk */}
         {themas.length > 0 && (
@@ -162,7 +185,7 @@ const GuidelineKaart = React.memo(function GuidelineKaart({
               onChange={e => onChangeField("description", e.target.value)}
               placeholder="Waarom dit principe? Wat is de strategische motivatie?"
               rows={4}
-              className={`w-full text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 resize-y focus:outline-none ${segment.focusRing} placeholder:text-slate-300 leading-relaxed`}
+              className="w-full text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 resize-y focus:outline-none focus:border-slate-400 placeholder:text-slate-300 leading-relaxed"
             />
           </div>
 
@@ -276,24 +299,8 @@ function SwimLane({
   return (
     <div className="rounded-2xl bg-white overflow-y-auto shadow-sm border border-slate-200/80">
 
-      {/* Sticky kolomheader */}
-      <div className={`sticky top-0 z-10 ${segment.headerBg} shadow-sm rounded-t-2xl`}>
-        <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <h3 className="text-xl font-bold text-white leading-tight">{segment.label}</h3>
-            <p className="text-xs text-white/60 font-medium mt-0.5">{segment.sublabel}</p>
-          </div>
-          <button
-            onClick={onGenerate}
-            disabled={generateDraft?.loading}
-            title={`AI principes genereren voor ${segment.label}`}
-            className="flex items-center gap-1.5 text-xs font-bold text-white/80 hover:text-white border border-white/30 hover:border-white/60 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
-          >
-            <AiIcon variant="improve" size={11} />
-            {generateDraft?.loading ? "…" : "Genereer"}
-          </button>
-        </div>
-      </div>
+      {/* T3: Sticky kolomheader verwijderd — categorie-naam + Genereer-knop
+          zitten nu in werkblad-tab-balk (één laag hoger). SwimLane is body-only. */}
 
       {/* Draft panel */}
       <GenerateDraftPanel
@@ -369,6 +376,10 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
 
   // Per-segment generate drafts: { [segKey]: { loading, msg, guidelines[], error? } }
   const [generateDrafts, setGenerateDrafts] = useState({});
+
+  // T3 — actief segment voor categorie-tabs-pattern (was: alle 4 segmenten
+  // naast elkaar als kolommen). Default = generiek.
+  const [activeSegment, setActiveSegment] = useState("generiek");
 
   // Per-guideline implications loading: { [id]: bool }
   const [implLoadings, setImplLoadings] = useState({});
@@ -723,10 +734,13 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
       <div className="flex-shrink-0 bg-white border-b border-slate-200 px-6 py-5">
         <div className="grid grid-cols-3 gap-4" style={{ height: "16rem" }}>
 
-          {/* Paneel 1: Stip op de Horizon — toont strategische samenvatting (max 2 zinnen) */}
+          {/* Paneel 1: Strategische samenvatting (max 2 zinnen, was "Stip op de Horizon" tot T3) */}
           <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col overflow-hidden">
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-primary)] mb-2.5 flex-shrink-0">
-              Stip op de Horizon
+            <p
+              data-testid="richtl-samenvatting-titel"
+              className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-primary)] mb-2.5 flex-shrink-0"
+            >
+              {appLabel("richtl.samenvatting.titel", "Strategische samenvatting")}
             </p>
             {(core.samenvatting || core.ambitie) ? (
               <p className="text-sm font-semibold text-[var(--color-primary)] leading-snug flex-1 overflow-y-auto pr-1">
@@ -809,9 +823,103 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
         </div>
       </div>
 
-      {/* ── Swimlane grid — elke kolom scrollt zelfstandig ── */}
-      <div className="flex-1 grid grid-cols-4 gap-3 p-3 overflow-hidden bg-slate-100">
+      {/* ── T3: categorie-tabs-balk ────────────────────────────────────────
+          5 tabs (Generiek/Klanten/Processen/Mensen/IT) + counter-pill per tab +
+          actieve onderlijn in categorie-kleur. Rechts: Genereer-AI-knop voor
+          het actieve segment (was tot T3 per-kolom in SwimLane-header). */}
+      <div
+        data-testid="richtl-tab-balk"
+        className="flex-shrink-0 flex items-center bg-white border-b border-slate-200 px-6 pt-2 gap-1 overflow-x-auto"
+      >
         {SEGMENTS.map(seg => {
+          const label = appLabel(`richtl.segment.${seg.key}`, seg.label);
+          const count = guidelines.filter(g => g.segment === seg.key).length;
+          const isActive = activeSegment === seg.key;
+          return (
+            <button
+              key={seg.key}
+              type="button"
+              onClick={() => setActiveSegment(seg.key)}
+              data-testid={`richtl-tab-${seg.key}`}
+              data-active={isActive ? "true" : "false"}
+              className={`relative flex items-center gap-2 px-4 py-2.5 text-sm transition-colors ${
+                isActive
+                  ? "text-[var(--color-primary)] font-semibold"
+                  : "text-neutral-500 hover:text-[var(--color-primary)]"
+              }`}
+              style={isActive ? { marginBottom: "-1px" } : undefined}
+            >
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: `var(${seg.colorVar})` }}
+                aria-hidden="true"
+              />
+              <span>{label}</span>
+              <span
+                className={`inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-full text-[10px] font-bold leading-none ${
+                  isActive ? "text-white" : "bg-neutral-100 text-neutral-600"
+                }`}
+                style={isActive ? { backgroundColor: `var(${seg.colorVar})` } : undefined}
+                data-testid={`richtl-tab-count-${seg.key}`}
+              >
+                {count}
+              </span>
+              {isActive && (
+                <span
+                  className="absolute left-0 right-0 bottom-0 h-[2px]"
+                  style={{ backgroundColor: `var(${seg.colorVar})` }}
+                  aria-hidden="true"
+                />
+              )}
+            </button>
+          );
+        })}
+        {/* Genereer-knop voor active-segment */}
+        <div className="ml-auto pr-2">
+          {(() => {
+            const seg = SEGMENTS.find(s => s.key === activeSegment);
+            const handlers = segmentHandlers[activeSegment];
+            const draft = generateDrafts[activeSegment];
+            return (
+              <button
+                type="button"
+                onClick={handlers?.onGenerate}
+                disabled={draft?.loading}
+                data-testid={`richtl-tab-generate-${activeSegment}`}
+                title={`AI principes genereren voor ${appLabel(`richtl.segment.${activeSegment}`, seg?.label)}`}
+                className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-primary)] hover:bg-neutral-100 border border-neutral-300 hover:border-neutral-400 rounded-md px-3 py-1.5 transition-colors disabled:opacity-50"
+              >
+                <AiIcon variant="generate" size={12} />
+                {draft?.loading ? "Genereren…" : "Genereer principes"}
+              </button>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* T3: info-banner voor actief segment — contextuele uitleg + click-hint */}
+      {(() => {
+        const seg = SEGMENTS.find(s => s.key === activeSegment);
+        if (!seg) return null;
+        const info = appLabel(`tips.richtlijnen.${activeSegment}.info`, "");
+        if (!info) return null;
+        return (
+          <div
+            data-testid={`richtl-info-banner-${activeSegment}`}
+            className="flex-shrink-0 px-6 py-3 text-xs leading-relaxed border-b border-slate-200"
+            style={{
+              backgroundColor: `var(${seg.lightVar})`,
+              color: `var(${seg.colorVar})`,
+            }}
+          >
+            {info}
+          </div>
+        );
+      })()}
+
+      {/* ── T3: body — alleen actieve segment renderen (was: alle 4 in grid) ── */}
+      <div className="flex-1 overflow-auto p-4 bg-slate-100">
+        {SEGMENTS.filter(seg => seg.key === activeSegment).map(seg => {
           const resolvedSeg = {
             ...seg,
             label:    appLabel(`richtl.segment.${seg.key}`,     seg.label),

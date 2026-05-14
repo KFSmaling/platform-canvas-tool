@@ -160,7 +160,7 @@ export default function GuidelinesOnePager({ guidelines, themas, core, canvasNam
                 <h1 className="text-xl font-black text-[var(--color-primary)] leading-tight">{canvasName || "Canvas"}</h1>
               </div>
               <div className="text-right max-w-xs">
-                <p className="text-[7px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Stip op de Horizon</p>
+                <p className="text-[7px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Strategische samenvatting</p>
                 <p className="text-[9px] font-semibold text-[var(--color-primary)] leading-snug">{core.ambitie || "(geen ambitie)"}</p>
               </div>
             </div>

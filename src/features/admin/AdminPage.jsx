@@ -110,6 +110,15 @@ const LABEL_GROUPS = [
       k.startsWith("label.richtl."),
   },
   {
+    // T3 — Richtlijnen-werkblad invultips (5 info-banner-keys per categorie-tab)
+    id: "richtlijnen-tips",
+    label: "Richtlijnen — Invultips",
+    icon: Layers,
+    desc: "Info-banner-teksten per categorie-tab (Generiek / Klanten / Processen / Mensen / IT)",
+    headerCls: "bg-purple-50/60 border-purple-100 text-purple-700",
+    match: k => k.startsWith("label.tips.richtlijnen."),
+  },
+  {
     id: "werkblad-klanten",
     label: "Werkblad Klanten",
     icon: Layers,

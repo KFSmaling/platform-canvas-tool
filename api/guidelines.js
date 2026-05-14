@@ -27,10 +27,12 @@ function safeParseJSON(raw, context) {
   }
 }
 
+// T3: 5-segmenten-architectuur (was 4: organisatie gesplitst in processen + mensen)
 const SEGMENT_CONTEXT = {
   generiek:    "Strategie & Governance — principes die strategische kaders, besluitvorming en organisatierichtlijnen bepalen",
   klanten:     "Klanten & Markt — principes die dienstverlening, klantrelaties en marktbenadering sturen",
-  organisatie: "Mens & Proces — principes die cultuur, samenwerking, processen en medewerkersbeleving bepalen",
+  processen:   "Processen & Organisatie — principes die werkstromen, governance, samenwerking en operationele inrichting sturen",
+  mensen:      "Mensen & Competenties — principes die leiderschap, cultuur, vaardigheden en medewerkersbeleving bepalen",
   it:          "Technologie & Data — principes die architectuurkeuzes, data-governance en digitale transformatie sturen",
 };
 
@@ -107,7 +109,8 @@ Genereer 3-5 principes voor het segment ${segment.toUpperCase()}.`;
 
 // ── MODE: ADVIES ──────────────────────────────────────────────────────────────
 async function generateAdvies(guidelines, themas, core, apiKey, systemOverride, languageInstruction, tenantVars = {}) {
-  const segments = ["generiek", "klanten", "organisatie", "it"];
+  // T3: 5-segmenten-architectuur
+  const segments = ["generiek", "klanten", "processen", "mensen", "it"];
   const guidelinesCtx = segments.map(seg => {
     const gs = guidelines.filter(g => g.segment === seg);
     if (gs.length === 0) return `${seg.toUpperCase()}: (geen principes)`;
@@ -121,7 +124,7 @@ async function generateAdvies(guidelines, themas, core, apiKey, systemOverride, 
   const rawSystem = systemOverride || `Je bent een kritische Senior Adviseur. Je analyseert Leidende Principes op coherentie, volledigheid en interne consistentie.
 
 FOCUS:
-- Segment-balans: zijn alle 4 segmenten voldoende en gelijkwaardig gedekt?
+- Segment-balans: zijn alle 5 segmenten (Generiek / Klanten / Processen / Mensen / IT) voldoende en gelijkwaardig gedekt?
 - Interne consistentie: botsen principes met elkaar (bijv. "Autonomie" vs "Strikte Compliance")?
 - Thema-dekking: zijn alle strategische thema's verankerd in de richtlijnen?
 - Concreetheid: zijn Stop/Start/Continue acties specifiek en actionabel?
