@@ -681,7 +681,7 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
         titel="Richtlijnen & Leidende Principes"
         onClose={onClose}
         showLogo
-        appTitle={appLabel("app.title", "Strategy Platform")}
+        appTitle={appLabel("app.title", "Business Transformation Workbench")}
         versie={process.env.REACT_APP_VERSION || "0.1.0"}
         lang={lang}
         onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}

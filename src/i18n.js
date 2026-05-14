@@ -14,7 +14,7 @@ const TRANSLATIONS = {
     "block.principles.title": "Leidende principes",
     "block.principles.sub":   "Spelregels voor alle pijlers",
     "block.customers.title":  "Klanten & Dienstverlening",
-    "block.customers.sub":    "Groepen · Journeys · Kanalen · Producten",
+    "block.customers.sub":    "Segmenten · Journeys · Kanalen · Producten",
     "block.processes.title":  "Processen & Organisatie",
     "block.processes.sub":    "Procesmodel · Org-design · Governance",
     "block.people.title":     "Mensen & Competenties",
@@ -80,7 +80,7 @@ const TRANSLATIONS = {
     "header.active.canvas":  "Actief canvas",
     "header.tips":           "Tips",
     "header.consistency":    "Consistency Check",
-    "header.subtitle":       "From strategy to execution",
+    "header.subtitle":       "Platform voor strategie tot executie",
 
     // Canvas menu
     "menu.new.canvas":       "Nieuw canvas",
@@ -131,7 +131,7 @@ const TRANSLATIONS = {
     "block.principles.title": "Guiding Principles",
     "block.principles.sub":   "Design rules for all pillars",
     "block.customers.title":  "Customers & Services",
-    "block.customers.sub":    "Groups · Journeys · Channels · Products",
+    "block.customers.sub":    "Segments · Journeys · Channels · Products",
     "block.processes.title":  "Processes & Organisation",
     "block.processes.sub":    "Process model · Org design · Governance",
     "block.people.title":     "People & Competencies",
@@ -197,7 +197,7 @@ const TRANSLATIONS = {
     "header.active.canvas":  "Active canvas",
     "header.tips":           "Tips",
     "header.consistency":    "Consistency Check",
-    "header.subtitle":       "From strategy to execution",
+    "header.subtitle":       "Platform voor strategie tot executie",
 
     // Canvas menu
     "menu.new.canvas":       "New canvas",

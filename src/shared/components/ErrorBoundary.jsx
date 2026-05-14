@@ -67,7 +67,7 @@ class ErrorBoundary extends React.Component {
             </button>
 
             <p className="text-[10px] text-slate-300 uppercase tracking-widest">
-              Strategy Platform
+              Business Transformation Workbench
             </p>
           </div>
         </div>

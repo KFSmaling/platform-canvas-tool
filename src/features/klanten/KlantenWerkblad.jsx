@@ -354,7 +354,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           titel={klantenTitel}
           onClose={onClose}
           showLogo
-          appTitle={appLabel("app.title", "Strategy Platform")}
+          appTitle={appLabel("app.title", "Business Transformation Workbench")}
           versie={process.env.REACT_APP_VERSION || "0.1.0"}
           lang={lang}
           onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}
@@ -376,7 +376,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           titel={klantenTitel}
           onClose={onClose}
           showLogo
-          appTitle={appLabel("app.title", "Strategy Platform")}
+          appTitle={appLabel("app.title", "Business Transformation Workbench")}
           versie={process.env.REACT_APP_VERSION || "0.1.0"}
           lang={lang}
           onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}
@@ -403,7 +403,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
         titel={klantenTitel}
         onClose={onClose}
         showLogo
-        appTitle={appLabel("app.title", "Strategy Platform")}
+        appTitle={appLabel("app.title", "Business Transformation Workbench")}
         versie={process.env.REACT_APP_VERSION || "0.1.0"}
         lang={lang}
         onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}

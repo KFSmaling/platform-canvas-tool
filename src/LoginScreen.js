@@ -85,8 +85,8 @@ export default function LoginScreen() {
           </div>
         </div>
         <div className="px-6">
-          <h1 className="text-[13px] font-bold tracking-[0.16em] uppercase text-white leading-none">{appLabel("app.title", "Strategy Platform")}</h1>
-          <p className="text-[10px] tracking-[0.12em] text-[var(--color-accent)] mt-1.5 uppercase font-semibold">{appLabel("app.subtitle", "From strategy to execution")}</p>
+          <h1 className="text-[13px] font-bold tracking-[0.16em] uppercase text-white leading-none">{appLabel("app.title", "Business Transformation Workbench")}</h1>
+          <p className="text-[10px] tracking-[0.12em] text-[var(--color-accent)] mt-1.5 uppercase font-semibold">{appLabel("app.subtitle", "Platform voor strategie tot executie")}</p>
         </div>
       </header>
 

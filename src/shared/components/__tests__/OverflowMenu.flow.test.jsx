@@ -148,8 +148,9 @@ describe("OverDialog — Fase 3 design-systeem", () => {
     expect(screen.getByTestId("over-dialog")).toBeInTheDocument();
     expect(screen.getByTestId("over-dialog-close")).toBeInTheDocument();
     expect(screen.getByTestId("over-dialog-ok")).toBeInTheDocument();
-    // Versie-pill zichtbaar (fallback 0.1.0)
-    expect(screen.getByText(/v0\.1\.0/i)).toBeInTheDocument();
+    // Versie zichtbaar (fallback 0.1.0). T1 B3: versie staat nu op 2 plekken
+    // (dt/dd Build-rij + copyright-regel). getAllByText om beide te dekken.
+    expect(screen.getAllByText(/v0\.1\.0/i).length).toBeGreaterThan(0);
 
     // Esc → onClose
     fireEvent.keyDown(document, { key: "Escape" });

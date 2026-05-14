@@ -22,7 +22,24 @@ import { useAppConfig } from "../context/AppConfigContext";
 export default function OverDialog({ onClose }) {
   const { label: appLabel } = useAppConfig();
   const versie = process.env.REACT_APP_VERSION || "0.1.0";
-  const buildDate = process.env.REACT_APP_BUILD_DATE || new Date().toISOString().slice(0, 10);
+  // T1 B1+B3: build-timestamp uit REACT_APP_BUILD_TIME (ingespoten in package.json
+  // build-script). Fallback op REACT_APP_BUILD_DATE (legacy) of huidige datum.
+  const buildRaw = process.env.REACT_APP_BUILD_TIME || process.env.REACT_APP_BUILD_DATE;
+  let buildDisplay = new Date().toISOString().slice(0, 10);
+  if (buildRaw) {
+    try {
+      const d = new Date(buildRaw);
+      if (!isNaN(d.getTime())) {
+        buildDisplay = new Intl.DateTimeFormat("nl-NL", {
+          day: "2-digit", month: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+          timeZone: "Europe/Amsterdam",
+        }).format(d);
+      } else {
+        buildDisplay = buildRaw;
+      }
+    } catch (_e) { /* keep default */ }
+  }
 
   // Esc-toets-sluiten
   useEffect(() => {
@@ -67,18 +84,17 @@ export default function OverDialog({ onClose }) {
             <dt className="text-neutral-500">{appLabel("over.versie.label", "Versie")}</dt>
             <dd className="font-mono" style={{ fontFamily: "var(--font-mono)" }}>v{versie}</dd>
 
-            <dt className="text-neutral-500">{appLabel("over.build.label", "Build-datum")}</dt>
-            <dd className="font-mono" style={{ fontFamily: "var(--font-mono)" }}>{buildDate}</dd>
+            <dt className="text-neutral-500">{appLabel("over.build.label", "Build")}</dt>
+            <dd className="font-mono" data-testid="over-build-display" style={{ fontFamily: "var(--font-mono)" }}>{buildDisplay}</dd>
 
             <dt className="text-neutral-500">{appLabel("over.auteur.label", "Auteur")}</dt>
             <dd>{appLabel("over.auteur.naam", "Kees Smaling")}</dd>
           </dl>
 
-          <p className="text-xs text-neutral-500 pt-2 border-t border-neutral-100">
-            {appLabel(
-              "over.copyright",
-              `© ${new Date().getFullYear()} Platform Workbench. Alle rechten voorbehouden.`
-            )}
+          {/* T1 B3 — copyright-statement (Platform-default "© Smaling Holding"
+              via app_config, override per tenant mogelijk). Jaar dynamisch. */}
+          <p className="text-xs text-neutral-500 pt-2 border-t border-neutral-100" data-testid="over-copyright">
+            {appLabel("over.copyright", "© Smaling Holding")} · {new Date().getFullYear()} · v{versie}
           </p>
         </div>
 

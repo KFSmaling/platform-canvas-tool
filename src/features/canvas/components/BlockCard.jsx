@@ -226,9 +226,9 @@ function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
                 </div>
               );
             })}
-            {(bullets || []).length === 0 && (
-              <p className="text-xs text-slate-500 italic uppercase tracking-tight">{t("status.empty")}</p>
-            )}
+            {/* T1 A8: "Leeg"-tekst verwijderd; CanvasTegelSummary (hieronder)
+                rendert al een passende lege-state-tekst per pijler ("Werkblad
+                komt later" of "Nog leeg — start met …"). */}
           </div>
         ) : (
           <div className="space-y-1.5 mt-3">
@@ -238,9 +238,7 @@ function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
                 <span className="text-base text-slate-700 leading-snug">{typeof b === "string" ? b : b.text}</span>
               </div>
             ))}
-            {(bullets || []).length === 0 && (
-              <p className="text-xs text-slate-500 italic uppercase tracking-tight">{t("status.empty")}</p>
-            )}
+            {/* T1 A8: zelfde — "Leeg"-tekst weg, CanvasTegelSummary doet stub-tekst */}
           </div>
         )}
 
@@ -252,31 +250,12 @@ function BlockCard({ block, status, bullets, insightCount, summary, onClick }) {
       </div>
 
       <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">
+        {/* T1 A7: As-is/To-be/Change-actions-pills verwijderd uit tegel-footer.
+            Subtab-state blijft intact (BlockPanel gebruikt het); alleen de
+            visuele labels onder aan de pijler-tegels zijn weg per Kees-test. */}
         {insightCount > 0 ? (
           <span className="text-[9px] font-bold text-orange-500 uppercase">{insightCount} {t("status.insights")}</span>
-        ) : block.hasSubs ? (
-          <div className="flex items-center gap-1.5">
-            {(block.subTabs || PILLAR_SUBTABS).map(st => {
-              const count = (bullets || []).filter(b => b.subtab === st.id).length;
-              const filled = count > 0;
-              return (
-                <span
-                  key={st.id}
-                  className={`text-[8px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider border transition-all
-                    ${filled
-                      ? st.id === "current" ? "bg-slate-100 border-slate-300 text-slate-600"
-                        : st.id === "tobe"    ? "bg-blue-100 border-blue-300 text-blue-700"
-                        : "bg-orange-100 border-orange-300 text-orange-700"
-                      : "bg-white border-slate-200 text-slate-300"}`}
-                >
-                  {t(st.labelKey)}{filled ? ` · ${count}` : ""}
-                </span>
-              );
-            })}
-          </div>
-        ) : (
-          <span className="text-[9px] text-slate-300 uppercase">{(bullets || []).length} bullets</span>
-        )}
+        ) : <span />}
         <ChevronRight size={18} className="text-slate-200 group-hover:text-[var(--color-accent)] transition-colors" />
       </div>
     </div>

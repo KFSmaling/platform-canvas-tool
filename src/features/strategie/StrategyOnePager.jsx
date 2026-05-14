@@ -68,7 +68,7 @@ function PageHeader({ canvasName, subtitle }) {
       </div>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: "13px", fontWeight: 700, color: C.green }}>{canvasName || "Canvas"}</div>
-        <div style={{ fontSize: "7px", color: "rgba(255,255,255,0.45)", marginTop: "2px" }}>{appLabel("app.title", "Strategy Platform")}</div>
+        <div style={{ fontSize: "7px", color: "rgba(255,255,255,0.45)", marginTop: "2px" }}>{appLabel("app.title", "Business Transformation Workbench")}</div>
       </div>
       <div style={{ textAlign: "right", fontSize: "8px", opacity: 0.5 }}>{today()}</div>
     </div>
@@ -81,7 +81,7 @@ function PageFooter() {
   return (
     <div style={{ background: C.navy, padding: "5px 20px", display: "flex", justifyContent: "space-between" }}>
       <span style={{ fontSize: "7px", color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em" }}>{brandName} — {appLabel("onepager.confidential", "Vertrouwelijk")}</span>
-      <span style={{ fontSize: "7px", color: "rgba(255,255,255,0.4)" }}>{appLabel("app.subtitle", "From strategy to execution")}</span>
+      <span style={{ fontSize: "7px", color: "rgba(255,255,255,0.4)" }}>{appLabel("app.subtitle", "Platform voor strategie tot executie")}</span>
     </div>
   );
 }

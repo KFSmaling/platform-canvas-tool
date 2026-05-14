@@ -24,7 +24,7 @@ jest.mock("../shared/services/auth.service", () => ({
     signOut: jest.fn(),
     profileLoading: false,
     tenantId: "tenant-1",
-    tenantTheme: { brand_name: "Platform" },
+    tenantTheme: { brand_name: "Platform", logo_url: "/platform-logo.svg", logo_white_url: "/platform-logo-white.svg" },
     userRole: "tenant_admin",
   }),
 }));
@@ -126,14 +126,16 @@ describe("Canvas-header — tools-zone werkblad-pattern (Inzichten + Rapportage)
     expect(btn.className).toMatch(/border-white\/20/);
   });
 
-  test("2. Tools-zone bevat Rapportage-knop, disabled-placeholder met tooltip", async () => {
+  test("2. Tools-zone bevat Rapportage-knop, T1 A4 klikbaar met placeholder-modal", async () => {
     render(<App />);
     const btn = await screen.findByTestId("header-tool-rapportage");
     expect(btn).toBeInTheDocument();
     expect(btn).toHaveTextContent(/Rapportage/i);
-    expect(btn).toBeDisabled();
-    expect(btn.className).toMatch(/cursor-not-allowed/);
+    // T1 A4: knop is NIET meer disabled — klik opent placeholder-modal
+    expect(btn).not.toBeDisabled();
     expect(btn).toHaveAttribute("title", expect.stringMatching(/volgt|release|rapportage/i));
+    fireEvent.click(btn);
+    expect(await screen.findByTestId("rapport-placeholder-dialog")).toBeInTheDocument();
   });
 
   test("3. Consistency-knop (oude header-tool-consistency) is NIET meer in tools-zone", async () => {

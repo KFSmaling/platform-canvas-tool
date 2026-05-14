@@ -93,7 +93,7 @@ export default function WerkbladHeader({
   // rendert `fixed inset-0 z-50` over de canvas-header heen) — daarom
   // moet de werkblad-strip dezelfde branding bevatten.
   showLogo = false,
-  appTitle = null,           // optionele app-titel naast logo (bv. "Strategy Platform")
+  appTitle = null,           // optionele app-titel naast logo (bv. "Business Transformation Workbench")
   versie = null,             // optionele versie-string voor mono-pill
   lang = null,               // "nl" | "en" | null (geen lang-switch)
   onLangSwitch = null,       // () => void

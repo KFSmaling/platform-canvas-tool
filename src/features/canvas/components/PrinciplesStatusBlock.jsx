@@ -5,10 +5,14 @@ import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import { STATUS_COLORS, STATUS_BADGE_KEYS } from "./BlockCard";
 
 // ── Segmentdefinities — labels via appLabel(), fallback hardcoded ─────────────
+// T1 A9: vijf categorieën (Generiek + Klanten + Processen + Mensen + IT) —
+// consistent met werkblad-categorieën. Processen + Mensen tonen voorlopig leeg
+// zonder data-migratie (Kees expliciet: geen data-impact).
 const SEGMENTS = [
   { key: "generiek",    fallbackNl: "Generiek",    fallbackEn: "Generic"      },
   { key: "klanten",     fallbackNl: "Klanten",     fallbackEn: "Customers"    },
-  { key: "organisatie", fallbackNl: "Organisatie", fallbackEn: "Organisation" },
+  { key: "processen",   fallbackNl: "Processen",   fallbackEn: "Processes"    },
+  { key: "mensen",      fallbackNl: "Mensen",      fallbackEn: "People"       },
   { key: "it",          fallbackNl: "IT",          fallbackEn: "IT"           },
 ];
 
