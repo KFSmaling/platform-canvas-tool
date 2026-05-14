@@ -11,12 +11,15 @@ import React, {
 import {
   ArrowLeft, Plus, Trash2, Wand2, X, RefreshCw,
   BookOpen, Link2, RotateCcw, ChevronDown, ChevronUp, Compass,
+  Info, Settings, LogOut,
 } from "lucide-react";
 import AiIcon from "../../shared/components/AiIcon";
 import WerkbladActieknoppen from "../../shared/components/WerkbladActieknoppen";
 import WerkbladHeader from "../../shared/components/WerkbladHeader";
+import OverDialog from "../../shared/components/OverDialog";
 import { apiFetch } from "../../shared/services/apiClient";
 import { useLang } from "../../i18n";
+import { useAuth } from "../../shared/services/auth.service";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 import {
   loadGuidelines, createGuideline, updateGuideline, deleteGuideline,
@@ -342,10 +345,13 @@ function SwimLane({
 
 // ── RichtlijnenWerkblad (main export) ─────────────────────────────────────────
 export default function RichtlijnenWerkblad({ canvasId, onClose }) {
-  const { t }                                  = useLang();
+  const { t, lang, setLang }                   = useLang();
+  const { user, signOut }                      = useAuth();
   const { prompt: appPrompt, label: appLabel } = useAppConfig();
 
   const [mounted,  setMounted]  = useState(false);
+  // S3 design-systeem — Over Platform Workbench dialog via overflow-menu
+  const [showOverDialog, setShowOverDialog] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Data state
@@ -661,27 +667,53 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
     <div className={`flex flex-col flex-1 min-h-0 bg-slate-50 transition-all duration-300 ease-out
       ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
 
-      {/* Fase 2 design-systeem — drie-lagen-hybride WerkbladHeader (geen laag 3) */}
+      {/* S3 design-systeem — drie-lagen-WerkbladHeader (geen laag 3).
+          Laag 1 vol-gevuld met logo + appTitle + versie-pill + lang-switch +
+          overflow-menu (analoog aan S2 Strategie).
+          Laag 2 categorie-leigrijs 3px bottom-border + Compass-tile + Inzichten
+          + Rapportage (Analyse-knop verhuisd naar Inzichten-overlay per
+          designer §7 punt 2 — `handleAnalyze` blijft in scope, gebruikt door
+          inline-showAdvies-block onderaan deze component). */}
       <WerkbladHeader
         categorie="richtlijnen"
         icon={Compass}
         capsLabel="Werkblad"
         titel="Richtlijnen & Leidende Principes"
         onClose={onClose}
+        showLogo
+        appTitle={appLabel("app.title", "Strategy Platform")}
+        versie={process.env.REACT_APP_VERSION || "0.1.0"}
+        lang={lang}
+        onLangSwitch={() => setLang(lang === "nl" ? "en" : "nl")}
+        overflowItems={[
+          {
+            id: "admin",
+            label: "App config",
+            icon: Settings,
+            onClick: () => { window.location.href = "/admin"; },
+            hidden: user?.email !== process.env.REACT_APP_ADMIN_EMAIL,
+          },
+          {
+            id: "over",
+            label: "Over Platform Workbench",
+            icon: Info,
+            onClick: () => setShowOverDialog(true),
+            divider: true,
+          },
+          {
+            id: "uitloggen",
+            label: "Uitloggen",
+            icon: LogOut,
+            onClick: signOut,
+            divider: true,
+            danger: true,
+          },
+        ]}
         actieknoppen={
           <WerkbladActieknoppen
-            onAnalyse={handleAnalyze}
             onBekijken={() => setShowAdvies(true)}
             onRapportage={() => setShowOnePager(true)}
-            analyseLabel={
-              analysisLoading
-                ? appLabel("werkblad.action.analyseert", "Analyseren…")
-                : analysis
-                  ? appLabel("werkblad.action.analyseer_opnieuw", "Opnieuw analyseren")
-                  : appLabel("werkblad.action.analyseer", "Analyse draaien")
-            }
-            analysing={analysisLoading}
-            bekijkenDisabled={!analysis}
+            bekijkenDisabled={false}
             appLabel={appLabel}
           />
         }
@@ -891,6 +923,11 @@ export default function RichtlijnenWerkblad({ canvasId, onClose }) {
             onClose={() => setShowOnePager(false)}
           />
         </Suspense>
+      )}
+
+      {/* S3 — Over Platform Workbench dialog via WerkbladHeader-overflow-menu */}
+      {showOverDialog && (
+        <OverDialog onClose={() => setShowOverDialog(false)} />
       )}
     </div>
   );
