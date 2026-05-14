@@ -216,4 +216,45 @@ describe("T4 — Klanten-werkblad-doorloop fixes", () => {
     expect(screen.getByTestId("verbeteracties-knop-overstijgend")).toBeInTheDocument();
     expect(screen.getByTestId("verbeteracties-knop-eigen-actie")).toBeInTheDocument();
   });
+
+  // ── U-cleanup F-rtl-1 — A7 + A9 RTL-gaps invullen ──────────────────────────
+
+  test("13. A7: dossier-fetch met 0-results → 'geen match'-banner zichtbaar (geen flicker)", async () => {
+    const segDim = dim("d-seg", "klantsegment", "Segmenten");
+    klantenService.listDimensions.mockResolvedValue({ data: [segDim], error: null });
+    // Server returnt empty array — geen items gevonden in dossier
+    klantenService.extractItemsFromDossier.mockResolvedValue({ data: [], error: null, meta: {} });
+    klantenService.fetchUploadsStatus.mockResolvedValue({
+      data: { hasUploads: true, hasIndexedChunks: true, uploadCount: 3, indexedChunkCount: 12 },
+      error: null,
+    });
+    await renderWerkblad();
+    // Trigger extract-flow via DimensieKolom-knop voor d-seg
+    const extractBtn = await screen.findByTestId("dossier-items-extract-d-seg");
+    await act(async () => { fireEvent.click(extractBtn); });
+    // Wacht tot info-banner verschijnt (na await + state-update)
+    const banner = await screen.findByTestId("klanten-dossier-info-banner-items");
+    expect(banner).toHaveTextContent(/geen match/i);
+    // Sluit-knop werkt
+    fireEvent.click(banner.querySelector("button"));
+    expect(screen.queryByTestId("klanten-dossier-info-banner-items")).not.toBeInTheDocument();
+  });
+
+  test("14. A9: duplicate-name in zelfde dimensie → inline-error + GEEN createItem-call", async () => {
+    const segDim = dim("d-seg", "klantsegment", "Segmenten");
+    const existing = item("it-1", "d-seg", "MKB");
+    klantenService.listDimensions.mockResolvedValue({ data: [segDim], error: null });
+    klantenService.listItemsForCanvas.mockResolvedValue({ data: [existing], error: null });
+    await renderWerkblad();
+    // Open create-modal voor d-seg via dimensie-+ knop
+    const addBtn = await screen.findByTestId("dimensie-kolom-add-item-d-seg");
+    fireEvent.click(addBtn);
+    await screen.findByLabelText("Naam");
+    fireEvent.change(screen.getByLabelText("Naam"), { target: { value: "mkb" } }); // case-insensitive duplicate
+    const submit = screen.getByRole("button", { name: /^Opslaan$/i });
+    fireEvent.click(submit);
+    // Inline-error rendered + createItem NIET geroepen (negative-assertion)
+    expect(await screen.findByText(/bestaat al/i)).toBeInTheDocument();
+    expect(klantenService.createItem).not.toHaveBeenCalled();
+  });
 });

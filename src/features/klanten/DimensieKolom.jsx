@@ -185,6 +185,7 @@ export default function DimensieKolom({
       <div className="px-4 py-2 border-t border-slate-100 flex items-center justify-between">
         <button
           onClick={onAddItem}
+          data-testid={`dimensie-kolom-add-item-${dimension.id}`}
           className="flex items-center gap-1 text-[11px] font-bold text-[var(--color-primary)] hover:text-[var(--color-accent)] uppercase tracking-widest"
         >
           <Plus size={12} />

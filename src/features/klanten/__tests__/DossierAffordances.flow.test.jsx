@@ -60,6 +60,7 @@ jest.mock("../services/klanten.service", () => ({
   fetchUploadsStatus:              jest.fn(),
   extractItemsFromDossier:         jest.fn(),
   fillFieldsFromDossier:           jest.fn(),
+  createItemWithFieldsFromDossier: jest.fn(),
   extractPainPointsFromDossier:    jest.fn(),
   acceptDraftItem:                 jest.fn(),
   rejectDraftItem:                 jest.fn(),
@@ -227,21 +228,83 @@ describe("KlantenWerkblad — dossier-driven AI-affordances (stap 11.K)", () => 
     expect(klantenService.rejectDraftItem).toHaveBeenCalledWith(draftItem.id);
   });
 
-  test("5. A2-knop in ItemModal disabled wanneer item nog niet bestaat (create-mode)", async () => {
+  // A6 (U-cleanup T-cyclus-afsluiting): wijziging in semantiek — bij 0 items in
+  // dimensie + has indexed chunks is de knop nu ENABLED en gebruikt de
+  // `dossier_create_with_fields`-flow i.p.v. `dossier_fill_fields`. Bij ≥1 item
+  // OF zonder indexed chunks blijft het oude disabled-gedrag (test 5b).
+  test("5. A6: create-mode + 0 items + indexed chunks → magic-knop ENABLED met create_with_fields-variant", async () => {
     klantenService.fetchUploadsStatus.mockResolvedValue({
       data: { hasUploads: true, hasIndexedChunks: true, uploadCount: 1, indexedChunkCount: 6 },
       error: null,
     });
+    klantenService.listItemsForCanvas.mockResolvedValue({ data: [], error: null });
 
     render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
-    // Open create-item modal via "+ item"-knop
     const addItemBtn = await screen.findByRole("button", { name: /\+ item$/i });
-    await act(async () => {
-      fireEvent.click(addItemBtn);
+    await act(async () => { fireEvent.click(addItemBtn); });
+    const fillBtn = await screen.findByTestId("dossier-fields-fill");
+    expect(fillBtn).not.toBeDisabled();
+    expect(fillBtn).toHaveAttribute("data-variant", "create_with_fields");
+    expect(fillBtn).toHaveTextContent(/item maken vanuit dossier/i);
+  });
+
+  test("5b. A6: create-mode + 0 items maar GEEN indexed chunks → magic-knop disabled", async () => {
+    klantenService.fetchUploadsStatus.mockResolvedValue({
+      data: { hasUploads: false, hasIndexedChunks: false, uploadCount: 0, indexedChunkCount: 0 },
+      error: null,
     });
+    klantenService.listItemsForCanvas.mockResolvedValue({ data: [], error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    const addItemBtn = await screen.findByRole("button", { name: /\+ item$/i });
+    await act(async () => { fireEvent.click(addItemBtn); });
     const fillBtn = await screen.findByTestId("dossier-fields-fill");
     expect(fillBtn).toBeDisabled();
-    expect(fillBtn).toHaveAttribute("title", expect.stringMatching(/bewaar eerst het item/i));
+    expect(fillBtn).toHaveAttribute("title", expect.stringMatching(/upload eerst documenten/i));
+  });
+
+  test("5c. A6: click magic-knop → createItemWithFieldsFromDossier called met canvas+dim, modal sluit, reload toont draft", async () => {
+    klantenService.fetchUploadsStatus.mockResolvedValue({
+      data: { hasUploads: true, hasIndexedChunks: true, uploadCount: 1, indexedChunkCount: 6 },
+      error: null,
+    });
+    const newDraft = { ...draftItem, id: "item-a6-new" };
+    klantenService.createItemWithFieldsFromDossier.mockResolvedValue({
+      data: newDraft,
+      error: null,
+      meta: { ai_model: "claude-haiku-4-5-20251001", chunk_count: 6 },
+    });
+    klantenService.listItemsForCanvas
+      .mockResolvedValueOnce({ data: [], error: null })   // initial
+      .mockResolvedValue({ data: [newDraft], error: null }); // post-reload
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    const addItemBtn = await screen.findByRole("button", { name: /\+ item$/i });
+    await act(async () => { fireEvent.click(addItemBtn); });
+    const fillBtn = await screen.findByTestId("dossier-fields-fill");
+    expect(fillBtn).not.toBeDisabled();
+    await act(async () => { fireEvent.click(fillBtn); });
+
+    expect(klantenService.createItemWithFieldsFromDossier).toHaveBeenCalledWith(TEST_CANVAS_ID, sampleDimension.id);
+    // Modal sluit + draft zichtbaar in lijst
+    expect(screen.queryByTestId("dossier-fields-fill")).not.toBeInTheDocument();
+    expect(await screen.findByTestId(`draft-item-${newDraft.id}`)).toBeInTheDocument();
+  });
+
+  test("5d. A6: in EDIT-mode op bestaand item gebruikt oude fill_fields-variant (geen A6-flow)", async () => {
+    klantenService.fetchUploadsStatus.mockResolvedValue({
+      data: { hasUploads: true, hasIndexedChunks: true, uploadCount: 1, indexedChunkCount: 6 },
+      error: null,
+    });
+    klantenService.listItemsForCanvas.mockResolvedValue({ data: [canonicalItem], error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    // Open edit-modal door op item-card te klikken
+    const itemCard = await screen.findByTestId(`item-card-${canonicalItem.id}`);
+    await act(async () => { fireEvent.click(itemCard); });
+    const fillBtn = await screen.findByTestId("dossier-fields-fill");
+    expect(fillBtn).toHaveAttribute("data-variant", "fill_fields");
+    expect(fillBtn).toHaveTextContent(/velden invullen vanuit dossier/i);
   });
 
   test("6. A3-knop disabled zonder canonical items (alleen draft-items aanwezig)", async () => {

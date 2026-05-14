@@ -828,10 +828,137 @@ function tryParseJsonObject(raw) {
   }
 }
 
+/**
+ * A6 (U-cleanup T-cyclus-afsluiting): combineer A1 + A2 voor 0-items-scenario.
+ * Extraheert ÉÉN item met name + description + archetype_data uit dossier
+ * en INSERTed direct als draft. Lost magic-velden-vullen-knop-disabled-bij-
+ * 0-items op (T4 deferred-finding).
+ *
+ * Body: { canvas_id, dimension_id }
+ * Response: { item, ai_model, prompt_version, chunk_count }
+ *
+ * Verschil met A1: A1 extraheert tot 5 items zonder fields. A6 extraheert
+ * ÉÉN item mét archetype_data, zodat de UI-flow "leeg-modal → magic →
+ * volledig-ingevulde-draft" werkt vanaf 0 items.
+ */
+async function createItemWithFieldsFromDossier({ supabase, req, canvasId, dimensionId, userId, userRole }) {
+  if (!canvasId || !dimensionId) {
+    return { status: 400, body: { error: "canvas_id en dimension_id zijn verplicht" } };
+  }
+
+  const { data: dim, error: dimErr } = await supabase
+    .from("cd_dimensions")
+    .select("id, canvas_id, tenant_id, archetype, name, description")
+    .eq("id", dimensionId)
+    .maybeSingle();
+  if (dimErr) return { status: 500, body: { error: dimErr.message } };
+  if (!dim)   return { status: 404, body: { error: "dimension niet gevonden of geen toegang" } };
+  if (dim.canvas_id !== canvasId) {
+    return { status: 400, body: { error: "dimension zit in ander canvas" } };
+  }
+
+  const allowedFields = ARCHETYPE_FIELDS[dim.archetype] || [];
+
+  // RAG-call (zelfde signaal als A1, maar gericht op één rijk item)
+  const query = `${dim.archetype} ${dim.name}${dim.description ? " " + dim.description : ""}`;
+  const ragResult = await runRagQuery({ req, query, canvasId });
+  if (ragResult.error) return { status: 502, body: { error: ragResult.error } };
+  if (ragResult.chunks.length === 0) {
+    return { status: 200, body: { item: null, note: "Geen relevante chunks in dossier voor dit archetype" } };
+  }
+
+  // Hergebruik items_extract-prompt; user-message instrueert ÉÉN volledig item.
+  const rawPrompt = await loadPromptViaRPC(supabase, PROMPT_KEYS.items_extract);
+  if (!rawPrompt) return { status: 500, body: { error: `Prompt ${PROMPT_KEYS.items_extract} niet gevonden` } };
+  const tenantVars = await getTenantVars(supabase);
+  const systemPrompt = renderPrompt(rawPrompt, tenantVars);
+
+  const userMessage = buildCreateWithFieldsUserMessage({ dim, allowedFields, chunks: ragResult.chunks });
+
+  const aiResult = await callClaude({ systemPrompt, userMessage });
+  if (aiResult.error) return { status: aiResult.status || 502, body: { error: aiResult.error } };
+
+  // Parse als array (consistent met A1 prompt-formaat) en pak eerste valide item.
+  const parsed = tryParseJsonArray(aiResult.raw);
+  if (!parsed.ok) {
+    console.error("[_dossier_extract:create_with_fields] parse-error:", parsed.error, "\nraw:", aiResult.raw.slice(0, 500));
+    return { status: 500, body: { error: "AI-output kon niet geparsed worden", detail: parsed.error } };
+  }
+  const first = parsed.value.find(it => typeof it?.name === "string" && it.name.trim().length > 0);
+  if (!first) {
+    return { status: 200, body: { item: null, note: "AI vond geen item in dossier" } };
+  }
+
+  // Filter archetype_data: alleen allowed-keys, niet-leeg, string-only.
+  const proposedFields = {};
+  const rawFields = (first.archetype_data && typeof first.archetype_data === "object") ? first.archetype_data : {};
+  for (const key of allowedFields) {
+    const v = rawFields[key];
+    if (typeof v === "string" && v.trim().length > 0) {
+      proposedFields[key] = v.trim();
+    }
+  }
+
+  const row = {
+    dimension_id: dimensionId,
+    canvas_id: dim.canvas_id,
+    tenant_id: dim.tenant_id,
+    name: String(first.name).trim().slice(0, 200),
+    description: typeof first.description === "string" ? first.description.trim().slice(0, 2000) : null,
+    archetype_data: proposedFields,
+    is_draft: true,
+    sort_order: 10,
+  };
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("cd_items").insert([row]).select().single();
+  if (insErr) return { status: insErr.code === "42501" ? 403 : 500, body: { error: insErr.message } };
+
+  await insertEventsBestEffort(supabase, [{
+    target_table: "cd_items",
+    target_id: inserted.id,
+    affordance: "items_from_dossier",
+    event_type: "ai_generated",
+    actor_user_id: userId,
+    actor_role: userRole,
+    text_before_md: null,
+    text_after_md: inserted.name + (inserted.description ? "\n\n" + inserted.description : ""),
+    metadata: {
+      ai_model: AI_MODEL,
+      prompt_key: PROMPT_KEYS.items_extract,
+      prompt_version: PROMPT_VERSION,
+      proposed_fields: proposedFields,
+      sources: Array.isArray(first.sources) ? first.sources : [],
+      chunk_count: ragResult.chunks.length,
+      variant: "create_with_fields",
+    },
+    tenant_id: dim.tenant_id,
+    canvas_id: dim.canvas_id,
+  }]);
+
+  return { status: 201, body: { item: inserted, ai_model: AI_MODEL, prompt_version: PROMPT_VERSION, chunk_count: ragResult.chunks.length } };
+}
+
+function buildCreateWithFieldsUserMessage({ dim, allowedFields, chunks }) {
+  const lines = [];
+  lines.push(`ARCHETYPE: ${dim.archetype}`);
+  lines.push(`DIMENSIE: ${dim.name}${dim.description ? " — " + dim.description : ""}`);
+  lines.push("\nBESTAANDE ITEMS: (nog geen — dit wordt het eerste item in deze dimensie)");
+  lines.push("\nINSTRUCTIE: extraheer EXACT ÉÉN item dat het meest representatief is voor deze dimensie volgens het dossier. Lever het in array-formaat (lengte 1) met de volgende structuur per item:");
+  lines.push(`  { "name": string, "description": string, "archetype_data": { ${allowedFields.map(k => `"${k}": string`).join(", ")} }, "sources": [string] }`);
+  lines.push(`Vul archetype_data zo volledig mogelijk in op basis van het dossier. Sla velden over waarvoor geen onderbouwing in het dossier staat (lege string of weglaten).`);
+
+  lines.push(`\nBRONDOCUMENTEN (${chunks.length} fragmenten):`);
+  lines.push(buildContextString(chunks));
+
+  return lines.join("\n");
+}
+
 module.exports = {
   extractItemsFromDossier,
   fillFieldsFromDossier,
   extractPainPointsFromDossier,
+  createItemWithFieldsFromDossier,
   acceptDraftItem,
   rejectDraftItem,
   editDraftItem,

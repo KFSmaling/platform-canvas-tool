@@ -18,66 +18,12 @@
 import React from "react";
 import { Plus, Sparkles, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
-import PijnpuntCard from "./PijnpuntCard";
 import KlantreisChevronOverview from "./KlantreisChevronOverview";
 import PijnpuntChevronCard from "./PijnpuntChevronCard";
 
-// Stap Bundle 3 F27 — gekoppelde pain_point_ids per item-id.
-// Vervangt de oude `couplingCountByItem`-counts door arrays zodat ItemCard-
-// indicator-bolletjes het volgnummer kan tonen (cross-referentie met
-// PijnpuntCard-badge).
-function painIdsByItem(couplings) {
-  const map = new Map();
-  for (const c of couplings) {
-    if (c.target_table !== "cd_items") continue;
-    if (!map.has(c.target_id)) map.set(c.target_id, []);
-    map.get(c.target_id).push(c.pain_point_id);
-  }
-  return map;
-}
-
-function CompactDimensieKolom({ dimension, items, painsByItem, painNumberById }) {
-  const dimItems = items.filter(it => it.dimension_id === dimension.id);
-  return (
-    <div className="border border-slate-200 rounded-lg p-3 bg-white">
-      <div className="font-medium text-[12px] mb-2">{dimension.name}</div>
-      {dimItems.length === 0 ? (
-        <p className="text-[10px] text-slate-400 italic">geen items</p>
-      ) : (
-        <div className="space-y-1.5">
-          {dimItems.map(it => {
-            const painIds = painsByItem.get(it.id) || [];
-            const visibleNums = painIds
-              .map(pid => painNumberById.get(pid))
-              .filter(Boolean)
-              .sort((a, b) => a - b);
-            const shown = visibleNums.slice(0, 5);
-            const overflow = visibleNums.length - shown.length;
-            return (
-              <div key={it.id} className="bg-slate-50 px-3 py-1.5 rounded flex justify-between items-center">
-                <div className="text-[12px]">{it.name}</div>
-                {visibleNums.length > 0 && (
-                  <div className="flex gap-1 items-center" data-testid={`item-pijn-indicators-${it.id}`}>
-                    {shown.map(n => (
-                      <span
-                        key={n}
-                        data-testid={`item-pijn-num-${it.id}-${n}`}
-                        className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold leading-none"
-                      >
-                        {n}
-                      </span>
-                    ))}
-                    {overflow > 0 && <span className="text-[9px] text-red-600 ml-1">+{overflow}</span>}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+// U-cleanup F-doodcode-1: PijnpuntCard import + CompactDimensieKolom-function +
+// painIdsByItem-helper verwijderd na T4 B1 lijst-layout-rework (rij-pattern
+// vervangt chips-pattern; CompactDimensieKolom-overlap met per-dimensie-sectie).
 
 export default function PijnpuntenView({
   dimensions = [],
@@ -102,7 +48,6 @@ export default function PijnpuntenView({
   onKlantreisChevronClick,
 }) {
   const { label: appLabel } = useAppConfig();
-  const painsByItem = painIdsByItem(couplings);
   const couplingsByPain = new Map();
   for (const c of couplings) {
     if (!couplingsByPain.has(c.pain_point_id)) couplingsByPain.set(c.pain_point_id, []);

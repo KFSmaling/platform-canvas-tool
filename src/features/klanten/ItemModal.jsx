@@ -35,6 +35,9 @@ export default function ItemModal({
   // Stap 11.K — A2 dossier-extract velden-invuller. Optionele callback +
   // upload-status uit useCanvasUploads (KlantenWerkblad-niveau).
   onFillFieldsFromDossier,
+  // A6 (U-cleanup) — 0-items-flow: combineer extract + INSERT met fields.
+  // Wordt aangeroepen in create-mode wanneer dimensie nog 0 items heeft.
+  onCreateWithFieldsFromDossier,
   hasIndexedChunks = false,
   hasUploads = false,
   uploadsProcessing = false,
@@ -99,14 +102,49 @@ export default function ItemModal({
     }
   }
 
-  const a2Disabled = !item?.id || !hasIndexedChunks || uploadsProcessing || filling;
-  const a2Tooltip = !item?.id
+  // A6 (U-cleanup): in create-mode + 0 items in dimensie, gebruik nieuwe
+  // server-flow die direct een draft item met fields INSERTed. In edit-mode
+  // of bij ≥1 bestaand item blijft de A2-flow (fill fields op bestaand item).
+  const isZeroItemsCreate =
+    !isEdit && !item?.id && existingItemsInDimension.length === 0 && !!onCreateWithFieldsFromDossier;
+
+  const a2Disabled = isZeroItemsCreate
+    ? (!hasIndexedChunks || uploadsProcessing || filling)
+    : (!item?.id || !hasIndexedChunks || uploadsProcessing || filling);
+  const a2Tooltip = (!item?.id && !isZeroItemsCreate)
     ? "Bewaar eerst het item — A2 vult velden voor een bestaand item"
     : !hasUploads
       ? appLabel("klanten.dossier.disabled_no_uploads", "Upload eerst documenten")
       : uploadsProcessing
         ? appLabel("klanten.dossier.disabled_processing", "Documenten worden nog verwerkt")
         : null;
+
+  // A6: in 0-items-create-mode roept de knop een ander callback. Server creëert
+  // een draft + KlantenWerkblad reload + we sluiten de modal. Geen form-merge
+  // omdat de modal nu een gebruiker-bevestigings-step is — draft staat in lijst
+  // met Markeer/Bewerk/Verwijder-affordances.
+  async function handleCreateWithFields() {
+    if (!onCreateWithFieldsFromDossier || !dimension?.id || filling) return;
+    setFilling(true);
+    setFillNote(null);
+    setErrMsg(null);
+    const { data: newItem, error } = await onCreateWithFieldsFromDossier(dimension.id);
+    setFilling(false);
+    if (error) {
+      setErrMsg(error.message || "Aanmaken vanuit dossier mislukt");
+      return;
+    }
+    if (!newItem) {
+      // 200 met item=null + note: AI vond geen items
+      setFillNote({ type: "empty", text: "AI vond geen item in dossier voor deze dimensie" });
+      return;
+    }
+    // Draft staat in lijst — modal sluiten zodat de gebruiker direct kan
+    // accepteren / bewerken / verwijderen.
+    onClose();
+  }
+
+  const a2OnClick = isZeroItemsCreate ? handleCreateWithFields : handleFillFromDossier;
 
   async function handleConfirmDelete() {
     if (!isEdit || !onDelete || !item?.id || deleting) return;
@@ -199,12 +237,13 @@ export default function ItemModal({
           <div className="border-t border-slate-100 pt-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-[10px] text-slate-400 uppercase tracking-widest">Archetype-velden</p>
-              {onFillFieldsFromDossier && (
+              {(onFillFieldsFromDossier || isZeroItemsCreate) && (
                 <button
                   type="button"
-                  onClick={handleFillFromDossier}
+                  onClick={a2OnClick}
                   disabled={a2Disabled}
                   data-testid="dossier-fields-fill"
+                  data-variant={isZeroItemsCreate ? "create_with_fields" : "fill_fields"}
                   title={a2Tooltip || undefined}
                   className={`flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors ${
                     a2Disabled
@@ -213,7 +252,9 @@ export default function ItemModal({
                   }`}
                 >
                   {filling ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                  {appLabel("klanten.dossier.fields_fill", "Velden invullen vanuit dossier")}
+                  {isZeroItemsCreate
+                    ? appLabel("klanten.dossier.create_with_fields", "Item maken vanuit dossier")
+                    : appLabel("klanten.dossier.fields_fill", "Velden invullen vanuit dossier")}
                 </button>
               )}
             </div>

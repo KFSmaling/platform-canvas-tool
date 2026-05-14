@@ -193,6 +193,16 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     return result;
   }
 
+  // A6 (U-cleanup): server-flow voor 0-items-scenario. ItemModal in create-
+  // mode roept dit aan; server INSERTed direct een draft item met fields
+  // gevuld. Daarna reload + modal sluiten in caller (ItemModal).
+  async function handleCreateWithFieldsFromDossier(dimensionId) {
+    if (!canvasId || !dimensionId) return { data: null, error: new Error("canvasId + dimensionId required") };
+    const result = await klantenService.createItemWithFieldsFromDossier(canvasId, dimensionId);
+    if (!result.error) reload();
+    return result;
+  }
+
   async function handleAcceptDraftItem(item) {
     if (dossierBusy) return;
     setDossierBusy({ action: "accept_item", id: item.id });
@@ -551,6 +561,8 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           onSave={handleSaveItem}
           onDelete={handleDeleteItem}
           onFillFieldsFromDossier={handleFillFieldsFromDossier}
+          /* A6 (U-cleanup): 0-items-flow — create item met fields uit dossier */
+          onCreateWithFieldsFromDossier={handleCreateWithFieldsFromDossier}
           hasUploads={hasUploads}
           hasIndexedChunks={hasIndexedChunks}
           uploadsProcessing={uploadsProcessing}

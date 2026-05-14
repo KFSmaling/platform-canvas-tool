@@ -23,6 +23,7 @@ const { userScopedClient } = require("../_template");
 const { validateArchetypeData } = require("./_archetypes");
 const {
   extractItemsFromDossier, fillFieldsFromDossier,
+  createItemWithFieldsFromDossier,
   acceptDraftItem, rejectDraftItem, editDraftItem,
 } = require("./_dossier_extract");
 
@@ -39,6 +40,7 @@ module.exports = async function handler(req, res) {
   // Endpoint-budget=12 — geen nieuwe top-level files.
   const subpath = req.query?._subpath;
   if (subpath === "dossier_extract" || subpath === "dossier_fill_fields" ||
+      subpath === "dossier_create_with_fields" ||
       subpath === "accept_draft"    || subpath === "reject_draft" ||
       subpath === "edit_draft") {
     return handleDossierSubpath(req, res, { subpath, supabase, user });
@@ -178,6 +180,19 @@ async function handleDossierSubpath(req, res, { subpath, supabase, user }) {
       }
       const { canvas_id, dimension_id } = req.body || {};
       const result = await extractItemsFromDossier({ ...ctx, canvasId: canvas_id, dimensionId: dimension_id });
+      return res.status(result.status).json(result.body || {});
+    }
+
+    if (subpath === "dossier_create_with_fields") {
+      // A6 (U-cleanup): combineer A1+A2 voor 0-items-flow. Body: { canvas_id, dimension_id }
+      if (req.method !== "POST") {
+        res.setHeader("Allow", "POST");
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      const { canvas_id, dimension_id } = req.body || {};
+      const result = await createItemWithFieldsFromDossier({
+        ...ctx, canvasId: canvas_id, dimensionId: dimension_id,
+      });
       return res.status(result.status).json(result.body || {});
     }
 

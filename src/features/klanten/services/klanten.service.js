@@ -115,6 +115,25 @@ export async function extractItemsFromDossier(canvasId, dimensionId) {
   };
 }
 
+/**
+ * A6 (U-cleanup): combineer A1+A2 voor 0-items-scenario. Server extraheert
+ * ÉÉN item met name+description+archetype_data en INSERTed direct als draft.
+ * Lost magic-knop-disabled-bij-0-items op.
+ */
+export async function createItemWithFieldsFromDossier(canvasId, dimensionId) {
+  if (!canvasId || !dimensionId) return { data: null, error: new Error("canvasId + dimensionId required") };
+  const { data, error } = await call(
+    "POST",
+    "/api/klanten/items?_subpath=dossier_create_with_fields",
+    { canvas_id: canvasId, dimension_id: dimensionId },
+  );
+  return {
+    data: data?.item ?? null,
+    error,
+    meta: data && { ai_model: data.ai_model, prompt_version: data.prompt_version, chunk_count: data.chunk_count, note: data.note },
+  };
+}
+
 export async function fillFieldsFromDossier(itemId) {
   if (!itemId) return { data: null, error: new Error("itemId required") };
   const { data, error } = await call(

@@ -303,6 +303,7 @@ const LABEL_FALLBACKS = {
   "klanten.dossier.actie.verwijder":                 "Verwijder",
   "klanten.dossier.items_extract":                   "Items vanuit dossier",
   "klanten.dossier.fields_fill":                     "Velden invullen vanuit dossier",
+  "klanten.dossier.create_with_fields":              "Item maken vanuit dossier",
   "klanten.dossier.pain_points_extract":             "Pijnpunten extraheren vanuit dossier",
   "klanten.dossier.draft_badge":                     "dossier-suggestie",
   "klanten.dossier.disabled_no_uploads":             "Upload eerst documenten",
