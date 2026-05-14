@@ -33,7 +33,8 @@
 const { requireAuth } = require("../_auth");
 const { renderPrompt, getTenantVars, userScopedClient } = require("../_template");
 
-const ALLOWED_ACTIONS = ["cluster", "paradox", "positionering", "overstijgend"];
+// T4 B2.3: 'algemeen' toegevoegd als 5e AI-generatie (zonder pre-bepaalde lens)
+const ALLOWED_ACTIONS = ["cluster", "paradox", "positionering", "overstijgend", "algemeen"];
 const PROMPT_KEY_PREFIX = "prompt.klanten.";
 const PROMPT_VERSION = "11G-v1"; // bumpen bij grote prompt-wijzigingen
 const MAX_SUGGESTIONS_PER_CALL = 5;

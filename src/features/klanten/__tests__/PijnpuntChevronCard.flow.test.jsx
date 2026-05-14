@@ -197,13 +197,15 @@ describe("WerkruimteView — F26-iteratie volle-breedte-strip integratie", () =>
     expect(screen.getByTestId("chevron-it-kr-9")).toBeInTheDocument();
   });
 
-  test("6. fase 1 + klantreis-dim + 2 items → geen top-strip (val terug naar grid)", async () => {
+  test("6. T4 A4: fase 1 + klantreis-dim + 2 items → strip ZICHTBAAR (was: ≥3-restrictie gedropt)", async () => {
     const items = makeKlantreisItems(2);
     await renderWerkruimte({
       dimensions: [sampleKlantreisDim, sampleOtherDim],
       items,
     });
-    expect(screen.queryByTestId("klantreis-top-strip-container")).not.toBeInTheDocument();
+    // T4 A4: strip is nu zichtbaar bij ALLE klantreis-dim-aanwezigheid, ongeacht aantal stages.
+    // Eerder vereiste de oude ≥3-restrictie 3 stages; nu render bij ≥1.
+    expect(screen.queryByTestId("klantreis-top-strip-container")).toBeInTheDocument();
   });
 
   test("7. fase 1 + geen klantreis-dim → geen top-strip", async () => {

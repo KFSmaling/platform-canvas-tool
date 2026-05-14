@@ -53,6 +53,15 @@ export const PATTERN_TYPE_STYLES = {
     text:   "#1e293b",
     label:  "#475569",
   },
+  // T4 B2.4: 5e AI-generatie 'Algemeen' — open lens, neutrale teal/cyaan
+  // (geen vooraf bepaalde Cluster/Paradox/Positionering/Overstijgend-frame).
+  algemeen: {
+    icon:   "◎",
+    bg:     "#ecfeff",
+    border: "#06b6d4",
+    text:   "#155e75",
+    label:  "#0e7490",
+  },
 };
 
 /** Tailwind-class-mapping voor in-screen UI (badge / card-border).
@@ -65,10 +74,12 @@ export const PATTERN_TYPE_TAILWIND = {
   positionering: { badge: "bg-green-100 text-green-800",    border: "border-l-green-500"   },
   overstijgend:  { badge: "bg-purple-100 text-purple-800",  border: "border-l-purple-500"  },
   eigen:         { badge: "bg-slate-200 text-slate-700",    border: "border-l-slate-500"   },
+  // T4 B2.4
+  algemeen:      { badge: "bg-cyan-100 text-cyan-800",      border: "border-l-cyan-500"    },
 };
 
-export const PATTERN_TYPES = ["cluster", "paradox", "positionering", "overstijgend", "eigen"];
-export const AI_ACTION_TYPES = ["cluster", "paradox", "positionering", "overstijgend"];
+export const PATTERN_TYPES = ["cluster", "paradox", "positionering", "overstijgend", "eigen", "algemeen"];
+export const AI_ACTION_TYPES = ["cluster", "paradox", "positionering", "overstijgend", "algemeen"];
 
 /** Label-key per pattern_type. Component roept appLabel(getPatternTypeLabelKey(type), fallback). */
 export function getPatternTypeLabelKey(type) {
@@ -82,6 +93,7 @@ export function getPatternTypeLabelFallback(type) {
     positionering: "Positionering",
     overstijgend:  "Overstijgend",
     eigen:         "Eigen",
+    algemeen:      "Algemeen",
   }[type] || type;
 }
 

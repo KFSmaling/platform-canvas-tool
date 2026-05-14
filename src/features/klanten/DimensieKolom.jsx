@@ -307,7 +307,8 @@ function DraftItemCard({ item, onClick, onAccept, onReject, busy, appLabel }) {
           data-testid={`draft-item-accept-${item.id}`}
           className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50"
         >
-          {appLabel("klanten.dossier.actie.markeer", "Markeer als richting")}
+          {/* T4 A5: items-draft-accept-knop label-rename ("Voeg toe als item") */}
+          {appLabel("klanten.dossier.items.actie.toevoegen", "Voeg toe als item")}
         </button>
         <button
           type="button"

@@ -127,6 +127,15 @@ const LABEL_GROUPS = [
     match: k => k === "label.werkblad.klanten" || k.startsWith("label.klanten."),
   },
   {
+    // T4 — Klanten-werkblad invultips (5 info-banners + dossier-actie-labels)
+    id: "klanten-tips",
+    label: "Klanten — Invultips",
+    icon: Layers,
+    desc: "Info-banner-teksten per fase + dossier-actie-labels (toevoegen/maakverbeteractie)",
+    headerCls: "bg-amber-50/60 border-amber-100 text-amber-700",
+    match: k => k.startsWith("label.tips.klanten."),
+  },
+  {
     id: "other",
     label: "Overig",
     icon: Tag,

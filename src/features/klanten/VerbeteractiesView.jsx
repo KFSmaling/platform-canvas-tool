@@ -54,7 +54,10 @@ import PromoteToIntentModal from "./PromoteToIntentModal";
 import CollapseSection from "./CollapseSection";
 import { useVerbeteracties } from "./hooks/useVerbeteracties";
 
+// T4 B2.3: 5 AI-generaties (was 4). 'Algemeen' is open lens — geen vooraf
+// bepaalde Cluster/Paradox/Positionering/Overstijgend-frame.
 const AI_BUTTONS = [
+  { action: "algemeen",      labelKey: "klanten.analyse.knop.algemeen",      labelFallback: "Algemeen patroon",      helperKey: "klanten.analyse.knop.algemeen.helper",      helperFallback: "Open analyse — AI kiest zelf welke lens past bij de pijnpunten" },
   { action: "cluster",       labelKey: "klanten.analyse.knop.cluster",       labelFallback: "Cluster zoeken",       helperKey: "klanten.analyse.knop.cluster.helper",       helperFallback: "Groepen pijnpunten met gemeenschappelijke oorzaak" },
   { action: "paradox",       labelKey: "klanten.analyse.knop.paradox",       labelFallback: "Paradox zoeken",       helperKey: "klanten.analyse.knop.paradox.helper",       helperFallback: "Pijnpunten die elkaar tegenspreken" },
   { action: "positionering", labelKey: "klanten.analyse.knop.positionering", labelFallback: "Positionering toetsen", helperKey: "klanten.analyse.knop.positionering.helper", helperFallback: "Wie zijn we voor wie — zwakke plekken" },
@@ -297,6 +300,20 @@ export default function VerbeteractiesView({
 
   return (
     <div className="flex-1 overflow-auto p-8" data-testid="verbeteracties-view">
+      {/* T4 B2.2: info-banner bovenin Verbeteracties-tab — uitleg
+          concept→definitief-flow + verwijzing naar Veranderprogramma-werkblad */}
+      <div
+        data-testid="klanten-fase3-info-banner"
+        className="mb-5 px-4 py-3 text-xs leading-relaxed border border-category-klanten/20 rounded-md"
+        style={{
+          backgroundColor: "var(--category-klanten-light)",
+          color: "var(--category-klanten)",
+        }}
+      >
+        {appLabel("tips.klanten.fase3.info",
+          "Acties starten als Concept en kunnen Definitief gemaakt worden. Plan en uitvoering volgt in het Veranderprogramma-werkblad.")}
+      </div>
+
       {/* Intro */}
       <div className="mb-6">
         <p className="text-sm text-slate-500 italic mb-4 max-w-3xl">

@@ -38,6 +38,10 @@ export default function ItemModal({
   hasIndexedChunks = false,
   hasUploads = false,
   uploadsProcessing = false,
+  // T4 A9: client-side duplicate-name-validatie. KlantenWerkblad geeft hier
+  // de bestaande items in deze dimensie zodat we vóór submit een vriendelijke
+  // inline-error kunnen tonen i.p.v. 500-INSERT-error.
+  existingItemsInDimension = [],
   // Stap 11.K.2 F16 — canonical-delete: alleen in edit-mode getoond,
   // inline-bevestiging vóór hard-delete. KlantenWerkblad handelt de service-call af.
   onDelete,
@@ -120,14 +124,26 @@ export default function ItemModal({
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setErrMsg("Naam is verplicht");
+      return;
+    }
+    // T4 A9: client-side duplicate-name-validatie. Voorkomt 500-INSERT-error
+    // bij twee items met dezelfde naam in zelfde dimensie. Case-insensitive
+    // vergelijking; in edit-mode (item.id bestaat) sluiten we zelf-id uit.
+    const lowerName = trimmedName.toLowerCase();
+    const duplicate = (existingItemsInDimension || []).some(it =>
+      it.id !== item?.id && (it.name || "").trim().toLowerCase() === lowerName
+    );
+    if (duplicate) {
+      setErrMsg(`Een item met de naam "${trimmedName}" bestaat al in deze dimensie. Kies een andere naam.`);
       return;
     }
     setSaving(true);
     setErrMsg(null);
     const { error } = await onSave({
-      name: name.trim(),
+      name: trimmedName,
       description: description.trim() || null,
       archetype_data: archetypeData,
     });

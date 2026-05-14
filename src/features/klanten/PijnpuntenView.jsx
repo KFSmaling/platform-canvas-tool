@@ -269,29 +269,8 @@ export default function PijnpuntenView({
         </div>
       )}
 
-      {/* Compacte inventaris-grid bovenaan (alleen andere dimensies bij
-          top-strip-active — klantreis-content zit al boven) */}
-      {andereDimensies.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          {klantreisTopStripActive && (
-            <div className="col-span-full text-[10px] font-bold uppercase tracking-widest text-slate-500 -mb-1">
-              {appLabel(
-                "klanten.pijnpunten.andere_dims.titel",
-                "Pijnpunten andere dimensies · {N} stuks"
-              ).replace("{N}", String(andereDimsPains.length))}
-            </div>
-          )}
-          {andereDimensies.map(dim => (
-            <CompactDimensieKolom
-              key={dim.id}
-              dimension={dim}
-              items={items}
-              painsByItem={painsByItem}
-              painNumberById={painNumberById}
-            />
-          ))}
-        </div>
-      )}
+      {/* T4 B1: compacte inventaris-grid verwijderd — nieuwe per-dimensie-
+          lijst-sectie (verder beneden) toont dezelfde info gestructureerder. */}
 
       {/* Pijnpunten-lijst */}
       <div className="flex justify-between items-baseline mb-3">
@@ -300,7 +279,7 @@ export default function PijnpuntenView({
         </div>
         <div className="flex items-center gap-3">
           <div className="text-[10px] text-slate-400">
-            {painPoints.length} · {appLabel("klanten.pijnpunt.lijst.helper", "card laat koppelingen zien als chips")}
+            {painPoints.length} · {appLabel("klanten.pijnpunt.lijst.helper", "gegroepeerd per dimensie")}
           </div>
           {a3HasCallback && (
             <button
@@ -356,19 +335,118 @@ export default function PijnpuntenView({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            {andereDimsPains.map(pp => (
-              <PijnpuntCard
-                key={pp.id}
-                painPoint={pp}
-                nummer={painNumberById.get(pp.id)}
-                couplings={couplingsByPain.get(pp.id) || []}
-                dimensions={dimensions}
-                items={items}
-                onClick={onEditPijnpunt}
-              />
-            ))}
+          {/* T4 B1: lijst-layout vervangt chips. Per dimensie sectie met header
+              (naam + counter) + lijst van pijnpunten gekoppeld aan items in
+              deze dimensie. "Overstijgend" (geen koppeling) eigen blok onderaan. */}
+          <div className="space-y-4 mb-4" data-testid="pijnpunten-lijst-per-dimensie">
+            {andereDimensies.map(dim => {
+              // Pijnpunten waarvan een coupling target_table=cd_items + item in deze dimensie OF target_table=cd_dimensions + target_id=dim.id
+              const dimItemIds = new Set(items.filter(it => it.dimension_id === dim.id).map(it => it.id));
+              const dimPains = andereDimsPains.filter(pp => {
+                const cs = couplingsByPain.get(pp.id) || [];
+                return cs.some(c =>
+                  (c.target_table === "cd_items" && dimItemIds.has(c.target_id)) ||
+                  (c.target_table === "cd_dimensions" && c.target_id === dim.id)
+                );
+              });
+              if (dimPains.length === 0) return null;
+              return (
+                <section
+                  key={dim.id}
+                  data-testid={`pijnpunten-sectie-${dim.id}`}
+                  className="border border-slate-200 rounded-lg bg-white p-3"
+                >
+                  <header className="flex items-baseline justify-between mb-2 pb-2 border-b border-slate-100">
+                    <h4 className="text-sm font-bold text-[var(--color-primary)]">{dim.name}</h4>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+                      {dimPains.length} pijnpunt{dimPains.length === 1 ? "" : "en"}
+                    </span>
+                  </header>
+                  <ul className="space-y-1.5">
+                    {dimPains.map(pp => {
+                      const cs = couplingsByPain.get(pp.id) || [];
+                      // Tags-rij: koppelingen-namen (item-naam + dim-naam)
+                      const tags = cs.map(c => {
+                        if (c.target_table === "cd_items") {
+                          const it = items.find(i => i.id === c.target_id);
+                          return it?.name;
+                        }
+                        if (c.target_table === "cd_dimensions") {
+                          const d = dimensions.find(d2 => d2.id === c.target_id);
+                          return d?.name;
+                        }
+                        return null;
+                      }).filter(Boolean);
+                      return (
+                        <li
+                          key={pp.id}
+                          onClick={() => onEditPijnpunt && onEditPijnpunt(pp)}
+                          data-testid={`pijnpunt-rij-${pp.id}`}
+                          className="flex items-start gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer transition-colors"
+                        >
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shrink-0 mt-0.5">
+                            {painNumberById.get(pp.id) ?? "•"}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-slate-700 leading-snug">{pp.text_md}</p>
+                            {tags.length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {tags.map((tag, i) => (
+                                  <span key={i} className="inline-block text-[9px] uppercase tracking-wide text-slate-500 bg-slate-100 rounded px-1.5 py-0.5">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              );
+            })}
+
+            {/* Overstijgend: pijnpunten zonder enige item/dimensie-koppeling */}
+            {(() => {
+              const overstijgend = andereDimsPains.filter(pp => {
+                const cs = couplingsByPain.get(pp.id) || [];
+                return cs.length === 0;
+              });
+              if (overstijgend.length === 0) return null;
+              return (
+                <section
+                  data-testid="pijnpunten-sectie-overstijgend"
+                  className="border border-slate-200 rounded-lg bg-slate-50 p-3"
+                >
+                  <header className="flex items-baseline justify-between mb-2 pb-2 border-b border-slate-200">
+                    <h4 className="text-sm font-bold text-slate-600">
+                      {appLabel("klanten.pijnpunt.overstijgend.titel", "Overstijgend")}
+                    </h4>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+                      {overstijgend.length} pijnpunt{overstijgend.length === 1 ? "" : "en"}
+                    </span>
+                  </header>
+                  <ul className="space-y-1.5">
+                    {overstijgend.map(pp => (
+                      <li
+                        key={pp.id}
+                        onClick={() => onEditPijnpunt && onEditPijnpunt(pp)}
+                        data-testid={`pijnpunt-rij-${pp.id}`}
+                        className="flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white cursor-pointer transition-colors"
+                      >
+                        <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full bg-slate-400 text-white text-[10px] font-bold leading-none shrink-0 mt-0.5">
+                          {painNumberById.get(pp.id) ?? "•"}
+                        </span>
+                        <p className="text-xs text-slate-700 leading-snug flex-1">{pp.text_md}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })()}
           </div>
+
           <div className="flex justify-end">
             <button
               type="button"
@@ -377,7 +455,7 @@ export default function PijnpuntenView({
               className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-1.5 rounded-sm transition-colors"
             >
               <Plus size={12} />
-              {appLabel("klanten.pijnpunt.knop.toevoegen", "+ pijnpunt")}
+              {appLabel("klanten.pijnpunt.knop.toevoegen", "pijnpunt")}
             </button>
           </div>
         </>
@@ -416,7 +494,8 @@ function DraftPainCard({ painPoint, onClick, onAccept, onReject, busy, appLabel 
           data-testid={`draft-pain-accept-${painPoint.id}`}
           className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50"
         >
-          {appLabel("klanten.dossier.actie.markeer", "Markeer als richting")}
+          {/* T4 A8: pijnpunt-draft-accept-knop label-rename ("Maak verbeteractie") */}
+          {appLabel("klanten.dossier.fields.actie.maakverbeteractie", "Maak verbeteractie")}
         </button>
         <button
           type="button"

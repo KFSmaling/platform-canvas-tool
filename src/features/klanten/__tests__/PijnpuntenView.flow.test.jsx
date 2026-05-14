@@ -218,8 +218,9 @@ describe("KlantenWerkblad — fase-2 Pijnpunten flow (stap 11.F)", () => {
     render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
     await openFase2();
 
-    // Card zichtbaar — click opent modal
-    fireEvent.click(await screen.findByTestId(`pijnpunt-card-${existingPain.id}`));
+    // T4 B1: rendering van pijnpunt veranderd van PijnpuntCard (chips, testid
+    // "pijnpunt-card-X") naar lijst-rij (testid "pijnpunt-rij-X"). Click opent modal.
+    fireEvent.click(await screen.findByTestId(`pijnpunt-rij-${existingPain.id}`));
 
     expect(await screen.findByText("Pijnpunt bewerken")).toBeInTheDocument();
     const textArea = screen.getByLabelText("Pijnpunt-tekst");
@@ -273,7 +274,7 @@ describe("KlantenWerkblad — fase-2 Pijnpunten flow (stap 11.F)", () => {
   });
 
   // ── Bundle 3 F27 — genummerde pijnpunt-bolletjes cross-referentie ────────
-  test("F27: drie pijnpunten gesorteerd → cards genummerd 1/2/3 + ItemCard rode-bolletjes tonen nummers", async () => {
+  test("T4 B1 (was F27): drie pijnpunten gesorteerd → rijen met nummer-bolletjes + overstijgend-blok", async () => {
     const pains = [
       { id: "pp-1", canvas_id: TEST_CANVAS_ID, text_md: "Eerste pain", is_floating: false, sort_order: 10, is_draft: false },
       { id: "pp-2", canvas_id: TEST_CANVAS_ID, text_md: "Tweede pain", is_floating: false, sort_order: 20, is_draft: false },
@@ -289,16 +290,14 @@ describe("KlantenWerkblad — fase-2 Pijnpunten flow (stap 11.F)", () => {
     render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
     await openFase2();
 
-    // PijnpuntCards tonen nummer-badges 1/2/3 in sort_order-volgorde
-    expect(await screen.findByTestId("pijnpunt-nummer-pp-1")).toHaveTextContent("1");
-    expect(screen.getByTestId("pijnpunt-nummer-pp-2")).toHaveTextContent("2");
-    expect(screen.getByTestId("pijnpunt-nummer-pp-3")).toHaveTextContent("3");
-
-    // CompactDimensieKolom indicator op item-1 toont nummers 1 + 2 (twee couplings)
-    const indicators = screen.getByTestId("item-pijn-indicators-item-1");
-    expect(indicators).toHaveTextContent("1");
-    expect(indicators).toHaveTextContent("2");
-    // Niet 3 — pp-3 koppelt nergens (overstijgend)
-    expect(indicators).not.toHaveTextContent("3");
+    // T4 B1: pijnpunten-rijen rendered via nieuwe lijst-pattern (was chips-PijnpuntCard).
+    // pp-1 + pp-2 zitten in dimensie-sectie (gekoppeld aan item-1). pp-3 zit in
+    // overstijgend-blok (geen koppelingen). Rijen-testids: pijnpunt-rij-<id>.
+    expect(await screen.findByTestId("pijnpunt-rij-pp-1")).toBeInTheDocument();
+    expect(screen.getByTestId("pijnpunt-rij-pp-2")).toBeInTheDocument();
+    expect(screen.getByTestId("pijnpunt-rij-pp-3")).toBeInTheDocument();
+    // Overstijgend-blok aanwezig (bevat pp-3)
+    expect(screen.getByTestId("pijnpunten-sectie-overstijgend")).toBeInTheDocument();
+    expect(screen.getByTestId("pijnpunten-sectie-overstijgend")).toHaveTextContent("Derde pain");
   });
 });

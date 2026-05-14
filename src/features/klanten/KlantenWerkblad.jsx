@@ -95,6 +95,8 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   // Stap 11.K: busyAction voor dossier-affordance-knoppen (A1/A2/A3 + draft-acties)
   const [dossierBusy, setDossierBusy] = useState(null);
   const [dossierError, setDossierError] = useState(null);
+  // T4 A7: "geen match"-melding ipv stille flicker bij empty dossier-result
+  const [dossierInfo, setDossierInfo] = useState(null);
 
   function openCreateItem(dimension) {
     setModalCtx({ dimension, item: null });
@@ -150,9 +152,17 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     if (dossierBusy) return;
     setDossierBusy({ action: "dossier_extract_items", dimensionId: dimension.id });
     setDossierError(null);
-    const { error } = await klantenService.extractItemsFromDossier(canvasId, dimension.id);
+    setDossierInfo(null);
+    const { data, error } = await klantenService.extractItemsFromDossier(canvasId, dimension.id);
     setDossierBusy(null);
     if (error) { setDossierError(error); return; }
+    // T4 A7: bij 0-results géén stille flicker maar duidelijke "geen match"-melding
+    if (!data || data.length === 0) {
+      setDossierInfo({ scope: "items", dimensionId: dimension.id,
+        text: appLabel("klanten.dossier.geen_match.items",
+          "Geen match in dossier voor deze dimensie — typ handmatig of upload meer documenten.") });
+      return;
+    }
     reload();
   }
 
@@ -160,9 +170,17 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     if (dossierBusy) return;
     setDossierBusy({ action: "dossier_extract_pains" });
     setDossierError(null);
-    const { error } = await klantenService.extractPainPointsFromDossier(canvasId);
+    setDossierInfo(null);
+    const { data, error } = await klantenService.extractPainPointsFromDossier(canvasId);
     setDossierBusy(null);
     if (error) { setDossierError(error); return; }
+    // T4 A7: idem voor pijnpunten — empty result toont melding ipv stille flicker
+    if (!data || data.length === 0) {
+      setDossierInfo({ scope: "pains",
+        text: appLabel("klanten.dossier.geen_match.pains",
+          "Geen pijnpunten gevonden in het dossier — typ handmatig of upload meer documenten.") });
+      return;
+    }
     reloadPains();
   }
 
@@ -458,6 +476,23 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
         </div>
       )}
 
+      {/* T4 A7: dossier "geen match"-info-banner (geen flicker meer) */}
+      {dossierInfo && (
+        <div
+          data-testid={`klanten-dossier-info-banner-${dossierInfo.scope}`}
+          className="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs px-6 py-2 flex items-center justify-between"
+        >
+          <span>{dossierInfo.text}</span>
+          <button
+            type="button"
+            onClick={() => setDossierInfo(null)}
+            className="text-[10px] font-bold uppercase tracking-widest text-amber-700 hover:text-amber-900 ml-3"
+          >
+            Sluiten
+          </button>
+        </div>
+      )}
+
       {/* Body */}
       {view === "werkruimte" ? (
         <WerkruimteView
@@ -519,6 +554,8 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           hasUploads={hasUploads}
           hasIndexedChunks={hasIndexedChunks}
           uploadsProcessing={uploadsProcessing}
+          /* T4 A9: items in zelfde dimensie voor client-side duplicate-name-validatie */
+          existingItemsInDimension={(items || []).filter(it => it.dimension_id === modalCtx.dimension?.id)}
         />
       )}
 

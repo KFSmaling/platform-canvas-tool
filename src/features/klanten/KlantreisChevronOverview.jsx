@@ -25,7 +25,8 @@
  * Fase 3+4 uit scope (designer-note) — chevrons blijven neutraal voorlopig.
  */
 
-import React from "react";
+import React, { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAppConfig } from "../../shared/context/AppConfigContext";
 
 const COLOR_NEUTRAL    = "#7F77DD";
@@ -74,9 +75,20 @@ export default function KlantreisChevronOverview({
   // container-breedte (flex-1 ipv vaste 88px). Voor top-strip-render in
   // WerkruimteView + PijnpuntenView. Default false voor backwards-compat.
   fullWidth = false,
+  // T4 A3: optionele stap-omschrijvingen per chevron, default collapsed.
+  // Click op disclosure-icoon onder shortName toggelt expand. Bij `false`
+  // (default) — backwards-compat, geen disclosure-icoon, geen expand-render.
+  expandable = false,
 }) {
   const { label: appLabel } = useAppConfig();
   const total = items.length;
+  // T4 A3: per-item expand-state Set<id>
+  const [expandedIds, setExpandedIds] = useState(() => new Set());
+  const toggleExpand = (id) => setExpandedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
   if (total === 0) return null;
 
   return (
@@ -122,23 +134,50 @@ export default function KlantreisChevronOverview({
                 data-asymmetrie={isAsymmetrie ? "true" : "false"}
                 title={fullName}
                 aria-label={`${nummer}. ${fullName}`}
-                className={`flex items-center justify-center w-full h-10 text-white text-[11px] font-bold transition-all hover:brightness-110 ${
+                className={`flex items-center justify-center w-full h-12 text-white text-[11px] font-bold transition-all hover:brightness-110 ${
                   isHighlighted ? "ring-2 ring-purple-300 ring-offset-1" : ""
                 }`}
                 style={{ clipPath, backgroundColor: background }}
               >
                 {nummer}
               </button>
-              <div className="mt-1 text-center text-[9px] text-slate-700 truncate px-1" title={fullName}>
-                {shortName}
+              <div className="mt-1 text-center text-[9px] text-slate-700 truncate px-1 flex items-center justify-center gap-1" title={fullName}>
+                <span className="truncate">{shortName}</span>
+                {expandable && (
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(item.id)}
+                    data-testid={`chevron-disclosure-${item.id}`}
+                    aria-expanded={expandedIds.has(item.id) ? "true" : "false"}
+                    aria-label={`Toon omschrijving voor ${fullName}`}
+                    className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
+                  >
+                    {expandedIds.has(item.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                  </button>
+                )}
               </div>
+              {/* T4 A10+A11: pain-badge nu BINNEN chevron-shape (top-1 ipv -top-1.5)
+                  + chevron-height verhoogd naar h-12 zodat halve-bolletjes-clip
+                  niet meer optreedt. */}
               {currentPhase >= 2 && painCount > 0 && (
                 <span
                   data-testid={`chevron-pain-badge-${item.id}`}
-                  className="absolute -top-1.5 right-2 inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold leading-none shadow-sm pointer-events-none"
+                  className="absolute top-1 right-2 inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold leading-none shadow-sm pointer-events-none"
                 >
                   {painCount}
                 </span>
+              )}
+              {/* T4 A3: stap-omschrijving conditioneel onder chevron */}
+              {expandable && expandedIds.has(item.id) && (
+                <div
+                  data-testid={`chevron-omschrijving-${item.id}`}
+                  className="mt-1.5 text-[10px] text-slate-600 leading-snug bg-slate-50 border border-slate-200 rounded px-2 py-1.5"
+                >
+                  {item.archetype_data?.customer_goal
+                    || item.archetype_data?.insight
+                    || item.description
+                    || appLabel("klanten.klantreis.chevron.geen_omschrijving", "Geen omschrijving — open item voor details.")}
+                </div>
               )}
             </div>
           );

@@ -76,7 +76,10 @@ export default function WerkruimteView({
         .slice()
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     : [];
-  const showKlantreisTopStrip = klantreisDim && klantreisItemsSorted.length >= 3;
+  // T4 A4: klantreis-strip render alleen als canvas een klantreis-dimensie heeft.
+  // De eerdere ≥3-stages-restrictie is gedropt — strip moet ook zichtbaar zijn
+  // bij 1-2 stages (consultant kan ze opbouwen).
+  const showKlantreisTopStrip = !!klantreisDim;
   const otherDimensions = showKlantreisTopStrip
     ? dimensions.filter(d => d.id !== klantreisDim.id)
     : dimensions;
@@ -151,6 +154,20 @@ export default function WerkruimteView({
         </div>
       ) : (
       <div className="flex-1 overflow-auto p-8">
+        {/* T4 A2: info-banner Inventarisatie-tab (analoog T3-pattern). Subtle
+            klanten-categorie-tint achtergrond + uitleg over fase-keten. */}
+        <div
+          data-testid="klanten-fase1-info-banner"
+          className="mb-5 px-4 py-3 text-xs leading-relaxed border border-category-klanten/20 rounded-md"
+          style={{
+            backgroundColor: "var(--category-klanten-light)",
+            color: "var(--category-klanten)",
+          }}
+        >
+          {appLabel("tips.klanten.fase1.info",
+            "Breng eerst klanten en dienstverlening in kaart via dimensies (kanaal, propositie, segmentatie, klantreis). In fase 2 koppel je pijnpunten per item; in fase 3 ontstaan verbeteracties uit AI-patroon-analyse over die pijnpunten.")}
+        </div>
+
         {/* Fase 1 — Inventarisatie (dimensie-grid) */}
         {dimensions.length === 0 ? (
           <div className="text-center py-12">
@@ -164,8 +181,9 @@ export default function WerkruimteView({
               data-testid="dimensie-cta-eerste"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] text-[11px] font-bold uppercase tracking-widest rounded-md transition-colors"
             >
+              {/* T4 A1: één `+` — Plus-icoon doet visuele cue, label-tekst zonder `+`-prefix */}
               <Plus size={14} />
-              {appLabel("klanten.knop.dimensie.toevoegen.eerste", "+ Eerste dimensie aanmaken")}
+              {appLabel("klanten.knop.dimensie.toevoegen.eerste", "Eerste dimensie aanmaken")}
             </button>
           </div>
         ) : (
@@ -177,8 +195,9 @@ export default function WerkruimteView({
                 data-testid="dimensie-cta-extra"
                 className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-1.5 rounded-sm transition-colors"
               >
+                {/* T4 A1: één `+` — Plus-icoon-only-prefix, label zonder `+` */}
                 <Plus size={12} />
-                {appLabel("klanten.knop.dimensie.toevoegen", "+ dimensie")}
+                {appLabel("klanten.knop.dimensie.toevoegen", "dimensie")}
               </button>
             </div>
             {/* F26-iteratie — klantreis volle-breedte-strip top (alleen bij
@@ -200,6 +219,7 @@ export default function WerkruimteView({
                   currentPhase={activeFase}
                   onChevronClick={handleTopStripChevronClick}
                   fullWidth
+                  expandable
                 />
               </div>
             )}
