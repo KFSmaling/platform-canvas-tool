@@ -59,6 +59,16 @@ const PROMPT_GROUPS = [
     match: k => k.startsWith("prompt.klanten."),
   },
   {
+    // 11.M — Processen & Organisatie AI-prompts (5 verbeteracties-generaties +
+    // 6 dossier-affordances + 2 rich-text-verbeter-prompts)
+    id: "processen",
+    label: "Processen & Organisatie",
+    icon: Layers,
+    desc: "AI-prompts voor 5 verbeteracties-generaties + 6 dossier-affordances + 2 rich-text-verbeter",
+    headerCls: "bg-emerald-50 border-emerald-200 text-emerald-800",
+    match: k => k.startsWith("prompt.processen."),
+  },
+  {
     id: "prompts-other",
     label: "Overig",
     icon: Wand2,
@@ -134,6 +144,24 @@ const LABEL_GROUPS = [
     desc: "Info-banner-teksten per fase + dossier-actie-labels (toevoegen/maakverbeteractie)",
     headerCls: "bg-amber-50/60 border-amber-100 text-amber-700",
     match: k => k.startsWith("label.tips.klanten."),
+  },
+  {
+    // 11.M — Processen & Organisatie werkblad-labels (fase/sub-tab/coverage/state-machine/enums)
+    id: "werkblad-processen",
+    label: "Werkblad Processen & Organisatie",
+    icon: Layers,
+    desc: "Sectiekoppen, fase- en sub-tab-namen, archetypes/doorsneden/sturingsmodellen, coverage-status, state-machine",
+    headerCls: "bg-emerald-50 border-emerald-200 text-emerald-800",
+    match: k => k.startsWith("label.processen."),
+  },
+  {
+    // 11.M — Processen & Organisatie invultips (5 sub-tabs × titel + body)
+    id: "processen-tips",
+    label: "Processen — Invultips",
+    icon: Layers,
+    desc: "Tips-modal-content per sub-tab (Bedrijfsprocessen/Lijnorganisatie/Veranderorganisatie/Besturing)",
+    headerCls: "bg-emerald-50/60 border-emerald-100 text-emerald-700",
+    match: k => k.startsWith("label.tips.processen."),
   },
   {
     id: "other",
