@@ -58,7 +58,7 @@ export async function indexDocumentChunks(uploadId, canvasId, rawText, onProgres
   const PARENT_STEP = 800;  // 200-char overlap tussen parents
   const CHILD_SIZE  = 200;
   const CHILD_STEP  = 150;  // 50-char overlap tussen children
-  const EMBED_BATCH = 50;   // max chunks per /api/embed call
+  const EMBED_BATCH = 50;   // max chunks per /api/documents?_subpath=embed call
 
   // ── Hulpfunctie: extraheer slide- of paginanummer uit tekst ─────────────────
   // Herkent: [Slide 7], [Pagina 3], [Notes 12], [Page 5]
@@ -123,7 +123,7 @@ export async function indexDocumentChunks(uploadId, canvasId, rawText, onProgres
 
     let embeddings;
     try {
-      const embRes = await apiFetch("/api/embed", {
+      const embRes = await apiFetch("/api/documents?_subpath=embed", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ texts }),

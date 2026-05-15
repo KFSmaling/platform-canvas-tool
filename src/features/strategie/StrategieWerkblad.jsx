@@ -689,7 +689,7 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
     setMagicFor(fieldKey, { loading: true, suggestion: null, error: null });
     try {
       const query = FIELD_QUERIES[fieldKey] || fieldKey;
-      const embRes = await apiFetch("/api/embed", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ texts: [query] }) });
+      const embRes = await apiFetch("/api/documents?_subpath=embed", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ texts: [query] }) });
       if (!embRes.ok) throw new Error("Embedding mislukt");
       const { embeddings } = await embRes.json();
       const { data: chunks, error: searchErr } = await searchDocumentChunks(embeddings[0], canvasId, matchCount);
