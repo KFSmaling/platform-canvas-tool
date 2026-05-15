@@ -110,6 +110,21 @@ export const deleteValueTeam = makeDelete("value_teams");
 
 export const createSchetsUploadMetadata = makeCreate("schets_upload_metadata");
 
+// 11.M.1 block-4 D4 — Schets-uploads-list voor preview-render
+// (Read via Supabase direct met RLS; geen server-endpoint nodig.)
+import { supabase as _supabaseForSchets } from "../../../shared/services/supabase.client";
+
+export async function listSchetsUploads(canvasId) {
+  if (!canvasId) return { data: null, error: new Error("canvasId is verplicht") };
+  if (!_supabaseForSchets) return { data: null, error: new Error("Supabase niet geconfigureerd") };
+  const { data, error } = await _supabaseForSchets
+    .from("vo_schets_uploads")
+    .select("*")
+    .eq("canvas_id", canvasId)
+    .order("created_at", { ascending: false });
+  return { data: data || [], error };
+}
+
 // ── Besturing (gov_*) ──────────────────────────────────────────────────────
 export async function getSteeringModel(canvasId) {
   if (!canvasId) return { data: null, error: new Error("canvasId is verplicht") };

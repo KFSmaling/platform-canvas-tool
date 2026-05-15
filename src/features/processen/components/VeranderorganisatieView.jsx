@@ -13,6 +13,7 @@ import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
 import DossierAiButton from "./DossierAiButton";
+import SchetsUpload from "./SchetsUpload";
 
 export default function VeranderorganisatieView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
@@ -26,17 +27,20 @@ export default function VeranderorganisatieView({ canvasId, hasUploads, hasIndex
   const [buAiBusy, setBuAiBusy] = useState(false);
   const [vtAiBusy, setVtAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState(null);
+  const [schetsUploads, setSchetsUploads] = useState([]);
 
   const loadAll = useCallback(async () => {
     if (!canvasId) return;
-    const [{ data: ca }, { data: bus }, { data: vts }] = await Promise.all([
+    const [{ data: ca }, { data: bus }, { data: vts }, { data: schetsen }] = await Promise.all([
       svc.getChangeApproach(canvasId),
       svc.listBusinessUnits(canvasId),
       svc.listValueTeams(canvasId),
+      svc.listSchetsUploads(canvasId),
     ]);
     setChangeApproach(ca?.text_md || "");
     setBusinessUnits(bus || []);
     setValueTeams(vts || []);
+    setSchetsUploads(schetsen || []);
   }, [canvasId]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
@@ -202,8 +206,16 @@ export default function VeranderorganisatieView({ canvasId, hasUploads, hasIndex
         </div>
       </section>
 
-      <section className="border-t border-slate-200 pt-4 text-xs text-slate-400 italic">
-        Schets-upload (PNG/JPG max 5MB) komt in 11.M follow-up (Supabase Storage bucket-config).
+      <section className="border-t border-slate-200 pt-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
+          Schetsen ({schetsUploads.length})
+        </h3>
+        <SchetsUpload
+          canvasId={canvasId}
+          existingUploads={schetsUploads}
+          onUploaded={loadAll}
+          onDeleted={loadAll}
+        />
       </section>
     </div>
   );

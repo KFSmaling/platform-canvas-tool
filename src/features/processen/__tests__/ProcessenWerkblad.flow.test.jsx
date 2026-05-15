@@ -38,6 +38,7 @@ jest.mock("../services/processen.service", () => ({
   createBusinessUnit:          jest.fn(),
   deleteBusinessUnit:          jest.fn(),
   listValueTeams:              jest.fn(),
+  listSchetsUploads:           jest.fn(),
   createValueTeam:             jest.fn(),
   deleteValueTeam:             jest.fn(),
   getSteeringModel:            jest.fn(),
@@ -86,6 +87,7 @@ beforeEach(() => {
   svc.getChangeApproach.mockResolvedValue({ data: null, error: null });
   svc.listBusinessUnits.mockResolvedValue({ data: [], error: null });
   svc.listValueTeams.mockResolvedValue({ data: [], error: null });
+  svc.listSchetsUploads.mockResolvedValue({ data: [], error: null });
   svc.getSteeringModel.mockResolvedValue({ data: null, error: null });
   svc.listControlProcesses.mockResolvedValue({ data: [], error: null });
   svc.listPainPoints.mockResolvedValue({ data: [], error: null });

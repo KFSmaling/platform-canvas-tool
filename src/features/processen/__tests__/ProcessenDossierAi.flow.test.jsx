@@ -38,6 +38,7 @@ jest.mock("../services/processen.service", () => ({
   updateBusinessUnit:          jest.fn(),
   deleteBusinessUnit:          jest.fn(),
   listValueTeams:              jest.fn(),
+  listSchetsUploads:           jest.fn(),
   createValueTeam:             jest.fn(),
   updateValueTeam:             jest.fn(),
   deleteValueTeam:             jest.fn(),
@@ -103,6 +104,7 @@ beforeEach(() => {
   svc.getChangeApproach.mockResolvedValue({ data: { text_md: "Aanpak: legacy" }, error: null });
   svc.listBusinessUnits.mockResolvedValue({ data: [], error: null });
   svc.listValueTeams.mockResolvedValue({ data: [], error: null });
+  svc.listSchetsUploads.mockResolvedValue({ data: [], error: null });
   svc.getSteeringModel.mockResolvedValue({ data: { model: "hierarchisch", text_md: "Steering oud", coordination_aspects: [] }, error: null });
   svc.listControlProcesses.mockResolvedValue({ data: [], error: null });
   svc.listPainPoints.mockResolvedValue({ data: [], error: null });
