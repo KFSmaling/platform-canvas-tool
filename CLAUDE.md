@@ -478,7 +478,8 @@ feature-root in DeepDiveOverlay (CLAUDE.md §4.1).
 | `strategy`   | `src/features/strategie/` | ✅ live | StrategieWerkblad + StrategyOnePager (anker voor rapport-laag-styling) |
 | `principles` | `src/features/richtlijnen/` | ✅ live | RichtlijnenWerkblad |
 | `customers`  | `src/features/klanten/` | ✅ **MVP volledig compleet** — Fase 1+2+3+4 + dossier-driven AI + 9/9 archetypes volledig (incl. klantreis Scope A met 80/20-denkdwang `StrategischeWegingBlok`) + canonical-delete + UX-banner + in-roadmap-rebrand + verbeteractie-terminologie (stap 11.D-K.2 + 11.I.1-I.2 + DimensieModal-boy-scout, master `9e803c3`, 2026-05-08 t/m 2026-05-12; Kees-handmatige-test van AI-flow pending) | Zie blok onder de tabel voor volledige stand; alle openstaande klant-substappen zijn hygiene of post-MVP — zie §10 |
-| `processes` / `people` / `technology` / `portfolio` | — | placeholder | DeepDiveOverlay valt terug op `GenericPlaceholder`-component |
+| `processes`  | `src/features/processen/` | ✅ **11.M + 11.M.1 volledig** — 4 sub-tabs (Bedrijfsprocessen/Lijnorganisatie/Veranderorganisatie/Besturing) + 3-fase-flow (Inventarisatie/Pijnpunten/Verbeteracties) + Dossier-AI (6 affordances + 2 rich-text-verbeter) + Verbeteracties-AI (5 source-types + Eigen) + Motivatie-modal + Matrix-render + Multi-koppeling-modal + Schets-upload (Supabase Storage); 11.M MVP master `9024bbe` (15 mei) → 11.M.1 final master (15 mei, 6 deploys) → laatste deploy `kbgjpl6gu`. **Kees-handmatige-test pending** (FINAL GATE vóór RFC-006 + K-rev-trigger) | Zie blok onder klanten-architectuur voor processen-architectuur (RFC-005-implementatie) |
+| `people` / `technology` / `portfolio` | — | placeholder | DeepDiveOverlay valt terug op `GenericPlaceholder`-component |
 
 **Klanten-werkblad-architectuur (stap 11.D-I.2):**
 - Datamodel: 7 `cd_*`-tabellen (RFC-001 §2) + 1 audit-tabel; alle RLS-enabled met canvas-eigenaar + tenant-isolatie-pattern (anker `canvases`-policy); event-CHECK uitgebreid met `unrejected` (stap 11.G.3); `cd_improvement_intents` actief in productie sinds 11.H met cross-tenant RLS-test PASS
@@ -660,34 +661,41 @@ RFC-004-akkoord als 11.M Proces-bouwer-implementatie.
 
 ## 11. VERSE-SESSIE-STARTROUTINE
 
-**Verse-sessie-start (13 mei 2026 en later — eventueel een andere Claude Code-instance zonder onze chat-historie):** lees deze documenten in deze volgorde:
+**Verse-sessie-start (16 mei 2026 en later — eventueel een andere Claude Code-instance zonder onze chat-historie):** lees deze documenten in deze volgorde:
 
-1. **`platform/reviewer/COWORK_REVIEWER.md`** — reviewer-anker met volledige stap-11-status + nieuwe roadmap-volgorde + 80/20-denkdwang-design-principe
+1. **`platform/reviewer/COWORK_REVIEWER.md`** — reviewer-anker met volledige stap-11-status + nieuwe roadmap-volgorde + 80/20-denkdwang-design-principe + 15-mei-discipline-leerpunt
 2. **`CLAUDE.md`** (dit bestand) — §5.1 + §5 architectuur-blok (werkblad-status) + §10 open punten + §11 hoofd-state
-3. **`platform/architecture/decisions/ADR-004-status-flow-model.md`** — Accepted; anker voor proces/org/IT-replicatie
-4. **`platform/architecture/RFCs/RFC-003-roadmap-werkblad-datamodel.md`** — Accepted (na RP4 waardestroom-canvas-niveau-verhuizing); voor latere 11.L Roadmap-bouwer-implementatie
-5. **`platform/architecture/decisions/inputs/2026-05-12-design-principle-80-20-denkdwang.md`** — checklist voor elke nieuwe component (vier categorieën: onderscheiding / trade-off / asymmetrie / intentionaliteit)
-6. **`platform/reviewer/findings/2026-05-07-klanten-werkblad-ux-consistency.md`** — open findings F1/F2/F6/F10/F12/F15/F19/F20
+3. **`platform/architecture/RFCs/RFC-005-processen-organisatie-werkblad.md`** — Accepted (15 mei); anker voor 11.M-implementatie + replicatie-pattern naar RFC-006/008
+4. **`platform/architecture/decisions/ADR-004-status-flow-model.md`** — Accepted; anker voor proces/org/IT-replicatie (RFC-005 §2 documenteert 3 bewuste afwijkingen)
+5. **`platform/architecture/RFCs/RFC-003-roadmap-werkblad-datamodel.md`** — Accepted (na RP4); voor latere 11.L Roadmap-bouwer-implementatie
+6. **`platform/architecture/decisions/inputs/2026-05-12-design-principle-80-20-denkdwang.md`** — checklist voor elke nieuwe component (vier categorieën)
+7. **`handoff/to-reviewer/archive/2026-05-15-2100-result-11M1-block4-FINAL.md`** — 11.M.1 final result-file met ~40-punten Kees-test-checklist + 11.M-conformiteit-bevestiging + discipline-evaluatie
+8. **`platform/reviewer/findings/2026-05-07-klanten-werkblad-ux-consistency.md`** — open findings F1/F2/F6/F10/F12/F15/F19/F20
 
 Daarna: **tech_debt.md** (open P3/P4-items + done-log), **WORKFLOW.md** (sprint-rituelen), **`handoff/to-builder/`** (pending instructies, oudste eerst). Bij twijfel over scope: question-file naar reviewer in `handoff/to-reviewer/`.
 
-### Huidige hoofd-state (per einde 2026-05-14 — eind-dag-administratie)
+### Huidige hoofd-state (per einde 2026-05-15 — eind-dag-administratie)
 
 | Aspect | Waarde |
 |---|---|
-| Laatste deploy | `platform-canvas-tool-m2cwtn2zu` (14 mei 23:30, F-sam-1-fix) op `kingfisher-btcprod.vercel.app` — deploy-id `dpl_8iptdjbRx5njemcB9MNxFzcdNZkN` |
-| Master HEAD | `960f2b4` — Merge `fix/F-sam-1-richtlijnen-samenvatting-sync` (Richtlijnen samenvatting state-sync + slice weg). |
+| Laatste deploy | `platform-canvas-tool-kbgjpl6gu` (15 mei 21:00, 11.M.1 block-4 FINAL) op `kingfisher-btcprod.vercel.app` — deploy-id `dpl_EEcobi4tbbKNpDeQWHju6jQpjNq4` |
+| Master HEAD | `905c6c6` — Merge 11.M.1 block-4 FINAL — D4 schets-upload + E1+E2+E3 tests PASS + eslint-fix. |
 | Test-credentials | `keessmaling+test@gmail.com` / staat in `.env.test` (gitignored) — KF tenant_admin |
 | E2E-suite | `npm run test:e2e` — J1-blueprint live, J2/J3/J5/J6 nog niet (mini-sprint 11.G.5) |
-| RTL | **166/166 PASS over 23 suites** (was 94/94 op 12 mei, +72 over 13-14 mei via S1-S4 + T1-T4 + U-cleanup + F-sam-1) |
-| Endpoint-budget Vercel | 12/12 (Hobby), 4 rewrites + sub-route-dispatchers (incl. dossier_extract op items.js + pain_points.js) — geen wijzigingen vandaag |
-| Klanten-labels | **~270 totaal** `label.klanten.*` (was 232, **+40 vandaag** via 4 MCP-applied migrations). Plus 1 enum-key `enum.klanten.klantreis.stap_type` (nieuwe `enum`-categorie naast prompt/label/setting). |
-| Klanten-prompts | 7 totaal `prompt.klanten.*` (4 analyse + 3 dossier, allen `tenant_overridable=true`) |
-| Audit-tabellen | `cd_pattern_suggestion_events` + `cd_input_suggestion_events` (beide append-only via RLS-policies SELECT+INSERT) |
-| Supabase-migrations CI | `workflow_dispatch`-only sinds 2026-05-11 (auto-trigger uitgeschakeld; migraties via Supabase-MCP applied tijdens sprints) |
+| RTL | **199/199 PASS over 28 suites** (was 166/166 op 14 mei, +33 over 15 mei via 11.M MVP + 11.M.1 alle 4 blocks; 33 cases voor processen-werkblad cumulatief) |
+| Endpoint-budget Vercel | **11/12** (Hobby) — 1 marge voor RFC-006/008. Pre-sprint 12/12 → C0 consolideerde extract+embed+parse naar `api/documents.js` → +1 voor `api/processen.js` |
+| Klanten-labels | **~270 totaal** `label.klanten.*` (ongewijzigd 15 mei) |
+| Klanten-prompts | 7 totaal `prompt.klanten.*` (ongewijzigd 15 mei) |
+| **Processen-labels** | **63 totaal** `label.processen.*` + `label.tips.processen.*` (nieuw 15 mei via Supabase-MCP) |
+| **Processen-prompts** | **12 totaal** `prompt.processen.*` (5 verbeteracties-AI + 6 dossier-AI + 2 rich-text-verbeter — alle `tenant_overridable=true`) |
+| Audit-tabellen | Klanten: `cd_pattern_suggestion_events` + `cd_input_suggestion_events`. Processen: `po_improvement_intent_events` + `po_input_suggestion_events` (alle 4 append-only via RLS SELECT+INSERT) |
+| Storage-buckets | `processen-schets` (private, 5MB, PNG/JPG, 3 RLS-policies via canvas-eigenaar-pattern) |
+| DB-tabellen processen | 17 (15 data + 2 events): `pr_*` × 2, `org_*` × 3, `vo_*` × 4, `gov_*` × 2, `po_*` × 6 |
+| Trigger-functies processen | 11 (zie 11.M C1 commit `ce786e9` voor lijst) — alle E1+E2+E3-tests PASS via Supabase-MCP DO-blokken |
+| Supabase-migrations CI | `workflow_dispatch`-only sinds 2026-05-11 (auto-trigger uitgeschakeld; migraties via Supabase-MCP applied) |
 | Architectuur-decisions live | ADR-002 (prompt-flexibiliteit) + ADR-003 (klantwerkblad) + ADR-004 (status-flow-model — anker voor proces/org/IT) |
-| RFC-status | RFC-001 (klanten-datamodel) + RFC-002 (dossier-driven AI) + RFC-003 (roadmap-werkblad — Accepted, bouw uitgesteld tot na proces/org/IT) |
-| Design-principe | 80/20-denkdwang per component (zie `inputs/2026-05-12-...md`). Eerst bewezen in 11.I.2 klantreis `StrategischeWegingBlok` (asymmetrie). Architect-checklist + reviewer-Type-9-walk-uitbreiding. |
+| RFC-status | RFC-001 (klanten) + RFC-002 (dossier-AI) + RFC-003 (roadmap, bouw uitgesteld) + RFC-005 (processen ✅ geïmplementeerd) + RFC-007 (klanten-verbeteracties; K-rev-1+K-rev-2 wachten op Kees-test 11.M.1) |
+| Design-principe | 80/20-denkdwang per component (zie `inputs/2026-05-12-...md`). Eerst bewezen in 11.I.2 klantreis `StrategischeWegingBlok` |
 
 ### Sprints afgerond 12 mei — chronologisch
 
@@ -719,6 +727,22 @@ Daarna: **tech_debt.md** (open P3/P4-items + done-log), **WORKFLOW.md** (sprint-
 | F-sam-1-fix Richtlijnen samenvatting | `35ac770` + `960f2b4` | `dpl_8iptdjbRx5njemcB9MNxFzcdNZkN` (`m2cwtn2zu`) | 166/166 | Delayed-retry 1500ms post-mount + window-focus event-listener voor cross-werkblad-edit-state-sync; `slice(0, 4)`-limit weg. Root-cause in `StrategieWerkblad.handleClose` (fire-and-forget upsert) blijft uitstaand — C1 verbood Strategie-wijziging |
 
 **Totaal 13-14 mei:** ~10 sprints, +72 RTL-cases (94 → 166), 1 nieuwe label-key (A6), geen DB-schema-wijzigingen. Endpoint-budget 12/12 behouden via sub-route-pattern (A6 via `items.js?_subpath=dossier_create_with_fields`).
+
+### Sprints afgerond 15 mei — chronologisch (11.M + 11.M.1 cycle)
+
+| Sprint | Master | Deploy-id | RTL | Onderwerp |
+|---|---|---|---|---|
+| **11.M MVP** Processen & Organisatie | `9024bbe` | `dpl_7N3wLoq6z7XbAnvSFNNQ3XKZ3AAw` (`kg4059z5v`) | 174/174 | C0 endpoint-consolidation (extract+embed+parse → `api/documents.js`, 12→10) + C1 DB-schema (17 tabellen + 11 triggers + RLS via MCP) + C2+C3 labels/prompts seed + C4 server-dispatcher `api/processen.js` + C7-C11 frontend-skelet (4 sub-tabs + fase 2/3) + C12 AdminPage-matchers. **MVP met 6 onderdelen stilzwijgend deferred** (later in 11.M.1 alsnog geleverd) |
+| 11.M.1 diagnose + discipline-vraag | — | — | — | Reviewer-call-out: bouwer-MVP-cuts zonder stop-en-vraag = anti-pattern. Bouwer-4-lagen-discipline-antwoord. Scenario B (4-block multi-sessie) groen-licht. |
+| **11.M.1 block-1** Dossier-AI | (merge) | `dpl_EMwjSmyc45MeAqbd6RTUyfJU2WzM` (`l6dai5spc`) | 180/180 | `_processen_dossier_extract.js` helper (~567 LOC, RAG+Claude haiku-4-5) + 4 sub-routes (dossier_extract / fields_fill / improve_change_approach / improve_steering) + `DossierAiButton` shared component + AI-knoppen wired in alle 5 sub-views + 6 RTL |
+| **11.M.1 block-2** Verbeteracties-AI + Motivatie-modal | (merge) | `dpl_4oYVP4YfVpvi9qwzNqanYAq7kyCq` (`2wezn92qx`) | 187/187 | `generateImprovementsAi` voor 5 source-types (algemeen/cluster/paradox/positionering/overstijgend) + VerbeteractiesView 6-tab-pattern + bron-pijnpunten-tags + `MotivatieModal` met live char-counter ≥20 + Bewust-niet-adresseren-flow + reset-knop + 7 RTL |
+| **11.M.1 block-3a** ProcesModal + Pijnpunt-completeness | (merge) | `dpl_FZFdMQKmVzwm6WZ1U11JGGJ8ebPA` (`etww0x4lu`) | 193/193 | ProcesModal D2 (5 jsonb-velden + AI-knop wired) + E1 Multi-tag-render (5 kleur-codering per target_table) + E2 3-nummer-varianten bolletjes (standaard/bepalend/overstijgend) + E3 Bepalend-pill + 6 RTL |
+| **11.M.1 block-3b** Multi-koppeling + Matrix | (merge) | `dpl_CQx7U7eAZyuQ9JMr5mUduWxuFP1Z` (`ux7g2f656`) | 199/199 | `CouplingModal` D3 (5 polymorphic entity-types, diff-based save) + `ProcessDepartmentMatrix` D1 (M:N grid + cross-functional-chip ≥3 + proceseigenaar in jsonb-sub-key) + 6 RTL |
+| **11.M.1 block-4 FINAL** D4 + tests | `e5a26e4` + `905c6c6` (eslint-fix) | `dpl_EEcobi4tbbKNpDeQWHju6jQpjNq4` (`kbgjpl6gu`) | 199/199 | D4 Storage-bucket via MCP + RLS-policies + `SchetsUpload.jsx` direct-browser-upload + E1+E2+E3 server-side tests via Supabase-MCP DO-blokken (cross-canvas trigger + append-only structure + motivatie-CHECK + max-7-stappen + coverage-sync + intent-status-sync) ALLE PASS. **11.M-conformiteit volledig.** |
+
+**Totaal 15 mei (11.M + 11.M.1):** 6 deploys + 1 eslint-fix-deploy = 7 deploys, ~17 commits totaal, **+33 RTL-cases** (166 → 199), 5 nieuwe migration-files (1 schema + 2 seeds + 1 bucket + 0 schema-wijzigingen 11.M.1), **17 nieuwe DB-tabellen** + 11 trigger-functies + 19 RLS-policies + 1 storage-bucket met 3 RLS-policies. Endpoint-count 12 → 10 (na C0-consolidation) → 11 (na C4 processen). **Werkomvang feitelijk ~17u** (estimate 78-98u 11.M + 51-63u 11.M.1; factor 7-9× door pattern-hergebruik + helper-DRY + jsonb-equivalents zonder DB-migratie + atomische multi-step-MCP-tests).
+
+**Discipline-leerpunt 15 mei:** bouwer schond aanvankelijk werkingsregel 9 (stilzwijgend-deferren 6 onderdelen in 11.M MVP zonder stop-en-vraag = anti-pattern conform reviewer 13-mei). Na 4-lagen-discipline-antwoord en hardgrens-toezegging consistent gerespecteerd over alle 4 11.M.1-blocks.
 
 ### 3 open UI-polish-issues (verse-sessie-werk 13 mei)
 
@@ -754,28 +778,52 @@ i.p.v. test-account.
   Richtlijnen-only-workaround; root-cause-fix in Strategie blijft
   uitstaand voor vervolg-sprint
 
-### Verwachte volgende stappen
+**Inbox `to-builder/` per einde 15 mei:** **LEEG** — alle 7 instructies
+verwerkt + gearchiveerd. Reviewer schrijft volgende instructie pas na
+Kees-handmatige-test 11.M.1 PASS (FINAL GATE).
 
-**Hoofdspoor (volgens nieuwe roadmap-volgorde klant → proces → org → IT → roadmap):**
+**Result-files per einde 15 mei** (alle in `handoff/to-reviewer/archive/`):
+- `2026-05-15-1030-diagnose-11M-processen-organisatie-bouwer.md`
+- `2026-05-15-1300-tussenresult-11M-C0-C1.md`
+- `2026-05-15-1500-result-11M-processen-organisatie-bouwer-MVP.md`
+- `2026-05-15-1600-diagnose-11M1-vervolg-deferred.md`
+- `2026-05-15-1700-tussenresult-11M1-block1-dossier-AI.md`
+- `2026-05-15-1800-tussenresult-11M1-block2-verbeteracties-motivatie.md`
+- `2026-05-15-1900-tussenresult-11M1-block3a-procesmodal-completeness.md`
+- `2026-05-15-2000-tussenresult-11M1-block3b-multikoppeling-matrix.md`
+- `2026-05-15-2100-result-11M1-block4-FINAL.md` ← **11.M.1 final**
 
-- **RFC-004 Proces-werkblad-datamodel** — architect-werk. Replicatie van ADR-004 status-flow-model op `pr_*`-tabellen. Vergelijkbaar met RFC-001 (klanten-datamodel) als anker. Bouwer-werk volgt na RFC-004-akkoord als **stap 11.M Proces-bouwer-implementatie**.
-- Daarna: RFC-005 Organisatie + 11.N Organisatie-bouwer (replicatie-patroon).
-- Daarna: RFC-006 IT + 11.O IT-bouwer.
-- Tot slot: **11.L Roadmap-werkblad-bouwer** — convergentielaag pas wanneer alle 4 bronnen leven. Mogelijk RFC-003 mini-revisie (~1u) voor `source_intent_table` polymorphic CHECK-uitbreiding op dat moment.
+### Verwachte volgende stappen (per einde 2026-05-15)
+
+**FINAL GATE = Kees-handmatige-test 11.M.1 op prod** (deploy `kbgjpl6gu` op `kingfisher-btcprod.vercel.app`). Zonder PASS blijven RFC-006-architect-werk + K-rev-1+K-rev-2-trigger geblokkeerd. ~40-punten-checklist in `archive/2026-05-15-2100-result-11M1-block4-FINAL.md`.
+
+**Hoofdspoor (klant → proces ✅ → org/mensen → IT → roadmap):**
+
+- **Klant ✅ live (11.D-K.2 + 11.I + 11.K)** — Kees-test pending op klanten-magic-flow + 11.M.1-werkblad
+- **Proces ✅ live (11.M + 11.M.1)** — gate = Kees-test
+- **Volgende = RFC-006 Org/Mensen-werkblad** — architect-werk. Replicatie van RFC-005-pattern op `org_*` of `mens_*`-tabellen. Bouwer-werk volgt na RFC-006-akkoord als 11.N. **Geblokkeerd tot Kees-test 11.M.1 PASS.**
+- Daarna: RFC-008 IT + 11.O IT-bouwer (replicatie).
+- Tot slot: **11.L Roadmap-werkblad-bouwer** — convergentielaag pas wanneer alle 4 bronnen leven. Mogelijk RFC-003 mini-revisie (~1u) voor `source_intent_table` polymorphic CHECK-uitbreiding.
+
+**Klanten-revisie K-rev-1 + K-rev-2** (instructie RFC-005 §12, trigger nu actief):
+- **K-rev-1** Klanten state-machine 5-staps → 2-staps (consistent met RFC-005). Vereist RFC-007-rev2.
+- **K-rev-2** Klanten coverage-discipline retro-fit op `cd_pain_points` (analoog RFC-005 §9.3).
+- Beide wachten op **Kees-handmatige-test 11.M.1 PASS** als final-criterium.
 
 **Parallelle/secundaire sporen:**
 
-- **F19 mini-sprint** (pending in inbox, ~1-2u) — RLS hardcoded-email + onConflict-mismatch oplossen; test-account-workaround vereist
-- **F-sam-1 root-cause-fix** (~15 min) — `StrategieWerkblad.handleClose` async-await + non-fire-and-forget (CLAUDE.md §4.2 compliance). Workaround in Richtlijnen is functioneel maar root-cause sit in Strategie. Te plannen na F19.
-- **Kees-handmatige-test A6 + 11.K** — magic-velden-vullen-knop 0-items-flow + dossier-driven-flow end-to-end op `kingfisher-btcprod.vercel.app`. Bij output-kwaliteit: prompts tunen via Admin-UI groep "Klanten & Dienstverlening" (tenant_overridable=true).
-- **Kees-handmatige-test F-sam-1** — Richtlijnen → Strategie → kernwaarde toevoegen → terug naar Richtlijnen → samenvatting toont nieuwe waarde (binnen 1.5s via delayed-retry)
+- **F19 mini-sprint** (pending in inbox sinds 14 mei, ~1-2u) — RLS hardcoded-email + onConflict-mismatch oplossen
+- **F-sam-1 root-cause-fix** (~15 min) — `StrategieWerkblad.handleClose` async-await + non-fire-and-forget. Workaround in Richtlijnen actief sinds 14 mei.
 - **Stap 11.G.5** — J2+J3+J5+J6 Playwright-specs (niet acuut)
-- **F20** — code-fallbacks-strings sync met verbeteractie-rename (boy-scout — grotendeels gedaan 12 mei, mogelijk nog restanten)
+- **F20** — code-fallbacks-strings sync met verbeteractie-rename (boy-scout)
 - **3 P3-items uit 11.I.2** — drag-and-drop is_ordered-UI / gestructureerde DMU-editor / strict type-validatie
 
 **Post-MVP klanten:**
-
 - Stap 11.J Type B visueel rapport
-- F12 canvas-tegel-feedback (wacht op Kees-test 11.K)
+- F12 canvas-tegel-feedback (wacht op Kees-test)
 - F15 prompt-naming-cleanup
 - DB-enum-rename `verstuurd→in_roadmap` (bundeling RFC-003 / cleanup-sprint)
+
+**Bekende observaties (niet 11.M.1-scope, post-Kees-test follow-ups):**
+- **OBS-18** Platform-logo-fix
+- Discipline-leerpunt 15 mei vastleggen in COWORK_REVIEWER-leerpunten-sectie (reviewer-werk)

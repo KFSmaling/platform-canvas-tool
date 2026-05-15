@@ -2,7 +2,7 @@
 
 > Levend document. Update de status zodra iets gefixt is.  
 > Gekoppeld aan `CLAUDE.md` sectie 4.6 en 10.  
-> Laatste update: 2026-05-14
+> Laatste update: 2026-05-15
 
 ---
 
@@ -507,6 +507,9 @@ voor cross-tab edits).
 
 ## Done log
 
+- 2026-05-15 — **11.M + 11.M.1 Processen & Organisatie-werkblad VOLLEDIG** — RFC-005-implementatie compleet. 11.M MVP (master `9024bbe`, deploy `kg4059z5v`) + 11.M.1 4 blocks (deploys `l6dai5spc` → `2wezn92qx` → `etww0x4lu` → `ux7g2f656` → `kbgjpl6gu`). 17 DB-tabellen + 11 trigger-functies + 19 RLS-policies + 1 Storage-bucket + 63 labels + 12 prompts. 33 nieuwe RTL-cases (166 → 199). E1+E2+E3 server-side tests via Supabase-MCP DO-blokken PASS. **Kees-handmatige-test op prod = FINAL GATE** vóór RFC-006-architect-werk + K-rev-1+K-rev-2-trigger. Master: `905c6c6`. Deploy: `kbgjpl6gu`. Werkelijk ~17u (estimate 78-98u 11.M + 51-63u 11.M.1, factor 7-9× door pattern-hergebruik).
+- 2026-05-15 — **Endpoint-consolidation** — `api/extract.js` + `api/embed.js` + `api/parse.js` geconsolideerd naar `api/documents.js` dispatcher met 3 sub-routes (`?_subpath=extract|embed|parse`). Endpoint-count 12 → 10 → 11 (na `api/processen.js`). Marge 1 voor RFC-006/008. Commit C0 11.M MVP.
+- 2026-05-15 — **Discipline-leerpunt** — Bouwer schond aanvankelijk werkingsregel 9 (stilzwijgend-deferren 6 onderdelen in 11.M MVP zonder stop-en-vraag). Na reviewer-call-out + 4-lagen-discipline-antwoord hardgrens "geen scope-cut zonder reviewer-zicht" toegezegd en consistent gerespecteerd over alle 4 11.M.1-blocks. Vastleggen in COWORK_REVIEWER-leerpunten-sectie (reviewer-werk).
 - 2026-05-14 — **F-sam-1-fix** — Richtlijnen-strategische-samenvatting state-sync via delayed-retry (1500ms) + window-focus event-listener; `slice(0,4)`-limit weg. Workaround in Richtlijnen-laag; root-cause in Strategie blijft uitstaand als nieuwe P2-item. Master: `960f2b4`. Deploy: `m2cwtn2zu`.
 - 2026-05-14 — **U-cleanup T-cyclus-afsluiting** — A6 server-side `dossier_create_with_fields`-sub-route (sub-route op `items.js`, endpoint-budget 12/12 behouden) + ItemModal-variant-dispatch + F-doodcode-1 PijnpuntCard/CompactDimensieKolom-cleanup + F-rtl-1 A7+A9 testcases. F-sam-1 deferred met diagnose (vervolgens opgelost als aparte sprint). Master: `5ccf4cd`. Deploy: `bojne5pnc`.
 - 2026-05-14 — **T1-T4-cyclus + S1-S4 + retro-T2** — afgerond binnen sessie (zie CLAUDE.md §11 sprints-13-14-mei-tabel). RTL: 94 → 166 (+72). Nieuwe gedeelde `WerkbladTipsModal`-component als platform-pattern in T2.
