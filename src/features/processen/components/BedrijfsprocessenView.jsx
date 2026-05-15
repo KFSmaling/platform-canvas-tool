@@ -10,10 +10,11 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, Check, X as XIcon } from "lucide-react";
+import { Plus, Trash2, Check, X as XIcon, Pencil } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
 import DossierAiButton from "./DossierAiButton";
+import ProcesModal from "./ProcesModal";
 
 const ARCHETYPES = [
   { id: "besturend",     labelKey: "processen.archetype.besturend",     fallback: "Besturend",     color: "bg-green-100 text-green-800" },
@@ -30,6 +31,7 @@ export default function BedrijfsprocessenView({ canvasId, hasUploads, hasIndexed
   const [newName, setNewName] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState(null);
+  const [editingProcess, setEditingProcess] = useState(null); // pr_processes-row voor ProcesModal
 
   const load = useCallback(async () => {
     if (!canvasId) return;
@@ -95,6 +97,17 @@ export default function BedrijfsprocessenView({ canvasId, hasUploads, hasIndexed
     const { error: err } = await svc.deleteProcess(id);
     if (err) { setError(err); return; }
     load();
+  }
+
+  async function handleSaveFromModal(patch) {
+    const result = await svc.updateProcess(editingProcess.id, patch);
+    if (!result.error) load();
+    return result;
+  }
+
+  async function handleFillFieldsFromDossier(processId) {
+    const result = await svc.fillProcessFieldsFromDossier(processId);
+    return result; // ProcesModal verwerkt zelf {data, meta, error}
   }
 
   if (loading) return <div className="p-6 text-sm text-slate-500">Laden…</div>;
@@ -220,15 +233,26 @@ export default function BedrijfsprocessenView({ canvasId, hasUploads, hasIndexed
                         </button>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(p.id)}
-                        data-testid={`bp-delete-${p.id}`}
-                        className="text-slate-400 hover:text-red-600"
-                        aria-label="Verwijder"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setEditingProcess(p)}
+                          data-testid={`bp-edit-${p.id}`}
+                          className="text-slate-400 hover:text-[var(--color-accent)]"
+                          aria-label="Bewerk"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(p.id)}
+                          data-testid={`bp-delete-${p.id}`}
+                          className="text-slate-400 hover:text-red-600"
+                          aria-label="Verwijder"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))
@@ -237,6 +261,19 @@ export default function BedrijfsprocessenView({ canvasId, hasUploads, hasIndexed
           </div>
         );
       })}
+
+      {/* 11.M.1 block-3a D2 — ProcesModal voor archetype-velden-editor */}
+      {editingProcess && (
+        <ProcesModal
+          process={editingProcess}
+          onClose={() => setEditingProcess(null)}
+          onSave={handleSaveFromModal}
+          onFillFieldsFromDossier={handleFillFieldsFromDossier}
+          hasUploads={hasUploads}
+          hasIndexedChunks={hasIndexedChunks}
+          uploadsProcessing={uploadsProcessing}
+        />
+      )}
     </div>
   );
 }

@@ -42,6 +42,7 @@ jest.mock("../services/processen.service", () => ({
   updateControlProcess:        jest.fn(),
   deleteControlProcess:        jest.fn(),
   listPainPoints:              jest.fn(),
+  listPainPointCouplings:      jest.fn(),
   createPainPoint:             jest.fn(),
   updatePainPoint:             jest.fn(),
   deletePainPoint:             jest.fn(),
@@ -98,6 +99,7 @@ beforeEach(() => {
   svc.getSteeringModel.mockResolvedValue({ data: { model: "hierarchisch", text_md: "Steering oud", coordination_aspects: [] }, error: null });
   svc.listControlProcesses.mockResolvedValue({ data: [], error: null });
   svc.listPainPoints.mockResolvedValue({ data: [], error: null });
+  svc.listPainPointCouplings.mockResolvedValue({ data: [], error: null });
   svc.listImprovementIntents.mockResolvedValue({ data: [], error: null });
   svc.fetchCoverageAggregate.mockResolvedValue({ data: { open: 0, covered: 0, motivated_no_action: 0, total: 0 }, error: null });
 });

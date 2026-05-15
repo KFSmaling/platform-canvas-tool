@@ -42,6 +42,7 @@ jest.mock("../services/processen.service", () => ({
   updateControlProcess:        jest.fn(),
   deleteControlProcess:        jest.fn(),
   listPainPoints:              jest.fn(),
+  listPainPointCouplings:      jest.fn(),
   createPainPoint:             jest.fn(),
   updatePainPoint:             jest.fn(),
   deletePainPoint:             jest.fn(),
@@ -101,6 +102,7 @@ beforeEach(() => {
   svc.getSteeringModel.mockResolvedValue({ data: null, error: null });
   svc.listControlProcesses.mockResolvedValue({ data: [], error: null });
   svc.listPainPoints.mockResolvedValue({ data: [PAIN], error: null });
+  svc.listPainPointCouplings.mockResolvedValue({ data: [], error: null });
   svc.listImprovementIntents.mockResolvedValue({ data: [], error: null });
   svc.fetchCoverageAggregate.mockResolvedValue({ data: { open: 1, covered: 0, motivated_no_action: 0, total: 1 }, error: null });
 });
@@ -226,6 +228,7 @@ describe("11.M.1 Block-2 — Verbeteracties-AI + Motivatie-modal", () => {
   test("7. motivated_no_action pijnpunt toont reset-knop, reset werkt", async () => {
     const motivatedPain = { ...PAIN, coverage_status: "motivated_no_action", no_action_motivation: "Behandeld in jaarplan" };
     svc.listPainPoints.mockResolvedValue({ data: [motivatedPain], error: null });
+  svc.listPainPointCouplings.mockResolvedValue({ data: [], error: null });
     svc.toggleCoverageStatus.mockResolvedValue({ data: { ...motivatedPain, coverage_status: "open" }, error: null });
 
     await renderWerkblad();

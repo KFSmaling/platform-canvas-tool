@@ -16,6 +16,22 @@ import * as svc from "../services/processen.service";
 import DossierAiButton from "./DossierAiButton";
 import MotivatieModal from "./MotivatieModal";
 
+// Wireframe-doc §"Fase 2 Pijnpunten" regel 184: per coupling kleur-codering naar entity-type
+const COUPLING_TAG_STYLES = {
+  pr_processes:          { label: "Proces",         cls: "bg-green-100 text-green-800 border-green-200"   },
+  org_departments:       { label: "Afdeling",       cls: "bg-slate-100 text-slate-700 border-slate-300"   },
+  vo_value_teams:        { label: "Team",           cls: "bg-purple-100 text-purple-800 border-purple-200" },
+  gov_control_processes: { label: "Control",        cls: "bg-blue-100 text-blue-800 border-blue-200"      },
+  vo_business_units:     { label: "BU",             cls: "bg-amber-100 text-amber-800 border-amber-200"   },
+};
+
+// Wireframe-doc regel 188: 3-nummer-varianten bolletjes
+function nummerBolletjeStyle(p) {
+  if (p.is_floating)         return "bg-slate-200 text-slate-700";   // overstijgend grijs
+  if (p.is_strategic_anchor) return "bg-red-700 text-white";          // bepalend donker-rood
+  return "bg-red-100 text-red-700";                                   // standaard rood
+}
+
 export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
   const [pains, setPains] = useState([]);
@@ -25,12 +41,17 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState(null);
   const [motivatieFor, setMotivatieFor] = useState(null); // { id, text_md } voor modal
+  const [couplings, setCouplings] = useState([]); // po_pain_point_couplings voor multi-tag-render
 
   const load = useCallback(async () => {
     if (!canvasId) return;
     setLoading(true);
-    const { data } = await svc.listPainPoints(canvasId);
-    setPains(data || []);
+    const [{ data: painData }, { data: couplData }] = await Promise.all([
+      svc.listPainPoints(canvasId),
+      svc.listPainPointCouplings(canvasId),
+    ]);
+    setPains(painData || []);
+    setCouplings(couplData || []);
     setLoading(false);
   }, [canvasId]);
 
@@ -125,20 +146,55 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
         </p>
       ) : (
         <div className="space-y-2">
-          {pains.map((p, idx) => (
+          {pains.map((p, idx) => {
+            // E1 Multi-tag-render: unieke target_table-set per pijnpunt
+            const painCouplings = couplings.filter(c => c.pain_point_id === p.id);
+            const uniqueTargetTables = [...new Set(painCouplings.map(c => c.target_table))];
+            const bolletjeCls = nummerBolletjeStyle(p);
+            return (
             <div
               key={p.id}
               data-testid={`pijnpunt-rij-${p.id}`}
               data-coverage={p.coverage_status}
               data-draft={p.is_draft ? "true" : "false"}
+              data-strategic-anchor={p.is_strategic_anchor ? "true" : "false"}
+              data-floating={p.is_floating ? "true" : "false"}
               className={`flex items-start gap-3 px-4 py-3 bg-white border border-slate-200 rounded hover:border-slate-300 ${p.is_draft ? "opacity-70" : ""}`}
             >
-              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center">
+              <span
+                data-testid={`pijnpunt-bolletje-${p.id}`}
+                data-variant={p.is_floating ? "overstijgend" : p.is_strategic_anchor ? "bepalend" : "standaard"}
+                className={`flex-shrink-0 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${bolletjeCls}`}
+              >
                 {idx + 1}
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-slate-800">{p.text_md}</p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  {/* E3 Bepalend-pill bij is_strategic_anchor */}
+                  {p.is_strategic_anchor && (
+                    <span
+                      data-testid={`pijnpunt-bepalend-pill-${p.id}`}
+                      className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded bg-pink-100 text-pink-800 border border-pink-200 font-bold"
+                    >
+                      Bepalend
+                    </span>
+                  )}
+                  {/* E1 Multi-tag-render per gekoppelde entity-type */}
+                  {uniqueTargetTables.map(tt => {
+                    const tag = COUPLING_TAG_STYLES[tt];
+                    if (!tag) return null;
+                    const countForTag = painCouplings.filter(c => c.target_table === tt).length;
+                    return (
+                      <span
+                        key={tt}
+                        data-testid={`pijnpunt-tag-${p.id}-${tt}`}
+                        className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded border ${tag.cls}`}
+                      >
+                        {tag.label}{countForTag > 1 ? ` ×${countForTag}` : ""}
+                      </span>
+                    );
+                  })}
                   <span className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded ${
                     p.coverage_status === "covered" ? "bg-green-100 text-green-800" :
                     p.coverage_status === "motivated_no_action" ? "bg-amber-100 text-amber-800" :
@@ -146,8 +202,8 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
                   }`}>
                     {appLabel(`processen.coverage.${p.coverage_status}`, p.coverage_status)}
                   </span>
-                  {p.is_floating && (
-                    <span className="text-[9px] text-slate-400">overstijgend (geen koppeling)</span>
+                  {p.is_floating && uniqueTargetTables.length === 0 && (
+                    <span className="text-[9px] text-slate-400 italic">overstijgend (geen koppeling)</span>
                   )}
                   {p.is_draft && (
                     <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">dossier-suggestie</span>
@@ -195,12 +251,13 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       <p className="text-[10px] text-slate-400 italic border-t border-slate-200 pt-3 mt-4">
-        Multi-koppeling-UI naar fase 1 entiteit-types komt in 11.M follow-up. Coverage-banner zit op fase 3.
+        Multi-koppeling-UI (toevoegen/wissen) naar fase 1 entiteit-types komt in 11.M.1 block-3b. Coverage-banner zit op fase 3.
       </p>
 
       {/* 11.M.1 block-2 C10 — Motivatie-modal voor Bewust-niet-adresseren */}

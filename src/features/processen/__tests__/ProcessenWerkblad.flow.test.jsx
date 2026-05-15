@@ -40,6 +40,7 @@ jest.mock("../services/processen.service", () => ({
   createControlProcess:        jest.fn(),
   deleteControlProcess:        jest.fn(),
   listPainPoints:              jest.fn(),
+  listPainPointCouplings:      jest.fn(),
   createPainPoint:             jest.fn(),
   deletePainPoint:             jest.fn(),
   listImprovementIntents:      jest.fn(),
@@ -81,6 +82,7 @@ beforeEach(() => {
   svc.getSteeringModel.mockResolvedValue({ data: null, error: null });
   svc.listControlProcesses.mockResolvedValue({ data: [], error: null });
   svc.listPainPoints.mockResolvedValue({ data: [], error: null });
+  svc.listPainPointCouplings.mockResolvedValue({ data: [], error: null });
   svc.listImprovementIntents.mockResolvedValue({ data: [], error: null });
   svc.fetchCoverageAggregate.mockResolvedValue({ data: { open: 0, covered: 0, motivated_no_action: 0, total: 0 }, error: null });
 });
