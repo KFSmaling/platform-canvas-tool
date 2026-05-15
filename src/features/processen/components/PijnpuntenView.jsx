@@ -10,16 +10,19 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, X as XIcon } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
+import DossierAiButton from "./DossierAiButton";
 
-export default function PijnpuntenView({ canvasId }) {
+export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
   const [pains, setPains] = useState([]);
   const [newText, setNewText] = useState("");
   const [adding, setAdding] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState(null);
 
   const load = useCallback(async () => {
     if (!canvasId) return;
@@ -37,22 +40,49 @@ export default function PijnpuntenView({ canvasId }) {
     setNewText(""); setAdding(false); load();
   }
 
+  async function extractPainsAi() {
+    if (aiBusy) return;
+    setAiBusy(true); setAiNote(null);
+    const { data, meta, error } = await svc.extractFromDossier(canvasId, "pain_points");
+    setAiBusy(false);
+    if (error) { setAiNote(`Fout: ${error.message}`); return; }
+    if (!data || data.length === 0) { setAiNote(meta?.note || "Geen pijnpunten in dossier"); return; }
+    setAiNote(`${data.length} draft-pijnpunt${data.length === 1 ? "" : "en"} toegevoegd vanuit dossier`);
+    load();
+  }
+  async function acceptPainDraft(id) {
+    await svc.updatePainPoint(id, { is_draft: false });
+    load();
+  }
+
   if (loading) return <div className="p-6 text-sm text-slate-500">Laden…</div>;
 
   return (
     <div data-testid="processen-pijnpunten-view" className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-slate-800">Pijnpunten ({pains.length})</h3>
-        <button
-          type="button"
-          onClick={() => setAdding(!adding)}
-          data-testid="pijnpunten-add-toggle"
-          className="flex items-center gap-1 text-xs uppercase tracking-widest text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
-        >
-          <Plus size={12} />
-          {appLabel("processen.knop.pijnpunt.toevoegen", "+ Pijnpunt")}
-        </button>
+        <div className="flex items-center gap-3">
+          <DossierAiButton
+            onClick={extractPainsAi}
+            busy={aiBusy}
+            hasUploads={hasUploads}
+            hasIndexedChunks={hasIndexedChunks}
+            uploadsProcessing={uploadsProcessing}
+            label="Genereer vanuit dossier"
+            testIdSuffix="pain-points-extract"
+          />
+          <button
+            type="button"
+            onClick={() => setAdding(!adding)}
+            data-testid="pijnpunten-add-toggle"
+            className="flex items-center gap-1 text-xs uppercase tracking-widest text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+          >
+            <Plus size={12} />
+            {appLabel("processen.knop.pijnpunt.toevoegen", "+ Pijnpunt")}
+          </button>
+        </div>
       </div>
+      {aiNote && <div data-testid="pijnpunten-ai-note" className="px-3 py-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">{aiNote}</div>}
 
       {adding && (
         <div className="bg-slate-50 border border-slate-200 rounded p-3 flex gap-2">
@@ -82,7 +112,8 @@ export default function PijnpuntenView({ canvasId }) {
               key={p.id}
               data-testid={`pijnpunt-rij-${p.id}`}
               data-coverage={p.coverage_status}
-              className="flex items-start gap-3 px-4 py-3 bg-white border border-slate-200 rounded hover:border-slate-300"
+              data-draft={p.is_draft ? "true" : "false"}
+              className={`flex items-start gap-3 px-4 py-3 bg-white border border-slate-200 rounded hover:border-slate-300 ${p.is_draft ? "opacity-70" : ""}`}
             >
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center">
                 {idx + 1}
@@ -100,16 +131,26 @@ export default function PijnpuntenView({ canvasId }) {
                   {p.is_floating && (
                     <span className="text-[9px] text-slate-400">overstijgend (geen koppeling)</span>
                   )}
+                  {p.is_draft && (
+                    <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">dossier-suggestie</span>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={async () => { await svc.deletePainPoint(p.id); load(); }}
-                className="text-slate-400 hover:text-red-600"
-                aria-label="Verwijder"
-              >
-                <Trash2 size={12} />
-              </button>
+              {p.is_draft ? (
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => acceptPainDraft(p.id)} data-testid={`pijnpunt-accept-${p.id}`} className="text-emerald-600 hover:text-emerald-800" aria-label="Accepteer"><Check size={14} /></button>
+                  <button type="button" onClick={async () => { await svc.deletePainPoint(p.id); load(); }} className="text-slate-400 hover:text-red-600" aria-label="Verwijder"><XIcon size={14} /></button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => { await svc.deletePainPoint(p.id); load(); }}
+                  className="text-slate-400 hover:text-red-600"
+                  aria-label="Verwijder"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
             </div>
           ))}
         </div>

@@ -9,9 +9,10 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, X as XIcon } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
+import DossierAiButton from "./DossierAiButton";
 
 const DOORSNEDE_OPTS = [
   { id: "functioneel",    labelKey: "processen.doorsnede.functioneel",    fallback: "Functioneel" },
@@ -20,12 +21,14 @@ const DOORSNEDE_OPTS = [
   { id: "marktgericht",   labelKey: "processen.doorsnede.marktgericht",   fallback: "Marktgericht" },
 ];
 
-export default function LijnorganisatieView({ canvasId }) {
+export default function LijnorganisatieView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
   const [doorsnede, setDoorsnede] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState(null);
 
   const loadAll = useCallback(async () => {
     if (!canvasId) return;
@@ -55,6 +58,18 @@ export default function LijnorganisatieView({ canvasId }) {
     loadAll();
   }
 
+  async function extractDepartmentsAi() {
+    if (aiBusy) return;
+    setAiBusy(true); setAiNote(null);
+    const { data, meta, error } = await svc.extractFromDossier(canvasId, "departments");
+    setAiBusy(false);
+    if (error) { setAiNote(`Fout: ${error.message}`); return; }
+    if (!data || data.length === 0) { setAiNote(meta?.note || "Geen afdelingen in dossier"); return; }
+    setAiNote(`${data.length} draft-afdeling${data.length === 1 ? "" : "en"} toegevoegd`);
+    loadAll();
+  }
+  async function acceptDeptDraft(id) { await svc.updateDepartment(id, { is_draft: false }); loadAll(); }
+
   return (
     <div data-testid="lijnorganisatie-view" className="p-6 space-y-6">
       <section>
@@ -82,16 +97,28 @@ export default function LijnorganisatieView({ canvasId }) {
       <section>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Afdelingen ({departments.length})</h3>
-          <button
-            type="button"
-            onClick={() => setAdding(!adding)}
-            data-testid="lijn-dept-add-toggle"
-            className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
-          >
-            <Plus size={10} />
-            {appLabel("processen.knop.afdeling.toevoegen", "+ Afdeling")}
-          </button>
+          <div className="flex items-center gap-3">
+            <DossierAiButton
+              onClick={extractDepartmentsAi}
+              busy={aiBusy}
+              hasUploads={hasUploads}
+              hasIndexedChunks={hasIndexedChunks}
+              uploadsProcessing={uploadsProcessing}
+              label="Genereer vanuit dossier"
+              testIdSuffix="departments-extract"
+            />
+            <button
+              type="button"
+              onClick={() => setAdding(!adding)}
+              data-testid="lijn-dept-add-toggle"
+              className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+            >
+              <Plus size={10} />
+              {appLabel("processen.knop.afdeling.toevoegen", "+ Afdeling")}
+            </button>
+          </div>
         </div>
+        {aiNote && <p data-testid="lijn-ai-note" className="text-[10px] text-emerald-700 mb-2">{aiNote}</p>}
         {adding && (
           <div className="mb-2 flex gap-2">
             <input
@@ -114,12 +141,21 @@ export default function LijnorganisatieView({ canvasId }) {
             <div
               key={d.id}
               data-testid={`lijn-dept-${d.id}`}
-              className="flex items-center justify-between px-3 py-2 bg-white border border-slate-200 rounded hover:border-slate-300 text-sm"
+              data-draft={d.is_draft ? "true" : "false"}
+              className={`flex items-center justify-between px-3 py-2 bg-white border border-slate-200 rounded text-sm ${d.is_draft ? "opacity-70" : "hover:border-slate-300"}`}
             >
-              <span className="flex-1 text-slate-800">{d.name}</span>
-              <button type="button" onClick={() => removeDept(d.id)} className="text-slate-400 hover:text-red-600" aria-label="Verwijder">
-                <Trash2 size={12} />
-              </button>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-slate-800 truncate">{d.name}</span>
+                {d.is_draft && <span className="shrink-0 px-1.5 py-0.5 text-[9px] uppercase rounded bg-emerald-100 text-emerald-800">draft</span>}
+              </div>
+              {d.is_draft ? (
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => acceptDeptDraft(d.id)} className="text-emerald-600 hover:text-emerald-800" aria-label="Accepteer"><Check size={14} /></button>
+                  <button type="button" onClick={() => removeDept(d.id)} className="text-slate-400 hover:text-red-600" aria-label="Verwijder"><XIcon size={14} /></button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => removeDept(d.id)} className="text-slate-400 hover:text-red-600" aria-label="Verwijder"><Trash2 size={12} /></button>
+              )}
             </div>
           ))}
         </div>

@@ -6,9 +6,10 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
+import DossierAiButton from "./DossierAiButton";
 
 const STEERING_OPTS = [
   { id: "hierarchisch",           labelKey: "processen.steering.hierarchisch",           fallback: "Hiërarchisch" },
@@ -25,12 +26,15 @@ const CONTROL_TYPES = [
   { id: "bijsturing",     labelKey: "processen.control_type.bijsturing",     fallback: "Bijsturing",     color: "bg-red-100 text-red-800 border-red-300" },
 ];
 
-export default function BesturingView({ canvasId }) {
+export default function BesturingView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
   const [steering, setSteering] = useState({ model: null, text_md: "", coordination_aspects: [] });
   const [controlProcesses, setControlProcesses] = useState([]);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("jaarplan");
+  const [improvingSteering, setImprovingSteering] = useState(false);
+  const [cpAiBusy, setCpAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState(null);
 
   const loadAll = useCallback(async () => {
     if (!canvasId) return;
@@ -70,6 +74,26 @@ export default function BesturingView({ canvasId }) {
     setNewName(""); loadAll();
   }
 
+  async function improveSteeringAi() {
+    if (improvingSteering || !steering.text_md.trim()) return;
+    setImprovingSteering(true); setAiNote(null);
+    const { data, meta, error } = await svc.improveSteering(canvasId);
+    setImprovingSteering(false);
+    if (error) { setAiNote(`Fout: ${error.message}`); return; }
+    if (meta?.after) { setSteering({ ...steering, text_md: meta.after }); setAiNote("Toelichting verbeterd door AI"); }
+  }
+  async function extractControlAi() {
+    if (cpAiBusy) return;
+    setCpAiBusy(true); setAiNote(null);
+    const { data, meta, error } = await svc.extractFromDossier(canvasId, "control_processes");
+    setCpAiBusy(false);
+    if (error) { setAiNote(`Fout: ${error.message}`); return; }
+    if (!data || data.length === 0) { setAiNote(meta?.note || "Geen control-processen in dossier"); return; }
+    setAiNote(`${data.length} draft control-proces${data.length === 1 ? "" : "sen"} toegevoegd`);
+    loadAll();
+  }
+  async function acceptCpDraft(id) { await svc.updateControlProcess(id, { is_draft: false }); loadAll(); }
+
   return (
     <div data-testid="besturing-view" className="p-6 space-y-6">
       <section>
@@ -97,7 +121,23 @@ export default function BesturingView({ canvasId }) {
       {steering.model && (
         <>
           <section>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Toelichting</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Toelichting</h3>
+              <button
+                type="button"
+                onClick={improveSteeringAi}
+                disabled={improvingSteering || !steering.text_md.trim()}
+                data-testid="gov-improve-steering"
+                className={`flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors ${
+                  improvingSteering || !steering.text_md.trim()
+                    ? "text-slate-400 cursor-not-allowed opacity-60"
+                    : "text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+                }`}
+              >
+                {improvingSteering ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                Verbeter met AI
+              </button>
+            </div>
             <textarea
               value={steering.text_md}
               onChange={(e) => setSteering({ ...steering, text_md: e.target.value })}
@@ -139,7 +179,17 @@ export default function BesturingView({ canvasId }) {
       <section>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Control-processen ({controlProcesses.length})</h3>
+          <DossierAiButton
+            onClick={extractControlAi}
+            busy={cpAiBusy}
+            hasUploads={hasUploads}
+            hasIndexedChunks={hasIndexedChunks}
+            uploadsProcessing={uploadsProcessing}
+            label="Genereer vanuit dossier"
+            testIdSuffix="control-extract"
+          />
         </div>
+        {aiNote && <p data-testid="gov-ai-note" className="text-[10px] text-emerald-700 mb-2">{aiNote}</p>}
         <div className="flex gap-2 mb-2">
           <input
             type="text"

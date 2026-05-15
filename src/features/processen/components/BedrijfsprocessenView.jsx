@@ -10,9 +10,10 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, X as XIcon } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
+import DossierAiButton from "./DossierAiButton";
 
 const ARCHETYPES = [
   { id: "besturend",     labelKey: "processen.archetype.besturend",     fallback: "Besturend",     color: "bg-green-100 text-green-800" },
@@ -20,13 +21,15 @@ const ARCHETYPES = [
   { id: "ondersteunend", labelKey: "processen.archetype.ondersteunend", fallback: "Ondersteunend", color: "bg-lime-100 text-lime-800" },
 ];
 
-export default function BedrijfsprocessenView({ canvasId }) {
+export default function BedrijfsprocessenView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
   const [processes, setProcesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [addingFor, setAddingFor] = useState(null);
   const [newName, setNewName] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState(null);
 
   const load = useCallback(async () => {
     if (!canvasId) return;
@@ -67,10 +70,53 @@ export default function BedrijfsprocessenView({ canvasId }) {
     load();
   }
 
+  async function handleAiExtract() {
+    if (aiBusy) return;
+    setAiBusy(true);
+    setAiNote(null);
+    const { data, meta, error: err } = await svc.extractFromDossier(canvasId, "processes");
+    setAiBusy(false);
+    if (err) { setError(err); return; }
+    if (!data || data.length === 0) {
+      setAiNote(meta?.note || "AI vond geen processen in dossier");
+      return;
+    }
+    setAiNote(`${data.length} draft-proces${data.length === 1 ? "" : "sen"} toegevoegd vanuit dossier`);
+    load();
+  }
+
+  async function handleAcceptDraft(id) {
+    // Eenvoudig: update is_draft=false via standaard updateProcess
+    const { error: err } = await svc.updateProcess(id, { is_draft: false });
+    if (err) { setError(err); return; }
+    load();
+  }
+  async function handleRejectDraft(id) {
+    const { error: err } = await svc.deleteProcess(id);
+    if (err) { setError(err); return; }
+    load();
+  }
+
   if (loading) return <div className="p-6 text-sm text-slate-500">Laden…</div>;
 
   return (
     <div data-testid="bedrijfsprocessen-view" className="p-6 space-y-4">
+      <div className="flex items-center justify-end">
+        <DossierAiButton
+          onClick={handleAiExtract}
+          busy={aiBusy}
+          hasUploads={hasUploads}
+          hasIndexedChunks={hasIndexedChunks}
+          uploadsProcessing={uploadsProcessing}
+          label="Genereer processen vanuit dossier"
+          testIdSuffix="processes-extract"
+        />
+      </div>
+      {aiNote && (
+        <div data-testid="bp-ai-note" className="px-3 py-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">
+          {aiNote}
+        </div>
+      )}
       {error && (
         <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
           {error.message}
@@ -139,18 +185,51 @@ export default function BedrijfsprocessenView({ canvasId }) {
                   <div
                     key={p.id}
                     data-testid={`bp-process-${p.id}`}
-                    className="flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded text-sm"
+                    data-draft={p.is_draft ? "true" : "false"}
+                    className={`flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded text-sm ${
+                      p.is_draft ? "opacity-70 bg-slate-50/50" : ""
+                    }`}
                   >
-                    <span className="flex-1 text-slate-800">{p.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(p.id)}
-                      data-testid={`bp-delete-${p.id}`}
-                      className="text-slate-400 hover:text-red-600"
-                      aria-label="Verwijder"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="flex-1 text-slate-800 truncate">{p.name}</span>
+                      {p.is_draft && (
+                        <span className="shrink-0 px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          dossier-suggestie
+                        </span>
+                      )}
+                    </div>
+                    {p.is_draft ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptDraft(p.id)}
+                          data-testid={`bp-accept-draft-${p.id}`}
+                          className="text-emerald-600 hover:text-emerald-800"
+                          aria-label="Accepteer draft"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRejectDraft(p.id)}
+                          data-testid={`bp-reject-draft-${p.id}`}
+                          className="text-slate-400 hover:text-red-600"
+                          aria-label="Verwijder draft"
+                        >
+                          <XIcon size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(p.id)}
+                        data-testid={`bp-delete-${p.id}`}
+                        className="text-slate-400 hover:text-red-600"
+                        aria-label="Verwijder"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </div>
                 ))
               )}

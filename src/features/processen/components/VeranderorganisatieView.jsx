@@ -9,11 +9,12 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
+import DossierAiButton from "./DossierAiButton";
 
-export default function VeranderorganisatieView({ canvasId }) {
+export default function VeranderorganisatieView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
   const [changeApproach, setChangeApproach] = useState("");
   const [businessUnits, setBusinessUnits] = useState([]);
@@ -21,6 +22,10 @@ export default function VeranderorganisatieView({ canvasId }) {
   const [newBuName, setNewBuName] = useState("");
   const [newVtName, setNewVtName] = useState("");
   const [savingApproach, setSavingApproach] = useState(false);
+  const [improvingCa, setImprovingCa] = useState(false);
+  const [buAiBusy, setBuAiBusy] = useState(false);
+  const [vtAiBusy, setVtAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState(null);
 
   const loadAll = useCallback(async () => {
     if (!canvasId) return;
@@ -53,10 +58,59 @@ export default function VeranderorganisatieView({ canvasId }) {
     setNewVtName(""); loadAll();
   }
 
+  async function improveChangeApproachAi() {
+    if (improvingCa || !changeApproach.trim()) return;
+    setImprovingCa(true); setAiNote(null);
+    const { data, meta, error } = await svc.improveChangeApproach(canvasId);
+    setImprovingCa(false);
+    if (error) { setAiNote(`Fout: ${error.message}`); return; }
+    if (meta?.after) { setChangeApproach(meta.after); setAiNote("Veranderaanpak verbeterd door AI"); }
+  }
+
+  async function extractBusinessUnitsAi() {
+    if (buAiBusy) return;
+    setBuAiBusy(true); setAiNote(null);
+    const { data, meta, error } = await svc.extractFromDossier(canvasId, "business_units");
+    setBuAiBusy(false);
+    if (error) { setAiNote(`Fout: ${error.message}`); return; }
+    if (!data || data.length === 0) { setAiNote(meta?.note || "Geen BU's in dossier"); return; }
+    setAiNote(`${data.length} draft business unit${data.length === 1 ? "" : "s"} toegevoegd`);
+    loadAll();
+  }
+  async function extractValueTeamsAi() {
+    if (vtAiBusy) return;
+    setVtAiBusy(true); setAiNote(null);
+    const { data, meta, error } = await svc.extractFromDossier(canvasId, "value_teams");
+    setVtAiBusy(false);
+    if (error) { setAiNote(`Fout: ${error.message}`); return; }
+    if (!data || data.length === 0) { setAiNote(meta?.note || "Geen value teams in dossier"); return; }
+    setAiNote(`${data.length} draft value team${data.length === 1 ? "" : "s"} toegevoegd`);
+    loadAll();
+  }
+  async function acceptBuDraft(id) { await svc.updateBusinessUnit(id, { is_draft: false }); loadAll(); }
+  async function acceptVtDraft(id) { await svc.updateValueTeam(id, { is_draft: false }); loadAll(); }
+
   return (
     <div data-testid="veranderorganisatie-view" className="p-6 space-y-6">
       <section>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Veranderaanpak</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Veranderaanpak</h3>
+          <button
+            type="button"
+            onClick={improveChangeApproachAi}
+            disabled={improvingCa || !changeApproach.trim()}
+            data-testid="vo-improve-change-approach"
+            className={`flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors ${
+              improvingCa || !changeApproach.trim()
+                ? "text-slate-400 cursor-not-allowed opacity-60"
+                : "text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+            }`}
+            title={!changeApproach.trim() ? "Vul eerst initiële tekst in" : undefined}
+          >
+            {improvingCa ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+            Verbeter met AI
+          </button>
+        </div>
         <textarea
           value={changeApproach}
           onChange={(e) => setChangeApproach(e.target.value)}
@@ -68,10 +122,20 @@ export default function VeranderorganisatieView({ canvasId }) {
         />
         {savingApproach && <p className="text-[10px] text-slate-400 mt-1">opslaan…</p>}
       </section>
+      {aiNote && <div data-testid="vo-ai-note" className="px-3 py-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">{aiNote}</div>}
 
       <section>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Business units ({businessUnits.length})</h3>
+          <DossierAiButton
+            onClick={extractBusinessUnitsAi}
+            busy={buAiBusy}
+            hasUploads={hasUploads}
+            hasIndexedChunks={hasIndexedChunks}
+            uploadsProcessing={uploadsProcessing}
+            label="Genereer BU's vanuit dossier"
+            testIdSuffix="bu-extract"
+          />
         </div>
         <div className="flex gap-2 mb-2">
           <input
@@ -102,6 +166,15 @@ export default function VeranderorganisatieView({ canvasId }) {
       <section>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Value teams ({valueTeams.length})</h3>
+          <DossierAiButton
+            onClick={extractValueTeamsAi}
+            busy={vtAiBusy}
+            hasUploads={hasUploads}
+            hasIndexedChunks={hasIndexedChunks}
+            uploadsProcessing={uploadsProcessing}
+            label="Genereer teams vanuit dossier"
+            testIdSuffix="vt-extract"
+          />
         </div>
         <div className="flex gap-2 mb-2">
           <input

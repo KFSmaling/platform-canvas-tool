@@ -25,6 +25,9 @@ import { useLang } from "../../i18n";
 import WerkbladHeader from "../../shared/components/WerkbladHeader";
 import WerkbladActieknoppen from "../../shared/components/WerkbladActieknoppen";
 import WerkbladTipsModal from "../../shared/components/WerkbladTipsModal";
+// Hergebruik useCanvasUploads uit klanten (RFC-002-pattern; klanten anker).
+// Boy-scout-mogelijkheid: lift naar shared/hooks in volgend block.
+import { useCanvasUploads } from "../klanten/hooks/useCanvasUploads";
 
 import BedrijfsprocessenView from "./components/BedrijfsprocessenView";
 import LijnorganisatieView   from "./components/LijnorganisatieView";
@@ -55,6 +58,10 @@ export default function ProcessenWerkblad({ canvasId, onClose }) {
   const [activeSubTab, setActiveSubTab] = useState("bedrijfsprocessen");
   const [showTips, setShowTips] = useState(false);
 
+  // Dossier-AI affordance-status (block-1): single source of truth via klanten-hook.
+  const { hasUploads, hasIndexedChunks, uploadsProcessing } = useCanvasUploads(canvasId);
+  const aiAffordanceProps = { hasUploads, hasIndexedChunks, uploadsProcessing };
+
   // Tips-content per sub-tab (Variant A: tips ALLEEN tijdens fase 1)
   const tipsTitelKey = `processen.tips.${activeSubTab}.titel`;
   const tipsBodyKey  = `processen.tips.${activeSubTab}.body`;
@@ -71,14 +78,14 @@ export default function ProcessenWerkblad({ canvasId, onClose }) {
   // ── Render fase-body ──
   function renderFaseBody() {
     if (activeFase === 1) {
-      if (activeSubTab === "bedrijfsprocessen")     return <BedrijfsprocessenView canvasId={canvasId} />;
-      if (activeSubTab === "lijnorganisatie")       return <LijnorganisatieView canvasId={canvasId} />;
-      if (activeSubTab === "veranderorganisatie")   return <VeranderorganisatieView canvasId={canvasId} />;
-      if (activeSubTab === "besturing")             return <BesturingView canvasId={canvasId} />;
+      if (activeSubTab === "bedrijfsprocessen")     return <BedrijfsprocessenView   canvasId={canvasId} {...aiAffordanceProps} />;
+      if (activeSubTab === "lijnorganisatie")       return <LijnorganisatieView     canvasId={canvasId} {...aiAffordanceProps} />;
+      if (activeSubTab === "veranderorganisatie")   return <VeranderorganisatieView canvasId={canvasId} {...aiAffordanceProps} />;
+      if (activeSubTab === "besturing")             return <BesturingView           canvasId={canvasId} {...aiAffordanceProps} />;
       return null;
     }
-    if (activeFase === 2) return <PijnpuntenView canvasId={canvasId} />;
-    if (activeFase === 3) return <VerbeteractiesView canvasId={canvasId} />;
+    if (activeFase === 2) return <PijnpuntenView      canvasId={canvasId} {...aiAffordanceProps} />;
+    if (activeFase === 3) return <VerbeteractiesView  canvasId={canvasId} />;
     return null;
   }
 
