@@ -10,10 +10,11 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, Check, X as XIcon } from "lucide-react";
+import { Plus, Trash2, Check, X as XIcon, Ban, MoreVertical } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
 import DossierAiButton from "./DossierAiButton";
+import MotivatieModal from "./MotivatieModal";
 
 export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks, uploadsProcessing }) {
   const { label: appLabel } = useAppConfig();
@@ -23,6 +24,7 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
   const [loading, setLoading] = useState(true);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState(null);
+  const [motivatieFor, setMotivatieFor] = useState(null); // { id, text_md } voor modal
 
   const load = useCallback(async () => {
     if (!canvasId) return;
@@ -52,6 +54,22 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
   }
   async function acceptPainDraft(id) {
     await svc.updatePainPoint(id, { is_draft: false });
+    load();
+  }
+
+  async function handleMotivatieConfirm(motivation) {
+    if (!motivatieFor) return { error: new Error("Geen pijnpunt geselecteerd") };
+    const result = await svc.toggleCoverageStatus(motivatieFor.id, "motivated_no_action", motivation);
+    if (!result.error) {
+      setMotivatieFor(null);
+      load();
+    }
+    return result;
+  }
+
+  async function handleResetCoverage(id) {
+    // Terug van motivated_no_action → open (geen motivatie nodig)
+    await svc.toggleCoverageStatus(id, "open", null);
     load();
   }
 
@@ -142,14 +160,39 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
                   <button type="button" onClick={async () => { await svc.deletePainPoint(p.id); load(); }} className="text-slate-400 hover:text-red-600" aria-label="Verwijder"><XIcon size={14} /></button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={async () => { await svc.deletePainPoint(p.id); load(); }}
-                  className="text-slate-400 hover:text-red-600"
-                  aria-label="Verwijder"
-                >
-                  <Trash2 size={12} />
-                </button>
+                <div className="flex items-center gap-1">
+                  {p.coverage_status === "motivated_no_action" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleResetCoverage(p.id)}
+                      data-testid={`pijnpunt-reset-coverage-${p.id}`}
+                      title={p.no_action_motivation ? `Motivatie: ${p.no_action_motivation}` : "Reset coverage"}
+                      aria-label="Reset coverage"
+                      className="text-amber-600 hover:text-amber-800"
+                    >
+                      <Ban size={12} />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setMotivatieFor({ id: p.id, text_md: p.text_md })}
+                      data-testid={`pijnpunt-bewust-niet-${p.id}`}
+                      title={appLabel("processen.knop.bewust_niet", "Bewust niet adresseren")}
+                      aria-label="Bewust niet adresseren"
+                      className="text-slate-400 hover:text-amber-700"
+                    >
+                      <Ban size={12} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={async () => { await svc.deletePainPoint(p.id); load(); }}
+                    className="text-slate-400 hover:text-red-600"
+                    aria-label="Verwijder"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -159,6 +202,16 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
       <p className="text-[10px] text-slate-400 italic border-t border-slate-200 pt-3 mt-4">
         Multi-koppeling-UI naar fase 1 entiteit-types komt in 11.M follow-up. Coverage-banner zit op fase 3.
       </p>
+
+      {/* 11.M.1 block-2 C10 — Motivatie-modal voor Bewust-niet-adresseren */}
+      {motivatieFor && (
+        <MotivatieModal
+          painId={motivatieFor.id}
+          painText={motivatieFor.text_md}
+          onConfirm={handleMotivatieConfirm}
+          onCancel={() => setMotivatieFor(null)}
+        />
+      )}
     </div>
   );
 }

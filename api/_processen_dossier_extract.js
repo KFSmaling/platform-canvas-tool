@@ -558,10 +558,206 @@ function tryParseJsonObject(raw) {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// 11.M.1 Block-2 — Verbeteracties-AI (5 source-types)
+// ══════════════════════════════════════════════════════════════════════════
+
+const IMPROVEMENT_SOURCE_TYPES = [
+  "ai_algemeen",
+  "ai_cluster",
+  "ai_paradox",
+  "ai_positionering",
+  "ai_overstijgend",
+];
+
+// Mapping source_type → prompt-key (allen in C3-seed met tenant_overridable=true)
+const IMPROVEMENT_PROMPT_KEYS = {
+  ai_algemeen:      "prompt.processen.algemeen",
+  ai_cluster:       "prompt.processen.cluster",
+  ai_paradox:       "prompt.processen.paradox",
+  ai_positionering: "prompt.processen.positionering",
+  ai_overstijgend:  "prompt.processen.overstijgend",
+};
+
+/**
+ * Genereer verbeteracties via AI voor één source-type.
+ * Body: { canvas_id, source_type }
+ * Output: JSON-array uit Claude met { title, intent_md, bron_pain_point_ids[] }
+ *
+ * Server:
+ *  - Verzamelt context (alle pijnpunten + canonical-items uit alle sub-tabs)
+ *  - RAG-call op pijnpunten-tekst voor extra documentcontext
+ *  - Claude-call met source-type-specifiek prompt
+ *  - Bulk-INSERT cd_improvement_intents met source_type-trace + ai_generated_at
+ *  - Link naar bron-pijnpunten via po_intent_pain_point_links (trigger fires coverage-sync)
+ *  - Audit naar po_improvement_intent_events (created-event per intent)
+ */
+async function generateImprovementsAi({ supabase, req, canvasId, sourceType, userId, userRole }) {
+  if (!canvasId) return { status: 400, body: { error: "canvas_id is verplicht" } };
+  if (!IMPROVEMENT_SOURCE_TYPES.includes(sourceType)) {
+    return { status: 400, body: { error: `source_type moet één van: ${IMPROVEMENT_SOURCE_TYPES.join(',')}` } };
+  }
+
+  // Canvas-context
+  const { data: canvas } = await supabase.from("canvases").select("id, tenant_id").eq("id", canvasId).maybeSingle();
+  if (!canvas) return { status: 404, body: { error: "canvas niet gevonden of geen toegang" } };
+  const canvasTenant = canvas.tenant_id;
+
+  // Pijnpunten (canonical, niet-dismissed) — bron voor de generatie
+  const { data: pains } = await supabase
+    .from("po_pain_points")
+    .select("id, text_md, is_strategic_anchor, coverage_status")
+    .eq("canvas_id", canvasId)
+    .eq("is_draft", false);
+
+  if (!pains || pains.length === 0) {
+    return { status: 409, body: { error: "Voeg eerst pijnpunten toe vóór AI-verbeteracties te genereren" } };
+  }
+
+  // RAG-call op canvas-niveau (dossier-context)
+  const ragQuery = `verbeteractie strategisch oplossing ${sourceType.replace("ai_", "")}`;
+  const ragResult = await runRagQuery({ req, query: ragQuery, canvasId });
+  const chunks = ragResult.chunks || []; // RAG-fail is niet fataal voor improvements
+
+  // Prompt + Claude
+  const promptKey = IMPROVEMENT_PROMPT_KEYS[sourceType];
+  const rawPrompt = await loadPromptViaRPC(supabase, promptKey);
+  if (!rawPrompt) return { status: 500, body: { error: `Prompt ${promptKey} niet gevonden` } };
+  const tenantVars = await getTenantVars(supabase);
+  const systemPrompt = renderPrompt(rawPrompt, tenantVars);
+
+  const userMessage = buildImprovementsUserMessage({ sourceType, pains, chunks });
+  const aiResult = await callClaude({ systemPrompt, userMessage });
+  if (aiResult.error) return { status: aiResult.status || 502, body: { error: aiResult.error } };
+
+  const parsed = tryParseJsonArray(aiResult.raw);
+  if (!parsed.ok) {
+    console.error(`[_processen_dossier:improvements:${sourceType}] parse-error:`, parsed.error, "\nraw:", aiResult.raw.slice(0, 500));
+    return { status: 500, body: { error: "AI-output kon niet geparsed worden", detail: parsed.error } };
+  }
+
+  // Filter + validate proposed intents
+  const validPainIds = new Set(pains.map(p => p.id));
+  const proposed = parsed.value
+    .slice(0, 5) // max 5 acties per generatie
+    .filter(it =>
+      typeof it?.title === "string" && it.title.trim().length > 0 && it.title.trim().length <= 100
+      && typeof it?.intent_md === "string" && it.intent_md.trim().length >= 50 && it.intent_md.trim().length <= 2000
+    );
+
+  if (proposed.length === 0) {
+    return { status: 200, body: { intents: [], note: "AI vond geen geldige verbeteracties (titel ≤100, intent_md 50-2000)" } };
+  }
+
+  // Bulk-INSERT intents
+  const aiTs = new Date().toISOString();
+  const intentRows = proposed.map((p, idx) => ({
+    canvas_id: canvasId,
+    tenant_id: canvasTenant,
+    title: p.title.trim().slice(0, 100),
+    intent_md: p.intent_md.trim().slice(0, 2000),
+    current_status: "concept",
+    source_type: sourceType,
+    ai_generated_at: aiTs,
+    is_user_edited: false,
+    sort_order: idx * 10,
+  }));
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("po_improvement_intents").insert(intentRows).select();
+  if (insErr) return { status: insErr.code === "42501" ? 403 : 500, body: { error: insErr.message } };
+
+  // Link naar bron-pijnpunten + created-events
+  const linkRows = [];
+  const eventRows = [];
+  for (let i = 0; i < inserted.length; i++) {
+    const intent = inserted[i];
+    const sourcePainIds = Array.isArray(proposed[i].bron_pain_point_ids)
+      ? proposed[i].bron_pain_point_ids.filter(id => validPainIds.has(id))
+      : [];
+
+    for (const painId of sourcePainIds) {
+      linkRows.push({
+        intent_id: intent.id,
+        pain_point_id: painId,
+        canvas_id: canvasId,
+        tenant_id: canvasTenant,
+      });
+    }
+
+    eventRows.push({
+      intent_id: intent.id,
+      event_type: "created",
+      actor_user_id: userId,
+      actor_role: userRole,
+      text_before_md: null,
+      text_after_md: intent.title + "\n\n" + intent.intent_md,
+      metadata: {
+        ai_model: AI_MODEL,
+        prompt_key: promptKey,
+        prompt_version: PROMPT_VERSION,
+        source_type: sourceType,
+        bron_pain_point_count: sourcePainIds.length,
+        chunk_count: chunks.length,
+      },
+      tenant_id: canvasTenant,
+      canvas_id: canvasId,
+    });
+  }
+
+  // Best-effort link-insert (kan falen bij stale pain_id; we filtreerden al)
+  let linkCount = 0;
+  if (linkRows.length > 0) {
+    const { data: linkData, error: linkErr } = await supabase
+      .from("po_intent_pain_point_links").insert(linkRows).select();
+    if (linkErr) console.warn("[_processen_dossier:improvements] link-insert faalde:", linkErr.message);
+    else linkCount = linkData?.length || 0;
+  }
+
+  // Audit-events best-effort (trigger sync_current_status werkt voor 'created' niet — DEFAULT='concept' staat al goed)
+  const { error: eventErr } = await supabase.from("po_improvement_intent_events").insert(eventRows);
+  if (eventErr) console.warn("[_processen_dossier:improvements] event-insert faalde:", eventErr.message);
+
+  return {
+    status: 201,
+    body: {
+      intents: inserted,
+      ai_model: AI_MODEL,
+      prompt_version: PROMPT_VERSION,
+      source_type: sourceType,
+      bron_pain_point_links: linkCount,
+      chunk_count: chunks.length,
+    },
+  };
+}
+
+function buildImprovementsUserMessage({ sourceType, pains, chunks }) {
+  const lines = [];
+  lines.push(`SOURCE_TYPE: ${sourceType}`);
+  lines.push(`\nBESCHIKBARE PIJNPUNTEN (${pains.length}, gebruik de IDs in bron_pain_point_ids):`);
+  for (const p of pains.slice(0, 30)) {
+    const tag = p.is_strategic_anchor ? " [ANKER]" : "";
+    const cov = p.coverage_status !== "open" ? ` [${p.coverage_status}]` : "";
+    lines.push(`- [id=${p.id}]${tag}${cov} ${truncate(p.text_md, 200)}`);
+  }
+  if (chunks.length > 0) {
+    lines.push(`\nDOSSIER-CONTEXT (${chunks.length} fragmenten):`);
+    lines.push(buildContextString(chunks));
+  }
+  lines.push(`\nINSTRUCTIE: lever een JSON-array van max 5 verbeteracties met velden:`);
+  lines.push(`  - title: string, 1-100 chars`);
+  lines.push(`  - intent_md: string, 50-2000 chars, markdown`);
+  lines.push(`  - bron_pain_point_ids: array van uuid's uit BESCHIKBARE PIJNPUNTEN-lijst`);
+  lines.push(`Geen meta-commentaar, alleen het JSON-array.`);
+  return lines.join("\n");
+}
+
 module.exports = {
   extractFromDossier,
   fillProcessFieldsFromDossier,
   improveChangeApproachText,
   improveSteeringText,
+  generateImprovementsAi,
+  IMPROVEMENT_SOURCE_TYPES,
   ENTITY_SPEC,
 };

@@ -42,6 +42,7 @@ const { userScopedClient } = require("./_template");
 const {
   extractFromDossier, fillProcessFieldsFromDossier,
   improveChangeApproachText, improveSteeringText,
+  generateImprovementsAi,
 } = require("./_processen_dossier_extract");
 
 // ── Tabel-specs voor generic CRUD ───────────────────────────────────────────
@@ -148,10 +149,8 @@ module.exports = async function handler(req, res) {
     if (subpath === "improve_change_approach") return await handleImproveChangeApproach(ctx);
     if (subpath === "improve_steering_text")   return await handleImproveSteeringText(ctx);
 
-    // Verbeteracties-AI (B4 — block-2 follow-up)
-    if (subpath === "ai_improvements_generate") {
-      return res.status(501).json({ error: `Sub-route 'ai_improvements_generate' wordt opgeleverd in 11.M.1 block-2 (verbeteracties-AI)` });
-    }
+    // Verbeteracties-AI (11.M.1 block-2 — 5 source-types)
+    if (subpath === "ai_improvements_generate") return await handleAiImprovementsGenerate(ctx);
 
     return res.status(400).json({ error: `Onbekende subpath: ${subpath}` });
   } catch (err) {
@@ -581,6 +580,25 @@ async function handleImproveSteeringText(ctx) {
   const { data: profile } = await supabase.from("user_profiles").select("role").maybeSingle();
   const result = await improveSteeringText({
     supabase, req, canvasId: canvas_id,
+    userId: user.id, userRole: profile?.role || null,
+  });
+  return res.status(result.status).json(result.body || {});
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 11.M.1 Block-2 — Verbeteracties-AI handler
+// ══════════════════════════════════════════════════════════════════════════
+
+async function handleAiImprovementsGenerate(ctx) {
+  const { supabase, req, res, user } = ctx;
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+  const { canvas_id, source_type } = req.body || {};
+  const { data: profile } = await supabase.from("user_profiles").select("role").maybeSingle();
+  const result = await generateImprovementsAi({
+    supabase, req, canvasId: canvas_id, sourceType: source_type,
     userId: user.id, userRole: profile?.role || null,
   });
   return res.status(result.status).json(result.body || {});

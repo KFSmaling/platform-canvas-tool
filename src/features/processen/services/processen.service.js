@@ -238,3 +238,29 @@ export async function improveSteering(canvasId) {
     meta: data && { before: data.before, after: data.after, ai_model: data.ai_model },
   };
 }
+
+// ── 11.M.1 Block-2 — Verbeteracties-AI ─────────────────────────────────────
+
+/**
+ * Genereer verbeteracties via AI voor opgegeven source-type.
+ * sourceType: 'ai_algemeen' | 'ai_cluster' | 'ai_paradox' | 'ai_positionering' | 'ai_overstijgend'
+ */
+export async function generateImprovementsAi(canvasId, sourceType) {
+  if (!canvasId || !sourceType) return { data: null, error: new Error("canvasId + sourceType required") };
+  const { data, error } = await call("POST", "ai_improvements_generate", {
+    canvas_id: canvasId,
+    source_type: sourceType,
+  });
+  return {
+    data: data?.intents ?? null,
+    error,
+    meta: data && {
+      ai_model: data.ai_model,
+      prompt_version: data.prompt_version,
+      source_type: data.source_type,
+      bron_pain_point_links: data.bron_pain_point_links,
+      chunk_count: data.chunk_count,
+      note: data.note,
+    },
+  };
+}
