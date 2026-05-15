@@ -24,6 +24,12 @@ jest.mock("../services/processen.service", () => ({
   getStructuringDoorsnede:     jest.fn(),
   setStructuringDoorsnede:     jest.fn(),
   listDepartments:             jest.fn(),
+  listProcessDepartmentIntensity:   jest.fn(),
+  createProcessDepartmentIntensity: jest.fn(),
+  deleteProcessDepartmentIntensity: jest.fn(),
+  createPainPointCoupling:     jest.fn(),
+  deletePainPointCoupling:     jest.fn(),
+  listDepartments:             jest.fn(),
   createDepartment:            jest.fn(),
   deleteDepartment:            jest.fn(),
   getChangeApproach:           jest.fn(),
@@ -76,6 +82,7 @@ beforeEach(() => {
   svc.listProcesses.mockResolvedValue({ data: [], error: null });
   svc.getStructuringDoorsnede.mockResolvedValue({ data: null, error: null });
   svc.listDepartments.mockResolvedValue({ data: [], error: null });
+  svc.listProcessDepartmentIntensity.mockResolvedValue({ data: [], error: null });
   svc.getChangeApproach.mockResolvedValue({ data: null, error: null });
   svc.listBusinessUnits.mockResolvedValue({ data: [], error: null });
   svc.listValueTeams.mockResolvedValue({ data: [], error: null });

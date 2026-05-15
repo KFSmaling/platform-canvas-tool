@@ -13,6 +13,7 @@ import { Plus, Trash2, Check, X as XIcon } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
 import DossierAiButton from "./DossierAiButton";
+import ProcessDepartmentMatrix from "./ProcessDepartmentMatrix";
 
 const DOORSNEDE_OPTS = [
   { id: "functioneel",    labelKey: "processen.doorsnede.functioneel",    fallback: "Functioneel" },
@@ -30,14 +31,21 @@ export default function LijnorganisatieView({ canvasId, hasUploads, hasIndexedCh
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState(null);
 
+  const [processes, setProcesses] = useState([]);
+  const [intensity, setIntensity] = useState([]);
+
   const loadAll = useCallback(async () => {
     if (!canvasId) return;
-    const [{ data: dRow }, { data: deps }] = await Promise.all([
+    const [{ data: dRow }, { data: deps }, { data: procs }, { data: pdi }] = await Promise.all([
       svc.getStructuringDoorsnede(canvasId),
       svc.listDepartments(canvasId),
+      svc.listProcesses(canvasId),
+      svc.listProcessDepartmentIntensity(canvasId),
     ]);
     setDoorsnede(dRow?.doorsnede || null);
     setDepartments(deps || []);
+    setProcesses((procs || []).filter(p => !p.is_draft));
+    setIntensity(pdi || []);
   }, [canvasId]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
@@ -69,6 +77,28 @@ export default function LijnorganisatieView({ canvasId, hasUploads, hasIndexedCh
     loadAll();
   }
   async function acceptDeptDraft(id) { await svc.updateDepartment(id, { is_draft: false }); loadAll(); }
+
+  // D1 matrix-cell toggle: existing=row|undefined
+  async function handleToggleCell(processId, departmentId, existing) {
+    if (existing) {
+      await svc.deleteProcessDepartmentIntensity(existing.id);
+    } else {
+      await svc.createProcessDepartmentIntensity({
+        canvas_id: canvasId, process_id: processId, department_id: departmentId,
+      });
+    }
+    loadAll();
+  }
+
+  // D1.4 proceseigenaar-edit: store in pr_processes.archetype_data.proces_eigenaar
+  async function handleSaveOwner(processId, newOwnerText) {
+    const proc = processes.find(p => p.id === processId);
+    if (!proc) return;
+    const newArchetypeData = { ...(proc.archetype_data || {}), proces_eigenaar: newOwnerText || undefined };
+    if (!newOwnerText) delete newArchetypeData.proces_eigenaar;
+    await svc.updateProcess(processId, { archetype_data: newArchetypeData });
+    loadAll();
+  }
 
   return (
     <div data-testid="lijnorganisatie-view" className="p-6 space-y-6">
@@ -164,8 +194,17 @@ export default function LijnorganisatieView({ canvasId, hasUploads, hasIndexedCh
         )}
       </section>
 
-      <section className="border-t border-slate-200 pt-4 text-xs text-slate-400 italic">
-        Proces × Afdeling-matrix komt in 11.M follow-up.
+      <section className="border-t border-slate-200 pt-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">
+          Proces × Afdeling-matrix
+        </h3>
+        <ProcessDepartmentMatrix
+          processes={processes}
+          departments={departments.filter(d => !d.is_draft)}
+          intensity={intensity}
+          onToggleCell={handleToggleCell}
+          onSaveOwner={handleSaveOwner}
+        />
       </section>
     </div>
   );

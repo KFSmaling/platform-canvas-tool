@@ -10,11 +10,12 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, Check, X as XIcon, Ban, MoreVertical } from "lucide-react";
+import { Plus, Trash2, Check, X as XIcon, Ban, Link2 } from "lucide-react";
 import { useAppConfig } from "../../../shared/context/AppConfigContext";
 import * as svc from "../services/processen.service";
 import DossierAiButton from "./DossierAiButton";
 import MotivatieModal from "./MotivatieModal";
+import CouplingModal from "./CouplingModal";
 
 // Wireframe-doc §"Fase 2 Pijnpunten" regel 184: per coupling kleur-codering naar entity-type
 const COUPLING_TAG_STYLES = {
@@ -42,16 +43,38 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
   const [aiNote, setAiNote] = useState(null);
   const [motivatieFor, setMotivatieFor] = useState(null); // { id, text_md } voor modal
   const [couplings, setCouplings] = useState([]); // po_pain_point_couplings voor multi-tag-render
+  const [couplingModalFor, setCouplingModalFor] = useState(null); // pain-object voor coupling-modal
+  const [entityLists, setEntityLists] = useState({}); // { pr_processes: [...], ... } voor coupling-modal
 
   const load = useCallback(async () => {
     if (!canvasId) return;
     setLoading(true);
-    const [{ data: painData }, { data: couplData }] = await Promise.all([
+    const [
+      { data: painData },
+      { data: couplData },
+      { data: procs },
+      { data: depts },
+      { data: bus },
+      { data: vts },
+      { data: cps },
+    ] = await Promise.all([
       svc.listPainPoints(canvasId),
       svc.listPainPointCouplings(canvasId),
+      svc.listProcesses(canvasId),
+      svc.listDepartments(canvasId),
+      svc.listBusinessUnits(canvasId),
+      svc.listValueTeams(canvasId),
+      svc.listControlProcesses(canvasId),
     ]);
     setPains(painData || []);
     setCouplings(couplData || []);
+    setEntityLists({
+      pr_processes:          (procs || []).filter(p => !p.is_draft),
+      org_departments:       (depts || []).filter(d => !d.is_draft),
+      vo_business_units:     (bus  || []).filter(b => !b.is_draft),
+      vo_value_teams:        (vts  || []).filter(v => !v.is_draft),
+      gov_control_processes: (cps  || []).filter(c => !c.is_draft),
+    });
     setLoading(false);
   }, [canvasId]);
 
@@ -92,6 +115,36 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
     // Terug van motivated_no_action → open (geen motivatie nodig)
     await svc.toggleCoverageStatus(id, "open", null);
     load();
+  }
+
+  /**
+   * Coupling-modal save: diff-based INSERT + DELETE.
+   * Trigger validate_po_pain_point_coupling doet cross-canvas-validatie automatisch.
+   */
+  async function handleSaveCouplings({ adds, removes }) {
+    try {
+      // Adds: parallelle INSERTs
+      const addResults = await Promise.all(adds.map(a =>
+        svc.createPainPointCoupling({
+          pain_point_id: couplingModalFor.id,
+          target_table: a.target_table,
+          target_id: a.target_id,
+          canvas_id: canvasId,
+        })
+      ));
+      const addError = addResults.find(r => r.error);
+      if (addError) return { error: addError.error };
+
+      // Removes: parallelle DELETEs
+      const removeResults = await Promise.all(removes.map(id => svc.deletePainPointCoupling(id)));
+      const removeError = removeResults.find(r => r.error);
+      if (removeError) return { error: removeError.error };
+
+      load();
+      return { error: null };
+    } catch (err) {
+      return { error: err };
+    }
   }
 
   if (loading) return <div className="p-6 text-sm text-slate-500">Laden…</div>;
@@ -217,6 +270,16 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
                 </div>
               ) : (
                 <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCouplingModalFor(p)}
+                    data-testid={`pijnpunt-koppel-${p.id}`}
+                    title="Koppelen aan entiteit"
+                    aria-label="Koppelen"
+                    className="text-slate-400 hover:text-[var(--color-accent)]"
+                  >
+                    <Link2 size={12} />
+                  </button>
                   {p.coverage_status === "motivated_no_action" ? (
                     <button
                       type="button"
@@ -257,7 +320,7 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
       )}
 
       <p className="text-[10px] text-slate-400 italic border-t border-slate-200 pt-3 mt-4">
-        Multi-koppeling-UI (toevoegen/wissen) naar fase 1 entiteit-types komt in 11.M.1 block-3b. Coverage-banner zit op fase 3.
+        Klik op het link-icoon naast een pijnpunt om aan een proces/afdeling/team/control/BU te koppelen. Coverage-banner zit op fase 3.
       </p>
 
       {/* 11.M.1 block-2 C10 — Motivatie-modal voor Bewust-niet-adresseren */}
@@ -267,6 +330,17 @@ export default function PijnpuntenView({ canvasId, hasUploads, hasIndexedChunks,
           painText={motivatieFor.text_md}
           onConfirm={handleMotivatieConfirm}
           onCancel={() => setMotivatieFor(null)}
+        />
+      )}
+
+      {/* 11.M.1 block-3b D3 — Coupling-modal voor multi-koppeling */}
+      {couplingModalFor && (
+        <CouplingModal
+          painPoint={couplingModalFor}
+          existingCouplings={couplings.filter(c => c.pain_point_id === couplingModalFor.id)}
+          entityLists={entityLists}
+          onClose={() => setCouplingModalFor(null)}
+          onSave={handleSaveCouplings}
         />
       )}
     </div>
