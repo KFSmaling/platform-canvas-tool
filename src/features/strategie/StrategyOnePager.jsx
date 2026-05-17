@@ -523,11 +523,12 @@ function AiBlock({ insights, appLabel }) {
 }
 
 // ── Footer ───────────────────────────────────────────────────────────────────
-function Footer({ tenantBrand, appLabel }) {
+function Footer({ tenantBrand, appLabel, pageNum = 1, totalPages = 1 }) {
   const lbl = (k, fb) => (appLabel ? appLabel(k, fb) : fb);
   return (
     <footer
       data-testid="strategie-onepager-footer"
+      data-page-num={pageNum}
       className="flex items-center justify-between px-6 text-[8px]"
       style={{
         height: 24,
@@ -544,24 +545,19 @@ function Footer({ tenantBrand, appLabel }) {
         {" · "}
         {lbl("strategie.onepager.werkblad.naam", "STRATEGIE")}
       </span>
-      <span className="opacity-60" style={{ fontFamily: "var(--font-mono)" }}>1</span>
+      <span className="opacity-60" style={{ fontFamily: "var(--font-mono)" }}>
+        {totalPages > 1 ? `${pageNum} / ${totalPages}` : pageNum}
+      </span>
     </footer>
   );
 }
 
-// ── Hoofdcomponent ────────────────────────────────────────────────────────────
-export default function StrategyOnePager({
-  vasteBlokken = [],   // [{id, label, sub_label}] — meta van Block 3 (niet direct gebruikt)
-  selectedModels = [], // [{id, label}] in volgorde
-  withAi = true,
-  insights = [],       // filtered op in_rapport intern via AiBlock
-  data = {},           // per-id payload uit strategieRapportageConfig.dataResolver
-  appLabel,
-  tenantBrand = null,
-  canvasName = null,
-}) {
-  // Helper: render model-blok per id. Alleen enabled-modellen worden door
-  // Builder geselecteerd; v1 ondersteunt SWOT + Kernwaarden (Block 4 scope).
+// ── BodyZone (page-2 content wanneer modellen of AI geselecteerd) ───────────
+// Extractie uit Block 4 v2-monolith zodat 11.S-retro multi-page-split mogelijk
+// is. Wanneer pageCount=1 (geen body-content) wordt deze NIET gerenderd.
+function BodyZone({ selectedModels, withAi, insights, data, appLabel }) {
+  const lbl = (k, fb) => (appLabel ? appLabel(k, fb) : fb);
+
   function renderModel(modelId) {
     const payload = data?.[modelId]?.data;
     switch (modelId) {
@@ -570,8 +566,6 @@ export default function StrategyOnePager({
       case "kernwaarden":
         return <KernwaardenBordModel key="kernwaarden" data={payload} appLabel={appLabel} />;
       default:
-        // Onbekend model-id: stille no-op (configuratie houdt overige modellen
-        // disabled — RFC-008 §C model-uitbreiding in fase 2).
         return null;
     }
   }
@@ -581,57 +575,137 @@ export default function StrategyOnePager({
     .filter(Boolean);
 
   const showAi = withAi && Array.isArray(insights);
-  // Reserveer rechter-kolom voor AI-blok wanneer aan; volle breedte indien uit.
   const bodyGridCols = showAi ? "1fr 280px" : "1fr";
 
   return (
+    <section
+      data-testid="strategie-onepager-body"
+      className="flex-1 px-6 py-3 min-h-0"
+    >
+      <div className="grid gap-3 h-full" style={{ gridTemplateColumns: bodyGridCols }}>
+        <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
+          {modelComponents.length === 0 ? (
+            <p className="text-[9px] italic text-slate-400">
+              {lbl("strategie.onepager.body.empty", "Geen modellen geselecteerd — kies in linker paneel.")}
+            </p>
+          ) : (
+            modelComponents
+          )}
+        </div>
+        {showAi && (
+          <AiBlock insights={insights} appLabel={appLabel} />
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Page-content wrappers ────────────────────────────────────────────────────
+// Elke pagina krijgt zijn eigen `.strategie-onepager`-class-scope zodat de
+// font-family CSS-variables (--font-body/display/mono) per pagina werken.
+// Vaste 100% width/height vult de A4Page (1190×842 CSS px).
+function PageShell({ children }) {
+  return (
     <div
-      data-testid="strategie-onepager-v2"
-      className="strategie-onepager h-full w-full flex flex-col"
+      className="strategie-onepager w-full h-full flex flex-col"
       style={{
         background: "white",
         fontFamily: "var(--font-body)",
         color: "var(--color-primary)",
       }}
     >
-      <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
+      {children}
+    </div>
+  );
+}
 
-      <TitelBlock
-        samenvatting={data?.samenvatting?.data?.samenvatting || data?.samenvatting?.text}
-        canvasName={canvasName}
-        tenantBrand={tenantBrand}
-        appLabel={appLabel}
-      />
+// ── Hoofdcomponent ────────────────────────────────────────────────────────────
+// 11.S-retro (18 mei): multi-page builder-preview via Page-slot uit A4Preview.
+// Optie B2 — logische page-distribution:
+//   Page 1: BrandStrip + TitelBlock + IdentiteitsBand + KpiStrip + ThemasGrid + Footer(1/N)
+//   Page 2 (alleen als hasBodyContent): BrandStrip + BodyZone + Footer(2/N)
+//
+// `hasBodyContent` = ≥1 selectedModel OR (withAi AND ≥1 in_rapport-insight).
+// Geen body-content → 1 pagina. Page-prop fallback voor backwards-compat-tests
+// (default: <div>-passthrough zonder shadow/counter).
+export default function StrategyOnePager({
+  vasteBlokken = [],   // [{id, label, sub_label}] — meta van Block 3 (niet direct gebruikt)
+  selectedModels = [], // [{id, label}] in volgorde
+  withAi = true,
+  insights = [],       // bij multi-page-distribution: filtered op in_rapport via BodyZone
+  data = {},           // per-id payload uit strategieRapportageConfig.dataResolver
+  appLabel,
+  tenantBrand = null,
+  canvasName = null,
+  // 11.S-retro: Page-slot uit A4Preview. Default = passthrough <div> zonder
+  // shadow/counter — handig voor RTL-tests zonder A4Preview-wrapper.
+  Page = ({ children }) => <div data-testid="strategie-onepager-page-fallback">{children}</div>,
+}) {
+  // Bepaal page-distributie: 1 pagina default, 2 pagina's als body-content.
+  // hasBodyContent = ≥1 selectedModel OR withAi=true.
+  // withAi=true reserveert altijd page 2 — zelfs bij 0 in_rapport-insights —
+  // zodat de "AI-inzichten uit voor dit rapport"-fallback expliciet zichtbaar
+  // blijft (Block 4 §2g + Kees-test-feedback: user moet zien dat AI aan/uit is).
+  const hasSelectedModels = Array.isArray(selectedModels) && selectedModels.length > 0;
+  const hasBodyContent = hasSelectedModels || !!withAi;
+  const totalPages = hasBodyContent ? 2 : 1;
 
-      {/* Vaste-blokken — render-volgorde gefixeerd: identiteit, kpi-strip, themas */}
-      <IdentiteitsBand data={data?.identiteit?.data} appLabel={appLabel} />
-      <KpiStrip        data={data?.["kpi-strip"]?.data} appLabel={appLabel} />
-      <ThemasGrid      data={data?.themas?.data} appLabel={appLabel} />
+  return (
+    <div data-testid="strategie-onepager-v2" data-total-pages={totalPages}>
+      {/* ── Page 1 — identiteit + KPI + thema's (vaste-blokken) ─────────── */}
+      <Page pageNum={1} totalPages={totalPages} appLabel={appLabel}>
+        <PageShell>
+          <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
 
-      {/* Body-zone: selectie-modellen + optionele AI-aside */}
-      <section
-        data-testid="strategie-onepager-body"
-        className="flex-1 px-6 pb-2 min-h-0"
-      >
-        <div className="grid gap-3 h-full" style={{ gridTemplateColumns: bodyGridCols }}>
-          <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
-            {modelComponents.length === 0 ? (
-              <p className="text-[9px] italic text-slate-400">
-                {appLabel
-                  ? appLabel("strategie.onepager.body.empty", "Geen modellen geselecteerd — kies in linker paneel.")
-                  : "Geen modellen geselecteerd — kies in linker paneel."}
-              </p>
-            ) : (
-              modelComponents
-            )}
-          </div>
-          {showAi && (
-            <AiBlock insights={insights} appLabel={appLabel} />
-          )}
-        </div>
-      </section>
+          <TitelBlock
+            samenvatting={data?.samenvatting?.data?.samenvatting || data?.samenvatting?.text}
+            canvasName={canvasName}
+            tenantBrand={tenantBrand}
+            appLabel={appLabel}
+          />
 
-      <Footer tenantBrand={tenantBrand} appLabel={appLabel} />
+          {/* Vaste-blokken — render-volgorde gefixeerd: identiteit, kpi-strip, themas */}
+          <IdentiteitsBand data={data?.identiteit?.data} appLabel={appLabel} />
+          <KpiStrip        data={data?.["kpi-strip"]?.data} appLabel={appLabel} />
+          <ThemasGrid      data={data?.themas?.data} appLabel={appLabel} />
+
+          {/* Spacer-flex pakt resterende verticale ruimte tot Footer.
+              Bij body-content op pagina 2 zou anders een grote leegte tussen
+              ThemasGrid en Footer ontstaan zonder mooie verticale verdeling. */}
+          <div className="flex-1" />
+
+          <Footer
+            tenantBrand={tenantBrand}
+            appLabel={appLabel}
+            pageNum={1}
+            totalPages={totalPages}
+          />
+        </PageShell>
+      </Page>
+
+      {/* ── Page 2 — body-zone (alleen wanneer hasBodyContent) ──────────── */}
+      {totalPages > 1 && (
+        <Page pageNum={2} totalPages={totalPages} appLabel={appLabel}>
+          <PageShell>
+            <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
+
+            <BodyZone
+              selectedModels={selectedModels}
+              withAi={withAi}
+              insights={insights}
+              data={data}
+              appLabel={appLabel}
+            />
+
+            <Footer
+              tenantBrand={tenantBrand}
+              appLabel={appLabel}
+              pageNum={2}
+              totalPages={totalPages}
+            />
+          </PageShell>
+        </Page>
+      )}
     </div>
   );
 }

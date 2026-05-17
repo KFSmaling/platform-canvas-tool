@@ -189,6 +189,8 @@ const LABEL_FALLBACKS = {
   "strategie.onepager.ai.fallback.empty":           "AI-inzichten uit voor dit rapport",
   "strategie.onepager.footer.classification":       "Vertrouwelijk — alleen voor genoemde klant",
   "strategie.onepager.body.empty":                  "Geen modellen geselecteerd — kies in linker paneel.",
+  // 11.S-retro — A4Page page-counter label
+  "onepager.page_counter":                          "Pagina {N} / {Total}",
   // Richtlijnen Werkblad — segmenten
   "richtl.segment.generiek":        "Generiek",
   "richtl.segment.generiek.sub":    "Strategie & Governance",
