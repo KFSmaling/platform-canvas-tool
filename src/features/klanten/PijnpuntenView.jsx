@@ -439,8 +439,8 @@ function DraftPainCard({ painPoint, onClick, onAccept, onReject, busy, appLabel 
           data-testid={`draft-pain-accept-${painPoint.id}`}
           className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded transition-colors bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-primary)] disabled:opacity-50"
         >
-          {/* T4 A8: pijnpunt-draft-accept-knop label-rename ("Maak verbeteractie") */}
-          {appLabel("klanten.dossier.fields.actie.maakverbeteractie", "Maak verbeteractie")}
+          {/* K-fix bevinding 1: draft-pijnpunt-accept maakt canonical pijnpunt (geen verbeteractie) */}
+          {appLabel("klanten.pijnpunt.draft.actie.accept", "Maak pijnpunt definitief")}
         </button>
         <button
           type="button"

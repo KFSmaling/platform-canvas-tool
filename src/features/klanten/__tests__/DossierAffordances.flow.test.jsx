@@ -370,4 +370,24 @@ describe("KlantenWerkblad — dossier-driven AI-affordances (stap 11.K)", () => 
     expect(klantenService.acceptDraftPainPoint).toHaveBeenCalledWith(draftPain.id);
   });
 
+  // K-fix bevinding 1: draft-pijnpunt-accept-knop label is semantisch correct.
+  // Was "Maak verbeteractie" (foutief, maakte alleen canonical pijnpunt, geen verbeteractie).
+  // Nu: "Maak pijnpunt definitief".
+  test("9. K-fix: draft-pijnpunt-accept-knop toont 'Maak pijnpunt definitief'-label (semantisch correct, geen 'verbeteractie')", async () => {
+    klantenService.fetchUploadsStatus.mockResolvedValue({
+      data: { hasUploads: true, hasIndexedChunks: true, uploadCount: 1, indexedChunkCount: 6 },
+      error: null,
+    });
+    klantenService.listItemsForCanvas.mockResolvedValue({ data: [canonicalItem], error: null });
+    klantenService.listPainPoints.mockResolvedValue({ data: [draftPain], error: null });
+
+    render(<KlantenWerkblad canvasId={TEST_CANVAS_ID} onClose={() => {}} />);
+    await openFase2();
+    const draftSection = await screen.findByTestId("draft-pains-section");
+    const acceptBtn = within(draftSection).getByTestId(`draft-pain-accept-${draftPain.id}`);
+    expect(acceptBtn).toHaveTextContent(/maak pijnpunt definitief/i);
+    // Negative-assertion: oude foutieve label is weg
+    expect(acceptBtn).not.toHaveTextContent(/maak verbeteractie/i);
+  });
+
 });

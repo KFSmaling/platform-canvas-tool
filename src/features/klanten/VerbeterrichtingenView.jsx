@@ -100,11 +100,8 @@ export default function VerbeterrichtingenView({
 
   async function handleHandover(intent) {
     if (busyAction) return;
-    const confirmed = window.confirm(
-      appLabel("klanten.verbeterrichting.handover.confirm",
-        "Roadmap-werkblad is nog niet beschikbaar — actie wordt vastgelegd zodat hij later kan worden opgepakt. Doorgaan?")
-    );
-    if (!confirmed) return;
+    // K-fix bevinding 3a: confirm-dialoog weggehaald. "Maak definitief" is
+    // reversible via "Terug naar concept" (unsendIntent) — geen waarschuwing nodig.
     setBusyAction({ action: "handover", id: intent.id });
     setGlobalError(null);
     const { error: hoErr } = await klantenService.handoverIntentToRoadmap(intent.id);
@@ -156,14 +153,14 @@ export default function VerbeterrichtingenView({
       {/* Intro + counter */}
       <div className="mb-6">
         <p className="text-[11px] text-slate-500 italic mb-3 max-w-3xl">
-          {appLabel("klanten.verbeterrichting.intro", "Verscherp geaccepteerde patronen tot intent. Verstuur naar Roadmap voor concrete acties, eigenaars en planning.")}
+          {appLabel("klanten.verbeterrichting.intro", "Verscherp geaccepteerde patronen tot intent.")}
         </p>
         <div className="text-[11px] text-slate-500" data-testid="verbeterrichting-counter">
           <span data-testid="counter-concept">{conceptCount}</span>{" "}
           {appLabel("klanten.verbeterrichting.counter.concept", "concept")}
           {" "}<span className="text-slate-400">{appLabel("klanten.verbeterrichting.counter.separator", "·")}</span>{" "}
           <span data-testid="counter-verstuurd">{verstuurdCount}</span>{" "}
-          {appLabel("klanten.verbeterrichting.counter.verstuurd", "verstuurd")}
+          {appLabel("klanten.verbeterrichting.counter.verstuurd", "definitief")}
         </div>
       </div>
 
@@ -208,7 +205,7 @@ export default function VerbeterrichtingenView({
       {verstuurdList.length > 0 && (
         <div className="mb-6" data-testid="verbeterrichting-lijst-verstuurd">
           <CollapseSection
-            title={`${appLabel("klanten.verbeterrichting.status.verstuurd", "In roadmap")} (${verstuurdCount})`}
+            title={`${appLabel("klanten.verbeterrichting.status.verstuurd", "Definitief")} (${verstuurdCount})`}
             items={verstuurdList}
             emptyMessage=""
             actionLabel={appLabel("klanten.verbeterrichting.actie.terugtrekken", "Haal uit roadmap")}
