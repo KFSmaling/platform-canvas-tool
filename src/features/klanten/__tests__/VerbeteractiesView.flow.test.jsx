@@ -213,7 +213,9 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
     expect(screen.getByTestId("promote-modal-opslaan")).toBeInTheDocument();
   });
 
-  test("7. Maak definitief op concept-intent → window.confirm + handoverIntentToRoadmap", async () => {
+  // K-fix-2 Bev. 1: confirm-dialog weggehaald (was Roadmap-mention).
+  // Test asserteert nu: GEEN confirm, direct handoverIntentToRoadmap-call.
+  test("7. Maak definitief op concept-intent → handoverIntentToRoadmap zonder confirm-dialog", async () => {
     klantenService.listIntents.mockResolvedValue({
       data: [sampleIntent({ id: "i-c", status: "concept" })],
       error: null,
@@ -226,7 +228,9 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
       await openFase3();
       const handoverBtn = await screen.findByTestId("intent-actie-markeer-i-c");
       await act(async () => { fireEvent.click(handoverBtn); });
-      expect(window.confirm).toHaveBeenCalled();
+      // K-fix-2: geen confirm meer aangeroepen
+      expect(window.confirm).not.toHaveBeenCalled();
+      // Direct service-call
       expect(klantenService.handoverIntentToRoadmap).toHaveBeenCalledWith("i-c");
     } finally {
       window.confirm = origConfirm;

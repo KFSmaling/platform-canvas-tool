@@ -61,7 +61,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
     reload:  reloadSuggestions,
   } = usePatternSuggestions(canvasId);
   // Stap 11.H: intents single source of truth in KlantenWerkblad — anker
-  // 11.G.4 F11-fix. VerbeterrichtingenView + RapportView krijgen beide
+  // 11.G.4 F11-fix. VerbeteractiesView + RapportView krijgen beide
   // dezelfde data zonder eigen hook-instance.
   const {
     intents,

@@ -24,7 +24,7 @@
  *   • Op concept-intent:
  *       Bewerk           → IntentModal edit
  *       Verwijder        → DELETE intent
- *       Maak definitief  → window.confirm + handoverIntentToRoadmap
+ *       Maak definitief  → handoverIntentToRoadmap (K-fix-2: confirm-dialog weggehaald)
  *   • Op definitief-intent (verstuurd):
  *       Bewerk           → IntentModal edit
  *       Verwijder        → DELETE intent (architect-aanbeveling RFC §7 open vraag #2)
@@ -180,11 +180,8 @@ export default function VerbeteractiesView({
   }
   async function handleHandoverIntent(intent) {
     if (busyAction) return;
-    const confirmed = window.confirm(
-      appLabel("klanten.verbeteractie.handover.confirm",
-        "Markeer deze verbeteractie als definitief? Hij verschijnt straks ook in het Roadmap-werkblad.")
-    );
-    if (!confirmed) return;
+    // K-fix-2 bevinding 1: confirm-dialog weggehaald (analoog K-fix 3a).
+    // Definitief maken is reversible via "Terug naar concept" → geen waarschuwing-stap nodig.
     setBusyAction({ action: "handover", id: intent.id });
     setGlobalError(null);
     const { error: hoErr } = await klantenService.handoverIntentToRoadmap(intent.id);
@@ -317,7 +314,7 @@ export default function VerbeteractiesView({
       {/* Intro */}
       <div className="mb-6">
         <p className="text-sm text-slate-500 italic mb-4 max-w-3xl">
-          {appLabel("klanten.verbeteractie.intro", "Verbeteracties starten als concept — vanuit AI-patroonherkenning of als eigen actie. Bewerk wat moet, verwijder wat niet klopt, maak definitief wat de roadmap in moet.")}
+          {appLabel("klanten.verbeteractie.intro", "Verbeteracties starten als concept — vanuit AI-patroonherkenning of als eigen actie. Bewerk wat moet, verwijder wat niet klopt, maak definitief wat blijft.")}
         </p>
 
         {!hasPainPoints && (
