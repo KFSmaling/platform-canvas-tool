@@ -13,6 +13,7 @@ import WandButton from "../../shared/components/WandButton";
 import MagicResult from "../../shared/components/MagicResult";
 import TagPill, { EXTERN_TAGS, INTERN_TAGS } from "../../shared/components/TagPill";
 import InzichtenOverlay from "../../shared/components/inzichten/InzichtenOverlay";
+import RapportageMenu from "../../shared/components/rapportage/RapportageMenu";
 import { updateInsight } from "./services/insight.service";
 import {
   loadStrategyCore,
@@ -522,6 +523,8 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
   const [autoDraftRunning, setAutoDraftRunning] = useState(false);
   const [autoDraftOpen, setAutoDraftOpen]       = useState(false);
   const [showOnePager,   setShowOnePager]       = useState(false);
+  // 11.S Block 2 — RapportageMenu dialog-zichtbaarheid
+  const [rapportageMenuOpen, setRapportageMenuOpen] = useState(false);
   const [showAdvies,       setShowAdvies]       = useState(false);
   // T2 A2 — invultips-modal voor Strategie-werkblad
   const [showInvultips,  setShowInvultips]      = useState(false);
@@ -817,11 +820,11 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
     return { data, error };
   }, [canvasId, applyInsightUpdate]);
 
-  // RFC-008 §4b — status-indicator-klik opent Rapportage. Block 2-functionaliteit:
-  // dood-href met TODO-comment (Block 2 maakt RapportageMenu-dialog).
+  // RFC-008 §4b — status-indicator-klik opent Rapportage.
+  // Block 2 wires de TODO uit Block 1: sluit Inzichten + opent RapportageMenu.
   const handleOpenRapportage = useCallback(() => {
-    // TODO Block 2: open RapportageMenu-dialog (verschuift Rapportage-knop naar werkblad-header).
     setShowAdvies(false);
+    setRapportageMenuOpen(true);
   }, []);
 
   // ── Samenvatting genereren — direct toepassen (geen draft-stap) ─────────────
@@ -1185,7 +1188,11 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
             <WerkbladActieknoppen
               onTips={() => setShowInvultips(true)}
               onBekijken={() => setShowAdvies(true)}
-              onRapportage={() => setShowOnePager(true)}
+              // 11.S Block 2 — Rapportage-knop opent RapportageMenu i.p.v. direct
+              // StrategyOnePager. Tile 1 (One-pager) is in Block 2 dood-href; Block 3
+              // wire't OnepagerBuilder. Bestaande StrategyOnePager-render hieronder
+              // blijft tijdelijk dead-code tot Block 3/4 deze vervangt.
+              onRapportage={() => setRapportageMenuOpen(true)}
               bekijkenDisabled={false}
               appLabel={appLabel}
             />
@@ -1550,6 +1557,23 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
               ? `${appLabel("werkblad.strategie.inzichten.header", "Inzichten — Strategie")} — ${canvasName}`
               : appLabel("werkblad.strategie.inzichten.header", "Inzichten — Strategie")
           }
+        />
+      )}
+
+      {/* ── 11.S Block 2 — Rapportage-menu (RFC-008 §6). Tile 1 (One-pager) is in
+            Block 2 dood-href + TODO Block 3 — Block 3 wire't OnepagerBuilder. ── */}
+      {rapportageMenuOpen && (
+        <RapportageMenu
+          open={rapportageMenuOpen}
+          onClose={() => setRapportageMenuOpen(false)}
+          // TODO Block 3 — vervang door open OnepagerBuilder.
+          // In Block 2 sluit alleen het menu; geen verdere actie.
+          onSelectOnepager={() => {
+            setRapportageMenuOpen(false);
+            // TODO Block 3 — setShowOnepagerBuilder(true);
+          }}
+          appLabel={appLabel}
+          headerLabel={appLabel("werkblad.strategie.title", "Strategie")}
         />
       )}
 
