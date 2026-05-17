@@ -1,4 +1,12 @@
 /**
+ * @deprecated Sinds RFC-007 C1 (S4-cyclus, mei 2026): `VerbeteractiesView`
+ * combineert AnalyseView + VerbeterrichtingenView. Dit bestand is dead-code;
+ * behouden voor git-history + regressie-protection op evt. legacy-paden.
+ * NIET meer importeren in nieuwe code. Inplannen voor verwijdering in volgende
+ * cleanup-sprint (verifieer eerst geen tests/imports meer hangen).
+ *
+ * --- ORIGINELE DOC (behouden voor context) ---
+ *
  * VerbeterrichtingenView — fase-4 root-component (RFC-001 §2.7, ADR-003 §B).
  *
  * Layout:
@@ -13,10 +21,6 @@
  *   - Acties checken `error` expliciet (4.2)
  *   - Geen optimistic update — wacht op service-bevestiging dan reload()
  *   - canvasIdRef voor async callbacks (4.4)
- *
- * Roadmap-handover-stub: bij klik op "Markeer als verstuurd" verschijnt een
- * confirm-dialoog ("Roadmap-werkblad is nog niet beschikbaar — actie wordt
- * vastgelegd"). Bij OK: status='verstuurd' + handover_to_roadmap_at=now().
  *
  * Props:
  *   - canvasId

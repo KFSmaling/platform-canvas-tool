@@ -8,7 +8,7 @@
  *   { loading, error, intents, reload }
  *
  * Bevat alle intents ongeacht status (concept/verstuurd) — UI-laag filtert.
- * Single source of truth zodat RapportView en VerbeterrichtingenView vanuit
+ * Single source of truth zodat RapportView en VerbeteractiesView vanuit
  * KlantenWerkblad dezelfde data renderen (anker 11.G.4 F11-fix).
  */
 

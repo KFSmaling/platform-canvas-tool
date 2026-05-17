@@ -1,5 +1,5 @@
 /**
- * IntentCard — één kaart per cd_improvement_intents in VerbeterrichtingenView.
+ * IntentCard — één kaart per cd_improvement_intents in VerbeteractiesView.
  *
  * Toont:
  *   - Status-badge (concept / verstuurd + datum)
