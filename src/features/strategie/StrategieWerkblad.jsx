@@ -14,6 +14,8 @@ import MagicResult from "../../shared/components/MagicResult";
 import TagPill, { EXTERN_TAGS, INTERN_TAGS } from "../../shared/components/TagPill";
 import InzichtenOverlay from "../../shared/components/inzichten/InzichtenOverlay";
 import RapportageMenu from "../../shared/components/rapportage/RapportageMenu";
+import OnepagerBuilder from "../../shared/components/rapportage/OnepagerBuilder";
+import { buildStrategieRapportageConfig } from "./strategieRapportageConfig";
 import { updateInsight } from "./services/insight.service";
 import {
   loadStrategyCore,
@@ -525,6 +527,8 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
   const [showOnePager,   setShowOnePager]       = useState(false);
   // 11.S Block 2 — RapportageMenu dialog-zichtbaarheid
   const [rapportageMenuOpen, setRapportageMenuOpen] = useState(false);
+  // 11.S Block 3 — OnepagerBuilder overlay-zichtbaarheid
+  const [onepagerBuilderOpen, setOnepagerBuilderOpen] = useState(false);
   const [showAdvies,       setShowAdvies]       = useState(false);
   // T2 A2 — invultips-modal voor Strategie-werkblad
   const [showInvultips,  setShowInvultips]      = useState(false);
@@ -1566,14 +1570,36 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
         <RapportageMenu
           open={rapportageMenuOpen}
           onClose={() => setRapportageMenuOpen(false)}
-          // TODO Block 3 — vervang door open OnepagerBuilder.
-          // In Block 2 sluit alleen het menu; geen verdere actie.
+          // 11.S Block 3 — opent nieuwe OnepagerBuilder-overlay
           onSelectOnepager={() => {
             setRapportageMenuOpen(false);
-            // TODO Block 3 — setShowOnepagerBuilder(true);
+            setOnepagerBuilderOpen(true);
           }}
           appLabel={appLabel}
           headerLabel={appLabel("werkblad.strategie.title", "Strategie")}
+        />
+      )}
+
+      {/* ── 11.S Block 3 — OnepagerBuilder overlay. Werkblad-agnostisch via
+            buildStrategieRapportageConfig (vasteBlokken + modelLib +
+            dataResolver per blok). LayoutComponent=null → A4Preview rendert
+            skelet-placeholder (Block 4 injecteert StrategyOnePager v2). ── */}
+      {onepagerBuilderOpen && (
+        <OnepagerBuilder
+          open={onepagerBuilderOpen}
+          onClose={() => setOnepagerBuilderOpen(false)}
+          onBackToMenu={() => {
+            setOnepagerBuilderOpen(false);
+            setRapportageMenuOpen(true);
+          }}
+          config={buildStrategieRapportageConfig({
+            strategyCore: core,
+            themas,
+            analysisItems: items,
+            appLabel,
+          })}
+          insights={Array.isArray(analysis) ? analysis : []}
+          appLabel={appLabel}
         />
       )}
 
