@@ -166,6 +166,9 @@ const LABEL_FALLBACKS = {
   "strategie.onepager.werkblad.label":              "WERKBLAD",
   "strategie.onepager.werkblad.naam":               "STRATEGIE",
   "strategie.onepager.titel.eyebrow":               "STRATEGIE · EXECUTIVE SUMMARY",
+  // 11.S-retro-3: vaste H1-titel (vervangt samenvatting-tekst-render).
+  "strategie.onepager.titel.h1":                    "Samenvatting Strategie",
+  // Deprecated sinds retro-3 (samenvatting-tekst niet meer in TitelBlock; F15-cleanup later).
   "strategie.onepager.titel.fallback":              "Strategische samenvatting nog niet gegenereerd",
   "strategie.onepager.identiteit.missie.label":     "MISSIE",
   "strategie.onepager.identiteit.missie.fallback":  "Missie nog niet ingevuld",

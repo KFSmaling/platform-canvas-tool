@@ -67,9 +67,12 @@ function BrandStrip({ tenantBrand, appLabel }) {
 }
 
 // ── Titel-block ──────────────────────────────────────────────────────────────
-function TitelBlock({ samenvatting, canvasName, tenantBrand, appLabel }) {
+// 11.S-retro-3 (Kees-keuze 18 mei): H1 is nu een vaste-titel ("Samenvatting
+// Strategie") i.p.v. de samenvatting-tekst zelf. Bespaart vertikale ruimte;
+// samenvatting blijft zichtbaar in werkblad-Stip-op-de-Horizon. dataResolver
+// blijft `samenvatting`-data leveren voor toekomstige PPT-export fase 2.
+function TitelBlock({ canvasName, tenantBrand, appLabel }) {
   const lbl = (k, fb) => (appLabel ? appLabel(k, fb) : fb);
-  const ready = !!samenvatting;
   return (
     <section data-testid="strategie-onepager-titel-block" className="px-6 pt-3 pb-3">
       <p
@@ -81,18 +84,16 @@ function TitelBlock({ samenvatting, canvasName, tenantBrand, appLabel }) {
       <div className="flex items-start justify-between gap-6">
         <h1
           data-testid="strategie-onepager-h1"
-          className={`flex-1 leading-tight m-0 ${ready ? "" : "text-slate-400 italic"}`}
+          className="flex-1 leading-tight m-0"
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: 24,
+            fontSize: 26,
             fontWeight: 600,
-            color: ready ? "var(--color-primary)" : "#94a3b8",
+            color: "var(--color-primary)",
             letterSpacing: "-0.01em",
           }}
         >
-          {ready
-            ? samenvatting
-            : lbl("strategie.onepager.titel.fallback", "Strategische samenvatting nog niet gegenereerd")}
+          {lbl("strategie.onepager.titel.h1", "Samenvatting Strategie")}
         </h1>
         {(canvasName || tenantBrand) && (
           <div className="text-right flex-shrink-0">
@@ -127,33 +128,34 @@ function SourceTag({ name }) {
 }
 
 // ── Identiteits-band ─────────────────────────────────────────────────────────
+// 11.S-retro-3 (Kees 18 mei): Kernwaarden-render hier VERWIJDERD (Fix 3) —
+// duplicatie-fix. Kernwaarden blijven beschikbaar via Kernwaarden-bord-model
+// in body-zone (consultant-keuze via ModelLibrary). dataResolver-API
+// onveranderd (data.kernwaarden blijft beschikbaar voor andere consumers).
+//
+// Tegelijk: `minHeight: 90` per kolom verwijderd → `min-h-auto`-gedrag,
+// band wraps natuurlijk bij lange content. Content-aware page-split via
+// computePages heuristic op `identityContentLength` regelt overflow naar
+// page 2 wanneer cumulatieve missie+visie+ambitie > IDENTITY_SPLIT_THRESHOLD.
 function IdentiteitsBand({ data, appLabel }) {
   const lbl = (k, fb) => (appLabel ? appLabel(k, fb) : fb);
   const missie  = data?.missie;
   const visie   = data?.visie;
   const ambitie = data?.ambitie;
-  const kernwaarden = Array.isArray(data?.kernwaarden) ? data.kernwaarden : [];
 
-  const Kolom = ({ label, source, value, fallback, italic, eyebrow }) => (
-    <div className="flex flex-col" style={{ minHeight: 90 }}>
+  const Kolom = ({ label, source, value, fallback }) => (
+    <div className="flex flex-col">
       <div className="flex items-baseline justify-between mb-1">
         <span className="text-[8px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           {label}
         </span>
         <SourceTag name={source} />
       </div>
-      {eyebrow && (
-        <span className="text-[8px] font-bold uppercase tracking-[0.18em] mb-1"
-              style={{ color: "var(--color-accent)" }}>
-          {eyebrow}
-        </span>
-      )}
       <p
         className="m-0 leading-snug"
         style={{
-          fontFamily: italic ? "var(--font-display)" : "var(--font-body)",
-          fontStyle: italic ? "italic" : "normal",
-          fontSize: italic ? 12 : 10.5,
+          fontFamily: "var(--font-body)",
+          fontSize: 10.5,
           color: value ? "var(--color-primary)" : "#94a3b8",
         }}
       >
@@ -187,7 +189,7 @@ function IdentiteitsBand({ data, appLabel }) {
           value={visie}
           fallback={lbl("strategie.onepager.identiteit.visie.fallback", "Visie nog niet ingevuld")}
         />
-        <div className="flex flex-col" style={{ minHeight: 90 }}>
+        <div className="flex flex-col">
           <div className="flex items-baseline justify-between mb-1">
             <span className="text-[8px] font-semibold uppercase tracking-[0.16em] text-slate-500">
               {lbl("strategie.onepager.identiteit.ambitie.label", "AMBITIE")}
@@ -211,19 +213,6 @@ function IdentiteitsBand({ data, appLabel }) {
           >
             {ambitie || lbl("strategie.onepager.identiteit.ambitie.fallback", "Ambitie nog niet ingevuld")}
           </p>
-          {kernwaarden.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-slate-200/60">
-              <span className="text-[8px] font-semibold uppercase tracking-[0.16em] text-slate-500 block mb-0.5">
-                {lbl("strategie.onepager.identiteit.kernwaarden.label", "KERNWAARDEN")}
-              </span>
-              <p
-                data-testid="strategie-onepager-kernwaarden-inline"
-                className="m-0 text-[10px] text-slate-700 leading-snug"
-              >
-                {kernwaarden.join(" · ")}
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </section>
@@ -663,52 +652,82 @@ function BodyZone({
 }
 
 // ── computePages — content-aware page-distribution helper ────────────────────
-// 11.S-retro-2 Optie A (heuristic-based, instructie §3 aanbevolen):
+// 11.S-retro-2 Optie A (heuristic-based) + 11.S-retro-3 Fix 2 (identiteits-
+// band content-aware split):
 //
-//   Page 1 (altijd):    "main"      — BrandStrip + Titel + Identiteit + KPI + Themas + Footer
-//   Page 2 (conditional): "body"    — BrandStrip + (modellen + AI eerste chunk) + Footer
-//   Page 3+ (overflow):   "ai-only" — BrandStrip + AI-vervolg-chunk + Footer
+//   Page 1:
+//     Short identiteit-content  → "main"          (Titel + Identiteit + KPI + Themas)
+//     Long identiteit-content   → "main-identity" (Titel + Identiteit only)
+//                                 + "main-kpi-themas" (KPI + Themas) op page 2
+//   Body-pages (volgen):
+//     "body"     — BrandStrip + (modellen + eerste AI-chunk) + Footer
+//     "ai-only"  — BrandStrip + AI-vervolg-chunk + Footer (page 3+)
 //
 // hasBodyContent  = ≥1 selectedModel OR withAi=true
-//                   withAi=true reserveert altijd page 2 voor "AI uit"-fallback
+//                   withAi=true reserveert altijd body-page voor "AI uit"-fallback
 //                   wanneer 0 in_rapport-insights (Block 4 §2g intent behouden).
 //
-// AI-chunking grens: MAX_AI_PER_PAGE (default 6) — meer dan dat → extra pagina's.
-//                    Bij grote insight-overflow kan dat 3, 4, 5+ pagina's worden;
-//                    nog steeds geen content-loss.
+// IDENTITY_SPLIT_THRESHOLD = 500 chars cumulatief (missie + visie + ambitie).
+//   Bouwer-tunable startwaarde. Bij overschrijding → vaste-blokken-distributie
+//   splitsen naar 2 pages. Geen DOM-measure-pass (font-async-flicker-vrij).
+//   Kernwaarden NIET meegerekend (retro-3 Fix 3 — kernwaarden-render verwijderd
+//   uit identiteits-band).
 //
-// Returns array van page-recipes (eerste = main, rest = body / ai-only).
-function computePages({ selectedModels, withAi, insights, MAX_AI_PER_PAGE = 6 }) {
-  const pages = [{ type: "main" }];
+// AI-chunking: MAX_AI_PER_PAGE (default 6) — meer dan dat → extra pagina's.
+//
+// Returns array van page-recipes.
+function computePages({
+  selectedModels,
+  withAi,
+  insights,
+  data,
+  MAX_AI_PER_PAGE = 6,
+  IDENTITY_SPLIT_THRESHOLD = 500,
+}) {
+  const pages = [];
 
+  // ── Vaste-blokken-distributie (page 1, eventueel split naar page 2) ────
+  // Char-count-heuristic op missie/visie/ambitie (kernwaarden weg uit
+  // identiteits-band sinds retro-3, dus niet meetellen).
+  const identiteit = data?.identiteit?.data || {};
+  const identityContentLength =
+    (identiteit.missie?.length || 0) +
+    (identiteit.visie?.length || 0) +
+    (identiteit.ambitie?.length || 0);
+  const splitIdentity = identityContentLength > IDENTITY_SPLIT_THRESHOLD;
+
+  if (splitIdentity) {
+    pages.push({ type: "main-identity" });
+    pages.push({ type: "main-kpi-themas" });
+  } else {
+    pages.push({ type: "main" });
+  }
+
+  // ── Body-distributie (modellen + AI-chunking) ──────────────────────────
   const hasSelectedModels = Array.isArray(selectedModels) && selectedModels.length > 0;
   const hasBodyContent = hasSelectedModels || !!withAi;
   if (!hasBodyContent) return pages;
 
   const inRapport = (Array.isArray(insights) ? insights : []).filter(i => i.in_rapport === true);
-  // Bepaal hoeveel AI-chunks nodig zijn.
   // Bij 0 insights + withAi=true: 1 chunk (toont ai-empty fallback).
   // Bij ≥1 insights: ceil(N / MAX_AI_PER_PAGE) chunks.
-  const aiChunkCount = withAi
+  const totalAiChunks = withAi
     ? Math.max(1, Math.ceil(inRapport.length / MAX_AI_PER_PAGE))
     : 0;
-  const totalAiChunks = aiChunkCount;
 
-  // Page 2 = body. Eerste AI-chunk hier (samen met modellen indien aanwezig).
+  // Body-page: eerste AI-chunk hier (samen met modellen indien aanwezig).
   pages.push({
     type: "body",
     mode: hasSelectedModels
       ? (withAi ? "models-with-ai" : "models-only")
       : "ai-only",
     selectedModels,
-    aiChunk: withAi
-      ? inRapport.slice(0, MAX_AI_PER_PAGE)
-      : null,
-    chunkIdx: withAi ? 0 : 0,
+    aiChunk: withAi ? inRapport.slice(0, MAX_AI_PER_PAGE) : null,
+    chunkIdx: 0,
     totalChunks: totalAiChunks,
   });
 
-  // Page 3+ = extra AI-chunks (alleen bij AI-overflow).
+  // Extra AI-pages (alleen bij AI-overflow).
   if (withAi && inRapport.length > MAX_AI_PER_PAGE) {
     let chunkStart = MAX_AI_PER_PAGE;
     let chunkIdx = 1;
@@ -770,8 +789,75 @@ export default function StrategyOnePager({
   Page = ({ children }) => <div data-testid="strategie-onepager-page-fallback">{children}</div>,
 }) {
   // Content-aware page-distribution. computePages returnt array van recipes.
-  const pages = computePages({ selectedModels, withAi, insights });
+  // `data` doorgegeven voor identiteits-band-char-count-heuristic (retro-3).
+  const pages = computePages({ selectedModels, withAi, insights, data });
   const totalPages = pages.length;
+
+  // ── Render-helpers per recipe-type ──────────────────────────────────────
+  // Houdt hoofdcomponent leesbaar; ieder helper bouwt PageShell-inhoud.
+  function renderMainFull(pageNum) {
+    return (
+      <PageShell>
+        <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
+        <TitelBlock
+          canvasName={canvasName}
+          tenantBrand={tenantBrand}
+          appLabel={appLabel}
+        />
+        <IdentiteitsBand data={data?.identiteit?.data} appLabel={appLabel} />
+        <KpiStrip        data={data?.["kpi-strip"]?.data} appLabel={appLabel} />
+        <ThemasGrid      data={data?.themas?.data} appLabel={appLabel} />
+        <div className="flex-1" />
+        <Footer tenantBrand={tenantBrand} appLabel={appLabel} pageNum={pageNum} totalPages={totalPages} />
+      </PageShell>
+    );
+  }
+  function renderMainIdentity(pageNum) {
+    // 11.S-retro-3 Fix 2: identiteits-band-only-pagina bij lange content
+    return (
+      <PageShell>
+        <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
+        <TitelBlock
+          canvasName={canvasName}
+          tenantBrand={tenantBrand}
+          appLabel={appLabel}
+        />
+        <IdentiteitsBand data={data?.identiteit?.data} appLabel={appLabel} />
+        <div className="flex-1" />
+        <Footer tenantBrand={tenantBrand} appLabel={appLabel} pageNum={pageNum} totalPages={totalPages} />
+      </PageShell>
+    );
+  }
+  function renderMainKpiThemas(pageNum) {
+    // 11.S-retro-3 Fix 2: KPI + Themas op eigen pagina wanneer identiteit
+    // overflow heeft veroorzaakt. BrandStrip + Footer per pagina (retro-1).
+    return (
+      <PageShell>
+        <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
+        <KpiStrip   data={data?.["kpi-strip"]?.data} appLabel={appLabel} />
+        <ThemasGrid data={data?.themas?.data} appLabel={appLabel} />
+        <div className="flex-1" />
+        <Footer tenantBrand={tenantBrand} appLabel={appLabel} pageNum={pageNum} totalPages={totalPages} />
+      </PageShell>
+    );
+  }
+  function renderBody(recipe, pageNum) {
+    return (
+      <PageShell>
+        <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
+        <BodyZone
+          mode={recipe.mode}
+          selectedModels={recipe.selectedModels}
+          aiChunk={recipe.aiChunk}
+          chunkIdx={recipe.chunkIdx}
+          totalChunks={recipe.totalChunks}
+          data={data}
+          appLabel={appLabel}
+        />
+        <Footer tenantBrand={tenantBrand} appLabel={appLabel} pageNum={pageNum} totalPages={totalPages} />
+      </PageShell>
+    );
+  }
 
   return (
     <div
@@ -780,59 +866,29 @@ export default function StrategyOnePager({
     >
       {pages.map((recipe, idx) => {
         const pageNum = idx + 1;
-        if (recipe.type === "main") {
-          return (
-            <Page key="main" pageNum={pageNum} totalPages={totalPages} appLabel={appLabel}>
-              <PageShell>
-                <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
-                <TitelBlock
-                  samenvatting={data?.samenvatting?.data?.samenvatting || data?.samenvatting?.text}
-                  canvasName={canvasName}
-                  tenantBrand={tenantBrand}
-                  appLabel={appLabel}
-                />
-                {/* Vaste-blokken — render-volgorde gefixeerd: identiteit, kpi-strip, themas */}
-                <IdentiteitsBand data={data?.identiteit?.data} appLabel={appLabel} />
-                <KpiStrip        data={data?.["kpi-strip"]?.data} appLabel={appLabel} />
-                <ThemasGrid      data={data?.themas?.data} appLabel={appLabel} />
-                {/* Spacer-flex pakt resterende verticale ruimte tot Footer. */}
-                <div className="flex-1" />
-                <Footer
-                  tenantBrand={tenantBrand}
-                  appLabel={appLabel}
-                  pageNum={pageNum}
-                  totalPages={totalPages}
-                />
-              </PageShell>
-            </Page>
-          );
+        let content;
+        let key;
+        switch (recipe.type) {
+          case "main":
+            content = renderMainFull(pageNum);
+            key = "main";
+            break;
+          case "main-identity":
+            content = renderMainIdentity(pageNum);
+            key = "main-identity";
+            break;
+          case "main-kpi-themas":
+            content = renderMainKpiThemas(pageNum);
+            key = "main-kpi-themas";
+            break;
+          default:
+            // "body" of "ai-only"
+            content = renderBody(recipe, pageNum);
+            key = `p${pageNum}-${recipe.mode}-${recipe.chunkIdx}`;
         }
-        // type = "body" of "ai-only" → BodyZone met page-specifieke mode
         return (
-          <Page
-            key={`p${pageNum}-${recipe.mode}-${recipe.chunkIdx}`}
-            pageNum={pageNum}
-            totalPages={totalPages}
-            appLabel={appLabel}
-          >
-            <PageShell>
-              <BrandStrip tenantBrand={tenantBrand} appLabel={appLabel} />
-              <BodyZone
-                mode={recipe.mode}
-                selectedModels={recipe.selectedModels}
-                aiChunk={recipe.aiChunk}
-                chunkIdx={recipe.chunkIdx}
-                totalChunks={recipe.totalChunks}
-                data={data}
-                appLabel={appLabel}
-              />
-              <Footer
-                tenantBrand={tenantBrand}
-                appLabel={appLabel}
-                pageNum={pageNum}
-                totalPages={totalPages}
-              />
-            </PageShell>
+          <Page key={key} pageNum={pageNum} totalPages={totalPages} appLabel={appLabel}>
+            {content}
           </Page>
         );
       })}

@@ -127,7 +127,10 @@ describe("StrategyOnePager v2 — RFC-008 §F + 11.S Block 4", () => {
     expect(screen.getAllByTestId("strategie-onepager-footer").length).toBe(2);
     // Page-1 specifieke testids (single match)
     expect(screen.getByTestId("strategie-onepager-titel-block")).toBeInTheDocument();
-    expect(screen.getByTestId("strategie-onepager-h1")).toHaveTextContent(/Onze strategie verschuift/i);
+    // 11.S-retro-3: H1 is vaste-titel "Samenvatting Strategie", niet de
+    // samenvatting-tekst zelf (Kees-keuze 18 mei).
+    expect(screen.getByTestId("strategie-onepager-h1")).toHaveTextContent(/Samenvatting Strategie/i);
+    expect(screen.getByTestId("strategie-onepager-h1")).not.toHaveTextContent(/Onze strategie verschuift/i);
     expect(screen.getByTestId("strategie-onepager-identiteit-band")).toBeInTheDocument();
     expect(screen.getByTestId("strategie-onepager-kpi-strip")).toBeInTheDocument();
     expect(screen.getByTestId("strategie-onepager-themas-grid")).toBeInTheDocument();
@@ -136,7 +139,9 @@ describe("StrategyOnePager v2 — RFC-008 §F + 11.S Block 4", () => {
     // Page-2 specifieke testid: AI-blok
     expect(screen.getByTestId("strategie-onepager-ai-block")).toBeInTheDocument();
     // Kernwaarden inline in identiteits-band
-    expect(screen.getByTestId("strategie-onepager-kernwaarden-inline")).toHaveTextContent(/Eerlijk · Helder · Mee-denkend/);
+    // 11.S-retro-3 Fix 3: kernwaarden-render uit identiteits-band verwijderd
+    // (duplicatie-fix; kernwaarden blijven in body-zone Kernwaarden-bord-model).
+    expect(screen.queryByTestId("strategie-onepager-kernwaarden-inline")).not.toBeInTheDocument();
     // 11.S-retro: data-total-pages-attribuut weerspiegelt page-count
     expect(screen.getByTestId("strategie-onepager-v2")).toHaveAttribute("data-total-pages", "2");
   });
@@ -152,8 +157,9 @@ describe("StrategyOnePager v2 — RFC-008 §F + 11.S Block 4", () => {
     const data = buildData(config, ["identiteit", "kpi-strip", "themas", "samenvatting"]);
     await renderOnePager({ data, selectedModels: [], withAi: false, insights: [] });
 
-    // Titel fallback
-    expect(screen.getByTestId("strategie-onepager-h1")).toHaveTextContent(/nog niet gegenereerd/i);
+    // 11.S-retro-3: H1 is vaste-titel ongeacht samenvatting-staat
+    // (geen fallback-rendering meer in TitelBlock).
+    expect(screen.getByTestId("strategie-onepager-h1")).toHaveTextContent(/Samenvatting Strategie/i);
     // Themas-empty fallback
     expect(screen.getByTestId("strategie-onepager-themas-empty")).toBeInTheDocument();
     // KPI-strip met fallback-cellen (BHAG uit ambitie "100M omzet" + Horizon)
