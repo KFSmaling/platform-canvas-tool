@@ -71,7 +71,7 @@ jest.mock("../../../shared/services/apiClient", () => ({
 }));
 
 // ── Mock InzichtenOverlay zwaar component, niet relevant ──
-jest.mock("../components/InzichtenOverlay", () => ({
+jest.mock("../../../shared/components/inzichten/InzichtenOverlay", () => ({
   __esModule: true,
   default: () => null,
 }));

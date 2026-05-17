@@ -84,7 +84,7 @@ jest.mock("../../../shared/services/embedding.service", () => ({
 jest.mock("../../../shared/services/apiClient", () => ({
   apiFetch: jest.fn(),
 }));
-jest.mock("../components/InzichtenOverlay", () => ({
+jest.mock("../../../shared/components/inzichten/InzichtenOverlay", () => ({
   __esModule: true,
   default: () => null,
 }));

@@ -1,26 +1,37 @@
 /**
  * InzichtenOverlay — document-layout voor Inzichten (sprint B rebuild, issue #68)
  *
+ * RFC-008 §C — werkblad-agnostisch component in `src/shared/components/inzichten/`.
  * Visueel conform docs/prototypes/inzichten-prototype-v2.html.
  * Color discipline: docs/inzichten-68-color-mapping.md
- *   - Brand-kleuren: var(--color-primary) — nooit hardcoded hex
- *   - Type-kleuren: via TYPE_CONFIG (Tailwind semantic names)
- *   - Neutrale grijzen: Tailwind utilities
  *
- * Props:
- *   insights    — array van insight-objecten of null
- *   loading     — boolean
- *   error       — string of null
- *   onClose     — () => void
- *   appLabel    — (key, fallback) => string
- *   canvasName  — string | null  (optioneel: toont "Strategie — {canvasName}" in h1)
- *   generatedAt — ISO-string | null  (updated_at uit strategy_core; null = datum weglaten)
+ * Props (basis):
+ *   insights      — array van insight-objecten of null
+ *   loading       — boolean
+ *   error         — string of null
+ *   onClose       — () => void
+ *   appLabel      — (key, fallback) => string
+ *   canvasName    — string | null
+ *   generatedAt   — ISO-string | null  (updated_at; null = datum weglaten)
+ *   worksheetName — string | null (default: appLabel("werkblad.strategie.title", "Strategie"))
+ *   headerLabel   — string | null (optioneel: overschrijft h1; default: "{wName} — {canvasName}")
+ *
+ * Props (Analyse-hoofdactie):
+ *   onAnalyse     — () => void (optioneel) — wordt bij ≥1 edited bevinding eerst door
+ *                    een regenerate-waarschuwingsdialog heen gestuurd (RFC-008 §4a edge-case)
+ *   analysing     — boolean
+ *   analyseLabel  — string
+ *
+ * Props (RFC-008 §4 service-injectie — werkblad-agnostisch):
+ *   onSave            — async (insightId, fields) => { data, error } — voor edit-mode
+ *   onToggleRapport   — async (insightId, in_rapport_bool) => { data, error } — voor pill
+ *   onOpenRapportage  — () => void (optioneel) — klik op status-indicator-counter
  */
 
 import React, { useState } from "react";
-import { Minus, AlertTriangle, TrendingUp, CheckCircle } from "lucide-react";
+import { Minus, AlertTriangle, TrendingUp, CheckCircle, FileText } from "lucide-react";
 import InzichtItem, { TYPE_CONFIG, FALLBACK_TYPE } from "./InzichtItem";
-import AiIcon from "../../../shared/components/AiIcon";
+import AiIcon from "../AiIcon";
 
 // Datum formatteren als "22 april 2026, 14:08" (NL-locale)
 function formatNlDate(isoString) {
@@ -88,17 +99,23 @@ function TocEntry({ insight }) {
 // ── Hoofdcomponent ────────────────────────────────────────────────────────────
 export default function InzichtenOverlay({
   insights, loading, error, onClose, appLabel, canvasName, generatedAt, canvasId, worksheetName,
+  headerLabel = null,
   // S2 instructie B — Analyse-knop verhuisd van werkblad-header naar
-  // Inzichten-scherm als hoofdactie. Optionele props (default null → geen
-  // knop) zodat Richtlijnen/andere overlays niet-breaking blijven tot S3.
+  // Inzichten-scherm als hoofdactie.
   onAnalyse = null,
   analysing = false,
   analyseLabel = null,
+  // RFC-008 §4 service-injectie — werkblad-agnostisch (default null → backwards-compat).
+  onSave = null,
+  onToggleRapport = null,
+  onOpenRapportage = null,
 }) {
   // Alle filters standaard actief
   const [activeFilters, setActiveFilters] = useState(
     new Set(["ontbreekt", "zwak", "kans", "sterk"])
   );
+  // RFC-008 §4a edge-case: regenerate-warning bij ≥1 edited insight
+  const [showRegenWarning, setShowRegenWarning] = useState(false);
 
   const toggleFilter = (key) => {
     setActiveFilters(prev => {
@@ -124,9 +141,31 @@ export default function InzichtenOverlay({
   const isEmpty     = !loading && !error && allInsights.length === 0;
   const noVisible   = !loading && !isEmpty && visible.length === 0;
 
+  // RFC-008 §4 counters
+  const editedCount    = allInsights.filter(i => i.edited_observation || i.edited_recommendation).length;
+  const inRapportCount = allInsights.filter(i => i.in_rapport === true).length;
+  const totalCount     = allInsights.length;
+
   // Document-h1: "{werkbladNaam}" of "{werkbladNaam} — {canvasNaam}"
   const wName   = worksheetName ?? lbl("werkblad.strategie.title", "Strategie");
-  const docTitle = canvasName ? `${wName} — ${canvasName}` : wName;
+  const docTitle = headerLabel ?? (canvasName ? `${wName} — ${canvasName}` : wName);
+
+  // RFC-008 §4a edge-case: Analyse-klik intercept met regenerate-warning
+  function handleAnalyseClick() {
+    if (!onAnalyse || analysing) return;
+    if (editedCount > 0) {
+      setShowRegenWarning(true);
+      return;
+    }
+    onAnalyse();
+  }
+  function confirmRegenerate() {
+    setShowRegenWarning(false);
+    if (onAnalyse) onAnalyse();
+  }
+  function cancelRegenerate() {
+    setShowRegenWarning(false);
+  }
 
   // Outer: vol scherm, bg-slate-100, document scrollt als geheel
   return (
@@ -192,24 +231,43 @@ export default function InzichtenOverlay({
                 {lbl("analysis.kicker", "Inzichten")}
               </p>
 
-              {/* H1 + Analyse-hoofdactie naast elkaar — S2 instructie B */}
+              {/* H1 + Analyse-hoofdactie + status-indicator — S2 instructie B + RFC-008 §4 */}
               <div className="flex items-start justify-between gap-4 mb-2.5">
                 <h1 className="text-[28px] font-semibold text-[var(--color-primary)] tracking-[-0.015em] leading-tight m-0">
                   {docTitle}
                 </h1>
-                {typeof onAnalyse === "function" && (
-                  <button
-                    type="button"
-                    onClick={analysing ? undefined : onAnalyse}
-                    disabled={analysing}
-                    data-testid="inzichten-actie-analyse"
-                    className="shrink-0 flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ background: "var(--color-accent)", color: "var(--color-primary)" }}
-                  >
-                    <AiIcon variant="generate" size={14} colorClass="text-[var(--color-primary)]" />
-                    {analyseLabel || lbl("werkblad.action.analyseer", "Analyse draaien")}
-                  </button>
-                )}
+                <div className="shrink-0 flex flex-col items-end gap-2">
+                  {/* RFC-008 §4b — status-indicator "{X}/{N} opgenomen in Rapportage", klikbaar */}
+                  {typeof onToggleRapport === "function" && totalCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={onOpenRapportage || undefined}
+                      disabled={!onOpenRapportage}
+                      data-testid="inzichten-status-indicator"
+                      className="inline-flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-[var(--color-primary)]
+                        disabled:cursor-default disabled:hover:text-slate-600 transition-colors"
+                    >
+                      <FileText size={12} />
+                      <span>
+                        <span data-testid="inzichten-status-counter">{inRapportCount}/{totalCount}</span>{" "}
+                        {lbl("analysis.status.opgenomen", "opgenomen in Rapportage")}
+                      </span>
+                    </button>
+                  )}
+                  {typeof onAnalyse === "function" && (
+                    <button
+                      type="button"
+                      onClick={analysing ? undefined : handleAnalyseClick}
+                      disabled={analysing}
+                      data-testid="inzichten-actie-analyse"
+                      className="flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: "var(--color-accent)", color: "var(--color-primary)" }}
+                    >
+                      <AiIcon variant="generate" size={14} colorClass="text-[var(--color-primary)]" />
+                      {analyseLabel || lbl("werkblad.action.analyseer", "Analyse draaien")}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Meta-regel: canvas · gegenereerd datum · n bevindingen
@@ -303,7 +361,13 @@ export default function InzichtenOverlay({
                   )}
                 </p>
                 {onderdelen.map(insight => (
-                  <InzichtItem key={insight.id} insight={insight} appLabel={appLabel} />
+                  <InzichtItem
+                    key={insight.id}
+                    insight={insight}
+                    appLabel={appLabel}
+                    onSave={onSave}
+                    onToggleRapport={onToggleRapport}
+                  />
                 ))}
               </section>
             )}
@@ -328,7 +392,13 @@ export default function InzichtenOverlay({
                   )}
                 </p>
                 {dwarsverb.map(insight => (
-                  <InzichtItem key={insight.id} insight={insight} appLabel={appLabel} />
+                  <InzichtItem
+                    key={insight.id}
+                    insight={insight}
+                    appLabel={appLabel}
+                    onSave={onSave}
+                    onToggleRapport={onToggleRapport}
+                  />
                 ))}
               </section>
             )}
@@ -336,6 +406,48 @@ export default function InzichtenOverlay({
         </article>
         </div>{/* grid */}
       </div>{/* white card */}
+
+      {/* ── RFC-008 §4a edge-case: regenerate-waarschuwingsdialog ────────── */}
+      {showRegenWarning && (
+        <div
+          data-testid="inzichten-regen-warning"
+          className="fixed inset-0 z-[61] bg-black/40 flex items-center justify-center p-4"
+          onClick={cancelRegenerate}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-[var(--color-primary)] mb-2">
+              {lbl("analysis.regen.title", "Bevindingen handmatig bewerkt")}
+            </h2>
+            <p className="text-sm text-slate-700 mb-4">
+              {lbl(
+                "analysis.regen.body",
+                `Je hebt ${editedCount} bevinding${editedCount === 1 ? "" : "en"} handmatig bewerkt. Bij her-genereren gaan deze edits verloren. Doorgaan?`
+              )}
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={cancelRegenerate}
+                data-testid="inzichten-regen-cancel"
+                className="px-3 py-1.5 text-xs rounded border border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 transition-colors"
+              >
+                {lbl("analysis.action.cancel", "Annuleer")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmRegenerate}
+                data-testid="inzichten-regen-confirm"
+                className="px-3 py-1.5 text-xs rounded bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity"
+              >
+                {lbl("analysis.regen.confirm", "Doorgaan")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   ); // outer
 }

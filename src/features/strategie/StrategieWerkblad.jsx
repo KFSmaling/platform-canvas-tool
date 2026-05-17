@@ -12,7 +12,8 @@ import { useAppConfig } from "../../shared/context/AppConfigContext";
 import WandButton from "../../shared/components/WandButton";
 import MagicResult from "../../shared/components/MagicResult";
 import TagPill, { EXTERN_TAGS, INTERN_TAGS } from "../../shared/components/TagPill";
-import InzichtenOverlay from "./components/InzichtenOverlay";
+import InzichtenOverlay from "../../shared/components/inzichten/InzichtenOverlay";
+import { updateInsight } from "./services/insight.service";
 import {
   loadStrategyCore,
   loadCanvasName,
@@ -793,6 +794,36 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
     }
   }, [core, items, themas, canvasId, appPrompt]);
 
+  // ── RFC-008 §4 — InzichtenOverlay service-injectie ──────────────────────────
+  // updateInsight retourneert het volledige insight-object (jsonb met merged fields);
+  // we mergen in-place in lokale `analysis`-state zodat de UI direct rerendert
+  // zonder full reload. Foutpad: error bubble-up naar InzichtItem (toont rood label).
+  const applyInsightUpdate = useCallback((insightId, updated) => {
+    setAnalysis(prev => {
+      if (!Array.isArray(prev)) return prev;
+      return prev.map(i => (i.id === insightId ? { ...i, ...updated } : i));
+    });
+  }, []);
+
+  const handleInsightSave = useCallback(async (insightId, fields) => {
+    const { data, error } = await updateInsight(canvasId, insightId, fields);
+    if (!error && data) applyInsightUpdate(insightId, data);
+    return { data, error };
+  }, [canvasId, applyInsightUpdate]);
+
+  const handleInsightToggleRapport = useCallback(async (insightId, inRapport) => {
+    const { data, error } = await updateInsight(canvasId, insightId, { in_rapport: inRapport });
+    if (!error && data) applyInsightUpdate(insightId, data);
+    return { data, error };
+  }, [canvasId, applyInsightUpdate]);
+
+  // RFC-008 §4b — status-indicator-klik opent Rapportage. Block 2-functionaliteit:
+  // dood-href met TODO-comment (Block 2 maakt RapportageMenu-dialog).
+  const handleOpenRapportage = useCallback(() => {
+    // TODO Block 2: open RapportageMenu-dialog (verschuift Rapportage-knop naar werkblad-header).
+    setShowAdvies(false);
+  }, []);
+
   // ── Samenvatting genereren — direct toepassen (geen draft-stap) ─────────────
   const handleGenerateSamenvatting = async () => {
     setMagicFor("samenvatting", { loading: true, suggestion: null, error: null });
@@ -1509,6 +1540,15 @@ export default function StrategieWerkblad({ canvasId, onClose, onManualSaved }) 
               : analysis
                 ? appLabel("werkblad.action.analyseer_opnieuw", "Opnieuw analyseren")
                 : appLabel("werkblad.action.analyseer", "Analyse draaien")
+          }
+          // RFC-008 §4 service-injectie
+          onSave={handleInsightSave}
+          onToggleRapport={handleInsightToggleRapport}
+          onOpenRapportage={handleOpenRapportage}
+          headerLabel={
+            canvasName
+              ? `${appLabel("werkblad.strategie.inzichten.header", "Inzichten — Strategie")} — ${canvasName}`
+              : appLabel("werkblad.strategie.inzichten.header", "Inzichten — Strategie")
           }
         />
       )}
