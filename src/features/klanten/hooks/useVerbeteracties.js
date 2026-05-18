@@ -76,7 +76,8 @@ export function useVerbeteracties({
 
   const definitiefEntries = useMemo(
     () => (intents || [])
-      .filter(i => i.status === "verstuurd")
+      // 11.U Block 1 (RFC-007-rev2): status='verstuurd' → 'definitief' via migratie.
+      .filter(i => i.status === "definitief" || i.status === "verstuurd")
       .map(i => ({ ...i, _type: "intent", _ui_status: "definitief" }))
       .sort((a, b) => {
         // Bouwer-keuze RFC §7 open vraag #1: handover_to_roadmap_at DESC

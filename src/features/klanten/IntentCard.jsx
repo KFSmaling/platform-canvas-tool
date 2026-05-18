@@ -44,7 +44,10 @@ export default function IntentCard({
   onUnsend,
 }) {
   const { label: appLabel } = useAppConfig();
-  const isVerstuurd = intent.status === "verstuurd";
+  // 11.U Block 1 (RFC-007-rev2): status='verstuurd' is gemigreerd naar
+  // 'definitief'. Check beide voor backwards-compat met legacy-rows
+  // (eigenlijk niet nodig na migratie maar defensive).
+  const isVerstuurd = intent.status === "definitief" || intent.status === "verstuurd";
   const vanuit = Array.isArray(intent.vanuit) ? intent.vanuit : [];
 
   return (

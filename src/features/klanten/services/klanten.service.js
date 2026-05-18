@@ -394,6 +394,85 @@ export async function unsendIntent(id) {
   return { data: data?.intent ?? null, error };
 }
 
+// ── 11.U Block 1 (RFC-007-rev2) — nieuwe state-machine + link-acties ─────────
+
+/** Maak een concept-intent definitief (RFC-007-rev2: make_definitief, vervangt handover). */
+export async function makeIntentDefinitief(id) {
+  const { data, error } = await call("POST", `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}&action=make_definitief`);
+  return { data: data?.intent ?? null, error };
+}
+
+/** Definitief → concept terug (RFC-007-rev2: back_to_concept, vervangt unsend). */
+export async function backToConcept(id) {
+  const { data, error } = await call("POST", `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}&action=back_to_concept`);
+  return { data: data?.intent ?? null, error };
+}
+
+/** Dismiss een intent met motivatie (≥20 chars). */
+export async function dismissIntent(id, motivation) {
+  const { data, error } = await call(
+    "POST",
+    `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}&action=dismiss`,
+    { motivation },
+  );
+  return { data: data?.intent ?? null, error };
+}
+
+/** Restore een dismissed intent (terug naar concept). */
+export async function restoreIntent(id) {
+  const { data, error } = await call("POST", `/api/klanten/improvement_intents?id=${encodeURIComponent(id)}&action=restore`);
+  return { data: data?.intent ?? null, error };
+}
+
+/** Maak n-op-n koppeling intent ↔ pijnpunt. */
+export async function createIntentPainPointLink(intentId, painPointId) {
+  const { data, error } = await call(
+    "POST",
+    `/api/klanten/improvement_intents?id=${encodeURIComponent(intentId)}&action=create_pain_link`,
+    { pain_point_id: painPointId },
+  );
+  return { data: data?.link ?? null, error };
+}
+
+/** Verwijder n-op-n koppeling intent ↔ pijnpunt. */
+export async function deleteIntentPainPointLink(intentId, painPointId) {
+  const { error } = await call(
+    "POST",
+    `/api/klanten/improvement_intents?id=${encodeURIComponent(intentId)}&action=delete_pain_link`,
+    { pain_point_id: painPointId },
+  );
+  return { data: null, error };
+}
+
+/** Coverage-gauge: counts per coverage_status voor pain-points van canvas.
+ *  Returnt { gauge: { open, addressed, dismissed, total } } */
+export async function getCoverageGauge(canvasId) {
+  const { data, error } = await call(
+    "POST",
+    `/api/klanten/improvement_intents?action=coverage_gauge&canvas_id=${encodeURIComponent(canvasId)}`,
+  );
+  return { data: data?.gauge ?? null, error };
+}
+
+/** Dismiss een pijnpunt met motivatie (≥20 chars). */
+export async function dismissPainPoint(painPointId, motivation) {
+  const { data, error } = await call(
+    "POST",
+    `/api/klanten/pain_points?id=${encodeURIComponent(painPointId)}&action=dismiss`,
+    { motivation },
+  );
+  return { data: data?.pain_point ?? null, error };
+}
+
+/** Restore een dismissed pijnpunt. */
+export async function restorePainPoint(painPointId) {
+  const { data, error } = await call(
+    "POST",
+    `/api/klanten/pain_points?id=${encodeURIComponent(painPointId)}&action=restore`,
+  );
+  return { data: data?.pain_point ?? null, error };
+}
+
 // ── cd_pattern_suggestion_events (read-only audit-trail) ───────────────────
 
 export async function listPatternSuggestionEvents({ suggestionId, canvasId } = {}) {

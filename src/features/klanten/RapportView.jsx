@@ -142,15 +142,20 @@ export default function RapportView({
     return flat;
   }, [acceptedByType]);
 
-  // F32 Bundle 5 — split intents in verstuurd (= naar Roadmap) vs concept.
-  // Default-rapport toont alleen verstuurd; concept zit achter "Toon proces-
+  // F32 Bundle 5 — split intents in definitief (= naar Roadmap) vs concept.
+  // Default-rapport toont alleen definitief; concept zit achter "Toon proces-
   // info"-toggle samen met AI-patronen.
+  //
+  // 11.U Block 1 (RFC-007-rev2 §F): status='verstuurd' is gemigreerd naar
+  // 'definitief' (datamigratie 20260519000000 stap 2). Filter aangepast.
+  // Variabele-namen behouden voor minimale diff; rename naar `definitiefIntents`
+  // pas bij Block 2 UI-refactor.
   const verstuurdIntents = useMemo(
-    () => intents.filter(it => it.status === "verstuurd"),
+    () => intents.filter(it => it.status === "definitief"),
     [intents]
   );
   const conceptIntents = useMemo(
-    () => intents.filter(it => it.status !== "verstuurd"),
+    () => intents.filter(it => it.status !== "definitief" && it.status !== "dismissed"),
     [intents]
   );
 

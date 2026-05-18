@@ -82,11 +82,14 @@ function suggestion(id, status) {
 }
 
 function intent(id, status, title) {
+  // 11.U Block 1 (RFC-007-rev2): legacy "verstuurd" → "definitief". Helper accepteert
+  // beide en normaliseert intern naar "definitief" voor consistente test-data.
+  const normalized = status === "verstuurd" ? "definitief" : status;
   return {
     id, title: title || `Intent ${id}`,
     intent_md: `Beschrijving ${id} — voldoende lang om validatie te passeren — minstens 50 tekens hier.`,
-    status, // "verstuurd" of "concept"
-    handover_to_roadmap_at: status === "verstuurd" ? "2026-05-12T12:00:00Z" : null,
+    status: normalized, // "definitief" of "concept" of "dismissed"
+    handover_to_roadmap_at: normalized === "definitief" ? "2026-05-12T12:00:00Z" : null,
   };
 }
 

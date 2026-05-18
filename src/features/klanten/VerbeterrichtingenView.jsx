@@ -53,8 +53,9 @@ export default function VerbeterrichtingenView({
 
   const { conceptList, verstuurdList, conceptCount, verstuurdCount } = useMemo(() => {
     const list = intents || [];
+    // 11.U Block 1 (RFC-007-rev2): status='verstuurd' → 'definitief' via migratie.
     const concept   = list.filter(i => i.status === "concept");
-    const verstuurd = list.filter(i => i.status === "verstuurd");
+    const verstuurd = list.filter(i => i.status === "definitief" || i.status === "verstuurd");
     return {
       conceptList:   concept,
       verstuurdList: verstuurd,

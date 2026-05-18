@@ -29,7 +29,21 @@ const TITLE_MAX        = 100;
 const TITLE_MIN        = 1;
 const INTENT_MD_MAX    = 2000;
 const INTENT_MD_MIN    = 50;
-const ALLOWED_ACTIONS  = ["handover_to_roadmap", "unsend"];
+// 11.U Block 1 (RFC-007-rev2 §B): nieuwe state-machine acties + legacy aliassen
+//   make_definitief   = nieuw (concept → definitief, vervangt handover_to_roadmap)
+//   back_to_concept   = nieuw (definitief → concept, vervangt unsend)
+//   dismiss           = nieuw (concept/definitief → dismissed)
+//   restore           = nieuw (dismissed → concept)
+//   handover_to_roadmap, unsend = legacy aliassen (blijven werken tot UI-refactor Block 2)
+//   create_pain_link  = nieuw (cd_intent_pain_point_links INSERT)
+//   delete_pain_link  = nieuw (cd_intent_pain_point_links DELETE)
+//   coverage_gauge    = nieuw (GROUP-BY pain_points.coverage_status)
+const ALLOWED_ACTIONS  = [
+  "handover_to_roadmap", "unsend",
+  "make_definitief", "back_to_concept", "dismiss", "restore",
+  "create_pain_link", "delete_pain_link", "coverage_gauge",
+];
+const STATUS_MIN_MOTIVATION = 20; // RFC-007-rev2 §C dismissal_motivation min-length
 
 async function handleIntents(req, res) {
   const user = await requireAuth(req, res);
@@ -67,9 +81,14 @@ async function handleIntents(req, res) {
       const id     = req.query.id;
       const action = req.query.action;
 
-      // ── Action-routes (handover_to_roadmap / unsend) ─────────────────────
+      // ── Action-routes ─────────────────────────────────────────────────
+      // 11.U Block 1: coverage_gauge gebruikt canvas_id i.p.v. intent-id;
+      // pain_link-acties gebruiken body.pain_point_id.
+      if (action === "coverage_gauge") {
+        return await handleCoverageGauge({ supabase, res, canvasId: req.query.canvas_id });
+      }
       if (id && action) {
-        return await handleAction({ supabase, res, id, action });
+        return await handleAction({ supabase, res, id, action, body: req.body || {}, tenantId, user });
       }
 
       // ── Create intent ────────────────────────────────────────────────────
@@ -175,37 +194,63 @@ async function handleIntents(req, res) {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function handleAction({ supabase, res, id, action }) {
+async function handleAction({ supabase, res, id, action, body, tenantId, user }) {
   if (!ALLOWED_ACTIONS.includes(action)) {
     return res.status(400).json({ error: `action moet één van: ${ALLOWED_ACTIONS.join(', ')}` });
   }
 
-  // Lees huidige status voor state-machine-validatie
+  // 11.U Block 1: nieuwe link-acties (intent-pain-point links)
+  if (action === "create_pain_link") {
+    return await handleCreatePainLink({ supabase, res, intentId: id, body, tenantId });
+  }
+  if (action === "delete_pain_link") {
+    return await handleDeletePainLink({ supabase, res, intentId: id, body });
+  }
+
+  // Lees huidige intent voor state-machine-validatie + canvas-id voor events
   const { data: existing, error: selErr } = await supabase
     .from("cd_improvement_intents")
-    .select("id, status, handover_to_roadmap_at")
+    .select("id, status, handover_to_roadmap_at, canvas_id, tenant_id, intent_md")
     .eq("id", id)
     .maybeSingle();
   if (selErr) return res.status(500).json({ error: selErr.message });
   if (!existing) return res.status(404).json({ error: "intent niet gevonden of geen toegang" });
 
   let patch;
-  if (action === "handover_to_roadmap") {
+  let eventType = null;
+  let motivation = null;
+
+  if (action === "handover_to_roadmap" || action === "make_definitief") {
+    // 11.U Block 1: legacy + nieuwe naam allebei → status='definitief'
     if (existing.status !== "concept") {
-      return res.status(409).json({ error: "alleen concept-intents kunnen verstuurd worden" });
+      return res.status(409).json({ error: "alleen concept-intents kunnen definitief gemaakt worden" });
     }
-    patch = {
-      status: "verstuurd",
-      handover_to_roadmap_at: new Date().toISOString(),
-    };
-  } else { // unsend
-    if (existing.status !== "verstuurd") {
-      return res.status(409).json({ error: "alleen verstuurde intents kunnen teruggetrokken worden" });
+    patch = { status: "definitief", handover_to_roadmap_at: new Date().toISOString() };
+    eventType = "made_definitief";
+  } else if (action === "unsend" || action === "back_to_concept") {
+    if (existing.status !== "definitief") {
+      return res.status(409).json({ error: "alleen definitieve intents kunnen terug naar concept" });
     }
-    patch = {
-      status: "concept",
-      handover_to_roadmap_at: null,
-    };
+    patch = { status: "concept", handover_to_roadmap_at: null };
+    eventType = "back_to_concept";
+  } else if (action === "dismiss") {
+    if (!["concept", "definitief"].includes(existing.status)) {
+      return res.status(409).json({ error: "alleen concept/definitief kunnen dismissed worden" });
+    }
+    motivation = (body && typeof body.motivation === "string") ? body.motivation.trim() : "";
+    if (motivation.length < STATUS_MIN_MOTIVATION) {
+      return res.status(400).json({ error: `motivation moet minimaal ${STATUS_MIN_MOTIVATION} tekens zijn` });
+    }
+    patch = { status: "dismissed" };
+    eventType = "dismissed";
+  } else if (action === "restore") {
+    if (existing.status !== "dismissed") {
+      return res.status(409).json({ error: "alleen dismissed-intents kunnen restored worden" });
+    }
+    patch = { status: "concept" };
+    eventType = "restored";
+  } else {
+    return res.status(400).json({ error: `action niet ondersteund: ${action}` });
   }
 
   const { data, error: upErr } = await supabase
@@ -214,8 +259,97 @@ async function handleAction({ supabase, res, id, action }) {
     .eq("id", id)
     .select()
     .single();
-  if (upErr) return res.status(500).json({ error: upErr.message });
+  if (upErr) {
+    if (upErr.code === "23514") return res.status(400).json({ error: upErr.message });
+    return res.status(500).json({ error: upErr.message });
+  }
+
+  // 11.U Block 1: schrijf audit-event (RFC-007-rev2 §D)
+  if (eventType) {
+    const eventRow = {
+      intent_id: id,
+      event_type: eventType,
+      actor_user_id: user?.id || null,
+      tenant_id: existing.tenant_id || tenantId,
+      canvas_id: existing.canvas_id,
+      metadata: motivation ? { motivation } : {},
+    };
+    const { error: evErr } = await supabase.from("cd_improvement_intent_events").insert(eventRow);
+    if (evErr) {
+      // event-write-fout is non-fatal voor UI maar log voor debug
+      console.error("[improvement_intent_events] insert mislukt:", evErr.message);
+    }
+  }
+
   return res.status(200).json({ intent: data });
+}
+
+// 11.U Block 1: link-handlers voor cd_intent_pain_point_links
+async function handleCreatePainLink({ supabase, res, intentId, body, tenantId }) {
+  const painPointId = body?.pain_point_id;
+  if (!intentId || !painPointId) {
+    return res.status(400).json({ error: "intent_id en pain_point_id zijn verplicht" });
+  }
+
+  // Haal canvas_id uit intent (voor cross-canvas-validatie zal trigger validateren)
+  const { data: intent, error: intErr } = await supabase
+    .from("cd_improvement_intents")
+    .select("canvas_id, tenant_id")
+    .eq("id", intentId)
+    .maybeSingle();
+  if (intErr) return res.status(500).json({ error: intErr.message });
+  if (!intent) return res.status(404).json({ error: "intent niet gevonden" });
+
+  const { data: link, error: insErr } = await supabase
+    .from("cd_intent_pain_point_links")
+    .insert({
+      intent_id: intentId,
+      pain_point_id: painPointId,
+      canvas_id: intent.canvas_id,
+      tenant_id: intent.tenant_id || tenantId,
+    })
+    .select()
+    .single();
+
+  if (insErr) {
+    if (insErr.code === "23505") return res.status(409).json({ error: "intent + pijnpunt zijn al gekoppeld" });
+    if (insErr.message && insErr.message.includes("cross-canvas")) return res.status(400).json({ error: "cross-canvas-koppeling niet toegestaan" });
+    if (insErr.message && insErr.message.includes("cross-tenant")) return res.status(400).json({ error: "cross-tenant-koppeling niet toegestaan" });
+    return res.status(500).json({ error: insErr.message });
+  }
+  return res.status(201).json({ link });
+}
+
+async function handleDeletePainLink({ supabase, res, intentId, body }) {
+  const painPointId = body?.pain_point_id;
+  if (!intentId || !painPointId) {
+    return res.status(400).json({ error: "intent_id en pain_point_id zijn verplicht" });
+  }
+  const { error: delErr } = await supabase
+    .from("cd_intent_pain_point_links")
+    .delete()
+    .eq("intent_id", intentId)
+    .eq("pain_point_id", painPointId);
+  if (delErr) return res.status(500).json({ error: delErr.message });
+  return res.status(204).end();
+}
+
+// 11.U Block 1: coverage-gauge endpoint — GROUP-BY pain-point coverage_status per canvas.
+async function handleCoverageGauge({ supabase, res, canvasId }) {
+  if (!canvasId) return res.status(400).json({ error: "canvas_id is verplicht" });
+  const { data, error } = await supabase
+    .from("cd_pain_points")
+    .select("coverage_status")
+    .eq("canvas_id", canvasId);
+  if (error) return res.status(500).json({ error: error.message });
+
+  const gauge = { open: 0, addressed: 0, dismissed: 0, total: 0 };
+  (data || []).forEach(row => {
+    const s = row.coverage_status || "open";
+    if (gauge[s] !== undefined) gauge[s] += 1;
+    gauge.total += 1;
+  });
+  return res.status(200).json({ gauge });
 }
 
 function validateIntentInput({ canvas_id, title, intent_md }) {
