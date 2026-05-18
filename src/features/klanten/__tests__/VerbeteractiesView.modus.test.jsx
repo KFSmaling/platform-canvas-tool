@@ -118,14 +118,13 @@ describe("11.U Block 2 — VerbeteractiesView ModusToggle + Doorloop (volledig i
     expect(screen.queryByTestId("verbeteracties-concept-list")).not.toBeInTheDocument();
   });
 
-  test("2. Toggle naar Overzicht → switch + actionbar zichtbaar", async () => {
+  test("2. Toggle naar Overzicht → OverzichtView empty-state (geen pijnpunten gemockt)", async () => {
     await renderAndOpenFase3();
     const overzichtBtn = screen.getByTestId("verbeteracties-modus-toggle-option-overzicht");
     await act(async () => { fireEvent.click(overzichtBtn); });
     expect(screen.queryByTestId("doorloop-view")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("doorloop-empty")).not.toBeInTheDocument();
-    expect(screen.getByTestId("verbeteracties-actionbar")).toBeInTheDocument();
-    expect(screen.getByTestId("verbeteracties-concept-list")).toBeInTheDocument();
+    // 11.U Block 3b: Overzicht-modus rendert nu OverzichtView matrix-tabel (S4-flow obsolete)
+    expect(screen.getByTestId("overzicht-empty")).toBeInTheDocument();
   });
 
   test("3. ModusToggle rendert beide opties", async () => {
@@ -138,13 +137,14 @@ describe("11.U Block 2 — VerbeteractiesView ModusToggle + Doorloop (volledig i
     expect(screen.getByTestId("verbeteracties-modus-toggle-option-overzicht")).toHaveAttribute("aria-selected", "false");
   });
 
-  test("4. Klik Overzicht-toggle-optie → aria-selected wisselt", async () => {
+  test("4. Klik Overzicht-toggle-optie → aria-selected wisselt + matrix-view of empty zichtbaar", async () => {
     await renderAndOpenFase3();
     const overzichtBtn = screen.getByTestId("verbeteracties-modus-toggle-option-overzicht");
     await act(async () => { fireEvent.click(overzichtBtn); });
     expect(screen.getByTestId("verbeteracties-modus-toggle-option-overzicht")).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("verbeteracties-modus-toggle-option-doorloop")).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByTestId("verbeteracties-actionbar")).toBeInTheDocument();
+    // 11.U Block 3b: matrix-tabel of empty-state ipv S4-actionbar
+    expect(screen.getByTestId("overzicht-empty")).toBeInTheDocument();
   });
 
   test("5. Inzichten-knop verborgen op fase 3 (KlantenWerkblad header-extensie)", async () => {

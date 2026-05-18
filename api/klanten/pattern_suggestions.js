@@ -355,11 +355,21 @@ async function handleAction({ supabase, req, res, id, action, tenantId, userRole
       return res.status(409).json({ error: "intent is al dismissed" });
     }
     eventType = "dismissed";
+    // 11.U Block 3b: motivation kan nu via body meekomen (MotivatieInput-flow);
+    // bij ontbreken vallen we terug op legacy-stub (≥20 chars) zodat
+    // bestaande UI-callers blijven werken. Full-retirement van de stub vereist
+    // dat alle reject-callers expliciet motivation meegeven — vervolg-cleanup.
+    const rejectBody = req?.body || {};
+    const providedMotivation = typeof rejectBody.motivation === "string" ? rejectBody.motivation.trim() : "";
+    const finalMotivation = providedMotivation.length >= 20
+      ? providedMotivation
+      : LEGACY_REJECT_MOTIVATION;
     updateFields = {
       status: "dismissed",
       dismissed_at: new Date().toISOString(),
-      dismissal_motivation: LEGACY_REJECT_MOTIVATION,
+      dismissal_motivation: finalMotivation,
     };
+    metadataExtra.motivation_source = providedMotivation.length >= 20 ? "user" : "legacy_stub";
   } else if (action === "unmark") {
     // Legacy unmark: was 'accepted'→'open' of 'promoted'→'open'.
     // Nieuwe model: vanaf 'definitief' → back_to_concept; vanaf 'concept' = no-op.

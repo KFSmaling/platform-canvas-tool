@@ -596,6 +596,22 @@ const LABEL_FALLBACKS = {
   "klanten.verbeteracties.reopen.confirm.body":      "Dit verwijdert {N} gekoppelde verbeteracties. Doorgaan?",
   "klanten.verbeteracties.reopen.confirm.bevestig":  "Ja, opnieuw openzetten",
   "klanten.verbeteracties.reopen.confirm.annuleer":  "Annuleer",
+  // 11.U Block 3b — Sub-header + CoverageGauge + OverzichtView matrix
+  "klanten.verbeteracties.subheader.titel":          "Verbeteracties · fase 3",
+  "klanten.verbeteracties.subheader.subtitle.open":  "Nog {N} pijnpunt{plural} zonder actie",
+  "klanten.verbeteracties.subheader.subtitle.alle_gedaan": "Alle pijnpunten geadresseerd ✓",
+  "klanten.verbeteracties.subheader.subtitle.leeg":  "Geen pijnpunten gedefinieerd",
+  "klanten.verbeteracties.gauge.tooltip":            "{addressed} geadresseerd · {dismissed} genegeerd · {open} open",
+  "klanten.verbeteracties.gauge.label.aria":         "Coverage: {addressed} van {total} geadresseerd",
+  "klanten.verbeteracties.overzicht.kolom.nr":       "#",
+  "klanten.verbeteracties.overzicht.kolom.pijnpunt": "Pijnpunt",
+  "klanten.verbeteracties.overzicht.kolom.status":   "Status",
+  "klanten.verbeteracties.overzicht.kolom.acties":   "Gekoppelde acties",
+  "klanten.verbeteracties.overzicht.kolom.actie":    "Actie",
+  "klanten.verbeteracties.overzicht.actie.doorloop": "Doorloop",
+  "klanten.verbeteracties.overzicht.actie.bekijken": "Bekijken",
+  "klanten.verbeteracties.overzicht.empty":          "Geen pijnpunten — gebruik fase 2 om toe te voegen",
+  "klanten.verbeteracties.overzicht.expansion.hint": "Voor uitgebreide AI-flow → klik 'Doorloop' rechts om volledige focus-modus te openen.",
 };
 
 const AppConfigContext = createContext(null);

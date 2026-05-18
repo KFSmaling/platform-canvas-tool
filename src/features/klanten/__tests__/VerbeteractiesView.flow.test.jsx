@@ -162,14 +162,14 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
     expect(screen.queryByTestId("werkblad-header-tab-4")).not.toBeInTheDocument();
   });
 
-  test("2. Activeer fase 3 → VerbeteractiesView + counter + actionbar zichtbaar", async () => {
+  test.skip("2. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] Activeer fase 3 → VerbeteractiesView + counter + actionbar zichtbaar", async () => {
     await renderWerkblad();
     await openFase3();
     expect(screen.getByTestId("verbeteracties-counter")).toBeInTheDocument();
     expect(screen.getByTestId("verbeteracties-actionbar")).toBeInTheDocument();
   });
 
-  test("3. ActionBar: 4 AI-knoppen + Eigen actie-knop", async () => {
+  test.skip("3. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] ActionBar: 4 AI-knoppen + Eigen actie-knop", async () => {
     await renderWerkblad();
     await openFase3();
     expect(screen.getByTestId("verbeteracties-knop-cluster")).toBeInTheDocument();
@@ -179,7 +179,7 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
     expect(screen.getByTestId("verbeteracties-knop-eigen-actie")).toBeInTheDocument();
   });
 
-  test("4. ConceptList rendert suggestions (open) + concept-intents", async () => {
+  test.skip("4. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] ConceptList rendert suggestions (open) + concept-intents", async () => {
     klantenService.listPatternSuggestions.mockResolvedValue({
       data: [sampleSuggestion({ id: "s-a", current_status: "open" })],
       error: null,
@@ -196,7 +196,7 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
     expect(screen.getByTestId("counter-concept")).toHaveTextContent("2");
   });
 
-  test("5. DefinitiefList rendert intents met status=verstuurd", async () => {
+  test.skip("5. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] DefinitiefList rendert intents met status=verstuurd", async () => {
     klantenService.listIntents.mockResolvedValue({
       data: [sampleIntent({ id: "i-def", status: "verstuurd", title: "Definitieve actie",
         handover_to_roadmap_at: "2026-05-14T10:00:00Z" })],
@@ -209,7 +209,7 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
     expect(screen.getByTestId("counter-definitief")).toHaveTextContent("1");
   });
 
-  test("6. Maak definitief op concept-suggestion → opent PromoteToIntentModal", async () => {
+  test.skip("6. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] Maak definitief op concept-suggestion → opent PromoteToIntentModal", async () => {
     klantenService.listPatternSuggestions.mockResolvedValue({
       data: [sampleSuggestion({ id: "s-prom", current_status: "open" })],
       error: null,
@@ -225,7 +225,7 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
 
   // K-fix-2 Bev. 1: confirm-dialog weggehaald (was Roadmap-mention).
   // Test asserteert nu: GEEN confirm, direct handoverIntentToRoadmap-call.
-  test("7. Maak definitief op concept-intent → handoverIntentToRoadmap zonder confirm-dialog", async () => {
+  test.skip("7. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] Maak definitief op concept-intent → handoverIntentToRoadmap zonder confirm-dialog", async () => {
     klantenService.listIntents.mockResolvedValue({
       data: [sampleIntent({ id: "i-c", status: "concept" })],
       error: null,
@@ -247,7 +247,7 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
     }
   });
 
-  test("8. Definitief-intent overflow-menu → 'Terug naar concept' → unsendIntent", async () => {
+  test.skip("8. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] Definitief-intent overflow-menu → 'Terug naar concept' → unsendIntent", async () => {
     klantenService.listIntents.mockResolvedValue({
       data: [sampleIntent({ id: "i-def", status: "verstuurd" })],
       error: null,
@@ -276,7 +276,7 @@ describe("VerbeteractiesView — S4 RFC-007 C1", () => {
     expect(screen.queryByRole("tab", { name: /Werkruimte/i })).not.toBeInTheDocument();
   });
 
-  test("11. Suggestions met status=promoted/rejected verborgen (mapping §3.1)", async () => {
+  test.skip("11. [Block 3b obsolete — S4 RFC-007 C1 flow vervangen door OverzichtView matrix-tabel] Suggestions met status=promoted/rejected verborgen (mapping §3.1)", async () => {
     klantenService.listPatternSuggestions.mockResolvedValue({
       data: [
         sampleSuggestion({ id: "s-prom", current_status: "promoted", text_md: "AAN-promoted" }),
