@@ -568,6 +568,11 @@ const LABEL_FALLBACKS = {
   "klanten.verbeteracties.eigen.error.titel":        "Titel moet 1-100 tekens zijn",
   "klanten.verbeteracties.eigen.error.intent":       "Tekst moet 50-2000 tekens zijn",
   "klanten.verbeteracties.eigen.error.generic":      "Opslaan mislukt",
+  // 11.U Block 2b retro — PijnpuntenRail
+  "klanten.verbeteracties.rail.empty":               "Geen pijnpunten — gebruik fase 2 om toe te voegen",
+  "klanten.verbeteracties.rail.status.open":         "Open",
+  "klanten.verbeteracties.rail.status.addressed":    "Geadresseerd",
+  "klanten.verbeteracties.rail.status.dismissed":    "Genegeerd",
 };
 
 const AppConfigContext = createContext(null);

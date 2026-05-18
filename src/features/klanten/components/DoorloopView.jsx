@@ -13,14 +13,17 @@
 import React from "react";
 import { ChevronLeft, ChevronRight, Inbox } from "lucide-react";
 import PijnpuntFocusCard from "./PijnpuntFocusCard";
+import PijnpuntenRail from "./PijnpuntenRail";
 
 export default function DoorloopView({
   painPoints,
+  dimensions = [],
   intents,
   links,
   currentIdx,
   onPrev,
   onNext,
+  onJumpToIdx,
   // Inline-state per focus
   lensPickerOpenFor,
   lensLoading,
@@ -76,41 +79,54 @@ export default function DoorloopView({
   const isEigenOpenHere = eigenActieEditFor === painPoint.id;
 
   return (
-    <div className="space-y-5" data-testid="doorloop-view">
-      {/* Top-strip */}
-      <div className="flex items-center justify-between">
-        <div
-          className="text-xs font-bold uppercase tracking-widest text-slate-500"
-          data-testid="doorloop-counter"
-        >
-          {lbl("klanten.verbeteracties.doorloop.counter", "Pijnpunt")} [{safeIdx + 1}/{total}]
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onPrev}
-            disabled={safeIdx === 0}
-            data-testid="doorloop-prev"
-            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-700 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-2 rounded disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft size={12} />
-            {lbl("klanten.verbeteracties.actie.vorige", "Vorige")}
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={safeIdx === total - 1}
-            data-testid="doorloop-next"
-            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-700 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-2 rounded disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {lbl("klanten.verbeteracties.actie.volgende", "Volgende")}
-            <ChevronRight size={12} />
-          </button>
-        </div>
-      </div>
+    <div className="flex gap-4 min-h-0" data-testid="doorloop-view">
+      {/* Links — 280px rail (11.U Block 2b retro) */}
+      <aside className="w-[280px] flex-shrink-0 overflow-y-auto border-r border-slate-200 max-h-[calc(100vh-280px)]">
+        <PijnpuntenRail
+          painPoints={painPoints}
+          dimensions={dimensions}
+          currentIdx={safeIdx}
+          onClickPainPoint={onJumpToIdx}
+          appLabel={appLabel}
+        />
+      </aside>
 
-      {/* Focus card */}
-      <div className="max-w-3xl mx-auto">
+      {/* Rechts — focus-area met top-strip + focus-card */}
+      <div className="flex-1 min-w-0 overflow-y-auto space-y-5">
+        {/* Top-strip */}
+        <div className="flex items-center justify-between">
+          <div
+            className="text-xs font-bold uppercase tracking-widest text-slate-500"
+            data-testid="doorloop-counter"
+          >
+            {lbl("klanten.verbeteracties.doorloop.counter", "Pijnpunt")} [{safeIdx + 1}/{total}]
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={safeIdx === 0}
+              data-testid="doorloop-prev"
+              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-700 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-2 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={12} />
+              {lbl("klanten.verbeteracties.actie.vorige", "Vorige")}
+            </button>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={safeIdx === total - 1}
+              data-testid="doorloop-next"
+              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-700 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-2 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {lbl("klanten.verbeteracties.actie.volgende", "Volgende")}
+              <ChevronRight size={12} />
+            </button>
+          </div>
+        </div>
+
+        {/* Focus card */}
+        <div>
         <PijnpuntFocusCard
           painPoint={painPoint}
           painIndex={safeIdx}
@@ -133,6 +149,7 @@ export default function DoorloopView({
           onEditIntent={onEditIntent}
           appLabel={appLabel}
         />
+        </div>
       </div>
     </div>
   );

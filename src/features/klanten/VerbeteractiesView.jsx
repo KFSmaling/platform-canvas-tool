@@ -146,6 +146,12 @@ export default function VerbeteractiesView({
     resetInlineState();
     setCurrentFocusIdx(i => Math.max(0, Math.min(sortedPainPoints.length - 1, i + delta)));
   }
+  // 11.U Block 2b retro: directe sprong vanuit PijnpuntenRail-klik. Reset inline-state
+  // analoog moveFocus zodat LensPicker/AiDraft/EigenActie sluiten bij wisseling.
+  function jumpToIdx(idx) {
+    resetInlineState();
+    setCurrentFocusIdx(Math.max(0, Math.min(sortedPainPoints.length - 1, idx)));
+  }
 
   // ── 11.U Block 2b — Doorloop-handlers ──────────────────────────────────────
   // Choice-cards
@@ -505,11 +511,13 @@ export default function VerbeteractiesView({
           )}
           <DoorloopView
             painPoints={sortedPainPoints}
+            dimensions={dimensions}
             intents={intents || []}
             links={intentPainLinks || []}
             currentIdx={currentFocusIdx}
             onPrev={() => moveFocus(-1)}
             onNext={() => moveFocus(+1)}
+            onJumpToIdx={jumpToIdx}
             lensPickerOpenFor={lensPickerOpenFor}
             lensLoading={lensLoading}
             aiDraftFor={aiDraftFor}
