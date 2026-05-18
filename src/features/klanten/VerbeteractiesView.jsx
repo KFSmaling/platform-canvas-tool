@@ -47,6 +47,8 @@ import ModusToggle from "../../shared/components/ModusToggle";
 import DoorloopView from "./components/DoorloopView";
 import MotivatieInput from "./components/MotivatieInput";
 import { suggestLens } from "./components/lensSuggestion";
+import CoverageGauge from "./components/CoverageGauge";
+import OverzichtView from "./components/OverzichtView";
 import * as klantenService from "./services/klanten.service";
 import SuggestionCard from "./SuggestionCard";
 import IntentCard from "./IntentCard";
@@ -128,6 +130,19 @@ export default function VerbeteractiesView({
   // 11.U Block 3 — F-retro-1 + Fix 3 + Fix 4
   const [dismissModalFor, setDismissModalFor] = useState(null);        // painPoint | null
   const [reopenConfirmFor, setReopenConfirmFor] = useState(null);      // { painPoint, linkCount } | null
+
+  // 11.U Block 3b: coverage-tellingen real-time uit painPoints-prop (geen extra round-trip)
+  const coverageCounts = useMemo(() => {
+    const counts = { open: 0, addressed: 0, dismissed: 0, total: 0 };
+    (painPoints || []).forEach(pp => {
+      const status = pp.coverage_status || "open";
+      counts.total += 1;
+      if (status === "addressed") counts.addressed += 1;
+      else if (status === "dismissed") counts.dismissed += 1;
+      else counts.open += 1;
+    });
+    return counts;
+  }, [painPoints]);
 
   // Sortering pijnpunten voor Doorloop: open eerst, dan addressed, dan dismissed;
   // binnen elke groep op created_at ASC.
@@ -559,17 +574,49 @@ export default function VerbeteractiesView({
           "Acties starten als Concept en kunnen Definitief gemaakt worden. Plan en uitvoering volgt in het Veranderprogramma-werkblad.")}
       </div>
 
-      {/* 11.U Block 2: ModusToggle Doorloop/Overzicht */}
-      <div className="mb-5 flex items-center justify-between">
-        <ModusToggle
-          value={modus}
-          onChange={setModus}
-          options={[
-            { value: "doorloop",  label: appLabel("klanten.verbeteractie.modus.doorloop",  "Doorloop") },
-            { value: "overzicht", label: appLabel("klanten.verbeteractie.modus.overzicht", "Overzicht") },
-          ]}
-          testIdPrefix="verbeteracties-modus-toggle"
-        />
+      {/* 11.U Block 3b — sub-header met titel + dyn-subtitle + CoverageGauge + ModusToggle */}
+      <div
+        className="mb-5 flex flex-wrap items-center justify-between gap-3 px-2 py-3 border-b border-slate-200"
+        data-testid="verbeteracties-sub-header"
+      >
+        <div>
+          <h2 className="text-base font-semibold text-slate-900" data-testid="verbeteracties-sub-header-titel">
+            {appLabel("klanten.verbeteracties.subheader.titel", "Verbeteracties · fase 3")}
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5" data-testid="verbeteracties-sub-header-subtitle">
+            {(() => {
+              const { open: ovOpen, total: ovTotal } = coverageCounts;
+              if (ovTotal === 0) {
+                return appLabel("klanten.verbeteracties.subheader.subtitle.leeg", "Geen pijnpunten gedefinieerd");
+              }
+              if (ovOpen === 0) {
+                return appLabel("klanten.verbeteracties.subheader.subtitle.alle_gedaan", "Alle pijnpunten geadresseerd ✓");
+              }
+              const plural = ovOpen === 1 ? "" : "en";
+              return appLabel("klanten.verbeteracties.subheader.subtitle.open", "Nog {N} pijnpunt{plural} zonder actie")
+                .replace("{N}", ovOpen)
+                .replace("{plural}", plural);
+            })()}
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <CoverageGauge
+            open={coverageCounts.open}
+            addressed={coverageCounts.addressed}
+            dismissed={coverageCounts.dismissed}
+            total={coverageCounts.total}
+            appLabel={appLabel}
+          />
+          <ModusToggle
+            value={modus}
+            onChange={setModus}
+            options={[
+              { value: "doorloop",  label: appLabel("klanten.verbeteractie.modus.doorloop",  "Doorloop") },
+              { value: "overzicht", label: appLabel("klanten.verbeteractie.modus.overzicht", "Overzicht") },
+            ]}
+            testIdPrefix="verbeteracties-modus-toggle"
+          />
+        </div>
       </div>
 
       {/* Doorloop-modus — Block 2b: volledig functioneel */}
@@ -622,202 +669,33 @@ export default function VerbeteractiesView({
         </>
       )}
 
-      {/* Intro — alleen in Overzicht-modus */}
+      {/* 11.U Block 3b — Overzicht-modus: matrix-tabel + inline-expansion + Doorloop-jump */}
       {modus === "overzicht" && (
-      <>
-      <div className="mb-6">
-        <p className="text-sm text-slate-500 italic mb-4 max-w-3xl">
-          {appLabel("klanten.verbeteractie.intro", "Verbeteracties starten als concept — vanuit AI-patroonherkenning of als eigen actie. Bewerk wat moet, verwijder wat niet klopt, maak definitief wat blijft.")}
-        </p>
-
-        {!hasPainPoints && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-4 py-3 rounded mb-4">
-            {appLabel("klanten.verbeteractie.empty.geen_pijnpunten", "Voeg eerst pijnpunten toe in fase 2 voordat je AI-analyse draait. Een eigen actie toevoegen kan altijd.")}
-          </div>
-        )}
-
-        {/* ActionBar — 4 AI-knoppen + Eigen actie (F6 spacing-tokens via gap-2) */}
-        <div className="flex flex-wrap items-center gap-2" data-testid="verbeteracties-actionbar">
-          {AI_BUTTONS.map(btn => {
-            const isLoading = busyAction?.action === btn.action;
-            return (
-              <AiIconButton
-                key={btn.action}
-                variant="generate"
-                loading={isLoading}
-                disabled={!hasPainPoints || (!!busyAction && !isLoading)}
-                onClick={() => handleAiClick(btn.action)}
-                tooltip={appLabel(btn.helperKey, btn.helperFallback)}
-                data-testid={`verbeteracties-knop-${btn.action}`}
-                label={isLoading
-                  ? appLabel("klanten.analyse.loading", "AI denkt na…")
-                  : appLabel(btn.labelKey, btn.labelFallback)}
-              />
-            );
-          })}
-          <button
-            type="button"
-            onClick={openCreateIntent}
-            disabled={!!busyAction}
-            data-testid="verbeteracties-knop-eigen-actie"
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-[var(--color-primary)] border border-slate-300 hover:border-slate-500 px-3 py-2 rounded-sm transition-colors disabled:opacity-50 ml-2"
-          >
-            <Plus size={12} />
-            {appLabel("klanten.verbeteractie.knop.eigen_actie", "Eigen actie")}
-          </button>
-          {isReloading && (
-            <Loader2 size={14} className="animate-spin text-slate-400 ml-2" data-testid="verbeteracties-inline-spinner" />
+        <>
+          {globalError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded mb-4 flex items-center justify-between">
+              <span>{globalError.message || appLabel("klanten.verbeteractie.error.generic", "Actie mislukt")}</span>
+              <button
+                type="button"
+                onClick={() => { setGlobalError(null); reload(); }}
+                className="text-[10px] font-bold uppercase tracking-widest text-red-700 hover:text-red-900 ml-3"
+              >
+                {appLabel("klanten.verbeteractie.error.retry", "Opnieuw")}
+              </button>
+            </div>
           )}
-        </div>
-      </div>
-
-      {/* Counter */}
-      <div className="text-xs text-slate-500 mb-4" data-testid="verbeteracties-counter">
-        <span data-testid="counter-concept">{conceptEntries.length}</span>{" "}
-        {appLabel("klanten.verbeteractie.counter.concept", "concept")}
-        {" "}<span className="text-slate-400">·</span>{" "}
-        <span data-testid="counter-definitief">{definitiefEntries.length}</span>{" "}
-        {appLabel("klanten.verbeteractie.counter.definitief", "definitief")}
-      </div>
-
-      {/* Global error */}
-      {globalError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded mb-4 flex items-center justify-between">
-          <span>{globalError.message || appLabel("klanten.verbeteractie.error.generic", "Actie mislukt")}</span>
-          <button
-            type="button"
-            onClick={() => { setGlobalError(null); reload(); }}
-            className="text-[10px] font-bold uppercase tracking-widest text-red-700 hover:text-red-900 ml-3"
-          >
-            {appLabel("klanten.verbeteractie.error.retry", "Opnieuw")}
-          </button>
-        </div>
-      )}
-
-      {/* Concept-lijst */}
-      <section className="mb-8" data-testid="verbeteracties-concept-list">
-        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-3">
-          {appLabel("klanten.verbeteractie.sectie.concept", "Concept")}
-        </h3>
-        {conceptEntries.length === 0 ? (
-          <p className="text-sm text-slate-400 italic" data-testid="verbeteracties-concept-leeg">
-            {appLabel("klanten.verbeteractie.concept.leeg", "Nog geen concept-verbeteracties — klik een AI-knop of voeg een eigen actie toe.")}
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {conceptEntries.map(entry => entry._type === "suggestion" ? (
-              <div key={`s-${entry.id}`} className="space-y-1">
-                <SuggestionCard
-                  suggestion={entry}
-                  hasParent={!!entry.parent_id}
-                  busy={!!busyAction && busyAction.id === entry.id}
-                  onAccept={null}             /* "Markeer" obsoleet binnen concept-bucket — vervangen door Maak definitief */
-                  onRefineEdit={openEditSuggestion}
-                  onRefineDeeper={openDeeperSuggestion}
-                  onReject={handleReject}
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => openPromoteFromSuggestion(entry)}
-                    disabled={!!busyAction}
-                    data-testid={`verbeteracties-maakdefinitief-suggestion-${entry.id}`}
-                    className="text-xs font-bold text-[var(--color-primary)] hover:text-[var(--color-accent-hover)] border border-[var(--color-primary)]/30 hover:border-[var(--color-primary)] px-3 py-1.5 rounded-sm transition-colors disabled:opacity-50"
-                  >
-                    {appLabel("klanten.verbeteractie.actie.maak_definitief", "Maak definitief")}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <IntentCard
-                key={`i-${entry.id}`}
-                intent={entry}
-                busy={!!busyAction && busyAction.id === entry.id}
-                onEdit={openEditIntent}
-                onDelete={handleDeleteIntent}
-                onHandover={handleHandoverIntent}
-                onUnsend={handleUnsendIntent}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Definitief-lijst */}
-      <section className="mb-8" data-testid="verbeteracties-definitief-list">
-        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-3">
-          {appLabel("klanten.verbeteractie.sectie.definitief", "Definitief")}
-        </h3>
-        {definitiefEntries.length === 0 ? (
-          <p className="text-sm text-slate-400 italic" data-testid="verbeteracties-definitief-leeg">
-            {appLabel("klanten.verbeteractie.definitief.leeg", "Nog geen definitieve verbeteracties.")}
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {definitiefEntries.map(entry => (
-              <div key={`def-${entry.id}`} className="relative">
-                <IntentCard
-                  intent={entry}
-                  busy={!!busyAction && busyAction.id === entry.id}
-                  onEdit={openEditIntent}
-                  onDelete={handleDeleteIntent}
-                  /* "Terug naar concept" zit niet meer op de card-primary — zie overflow hieronder */
-                  onUnsend={null}
-                  onHandover={null}
-                />
-                {/* Overflow-menu (RFC §3.3 + C1.6) — "Terug naar concept" niet primary */}
-                <div className="absolute top-2 right-2">
-                  <button
-                    type="button"
-                    aria-label={appLabel("klanten.verbeteractie.actie.overflow", "Meer opties")}
-                    onClick={() => setOverflowOpenId(overflowOpenId === entry.id ? null : entry.id)}
-                    data-testid={`verbeteracties-overflow-${entry.id}`}
-                    className="w-7 h-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-[var(--color-primary)] hover:bg-slate-100 transition-colors"
-                  >
-                    <MoreVertical size={14} />
-                  </button>
-                  {overflowOpenId === entry.id && (
-                    <>
-                      <div className="fixed inset-0 z-30" onClick={() => setOverflowOpenId(null)} />
-                      <div
-                        className="absolute right-0 mt-1 min-w-[180px] bg-white border border-slate-200 rounded-md shadow-lg z-40 py-1"
-                        role="menu"
-                        data-testid={`verbeteracties-overflow-menu-${entry.id}`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleUnsendIntent(entry)}
-                          disabled={!!busyAction}
-                          className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                          data-testid={`verbeteracties-terug-naar-concept-${entry.id}`}
-                        >
-                          {appLabel("klanten.verbeteractie.actie.terug_naar_concept", "Terug naar concept")}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Verwijderd-collapse (rejected-patterns) */}
-      {deletedSuggestions.length > 0 && (
-        <div className="mb-6">
-          <CollapseSection
-            title={`${appLabel("klanten.verbeteractie.verwijderd.titel", "Verwijderd")} (${deletedSuggestions.length})`}
-            items={deletedSuggestions}
-            emptyMessage={appLabel("klanten.verbeteractie.verwijderd.leeg", "Niets verwijderd")}
-            actionLabel={appLabel("klanten.verbeteractie.verwijderd.herstel", "Herstellen")}
-            onAction={handleRestore}
-            testIdPrefix="verbeteracties-deleted"
-            busyId={busyAction?.action === "restore" ? busyAction.id : null}
+          <OverzichtView
+            painPoints={sortedPainPoints}
+            intents={intents || []}
+            links={intentPainLinks || []}
+            dimensions={dimensions}
+            onDoorloopJump={(idx) => { setModus("doorloop"); jumpToIdx(idx); }}
+            onChooseAi={(pp) => { setModus("doorloop"); jumpToIdx(sortedPainPoints.findIndex(p => p.id === pp.id)); handleChooseAi(pp); }}
+            onChooseEigen={(pp) => { setModus("doorloop"); jumpToIdx(sortedPainPoints.findIndex(p => p.id === pp.id)); handleChooseEigen(pp); }}
+            onChooseDismiss={(pp) => handleChooseDismiss(pp)}
+            appLabel={appLabel}
           />
-        </div>
-      )}
-      </>
+        </>
       )}
 
       {/* Modals */}

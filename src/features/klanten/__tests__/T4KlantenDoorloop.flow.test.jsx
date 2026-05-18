@@ -207,7 +207,7 @@ describe("T4 — Klanten-werkblad-doorloop fixes", () => {
     expect(screen.getByTestId("klanten-fase3-info-banner")).toHaveTextContent(/Concept.*Definitief|Veranderprogramma/i);
   });
 
-  test("12. B2.3: 5 AI-knoppen aanwezig in VerbeteractiesView ActionBar (incl. Algemeen)", async () => {
+  test.skip("12. B2.3 OBSOLETE (Block 3b refactor — S4 ActionBar verwijderd): 5 AI-knoppen aanwezig in VerbeteractiesView ActionBar (incl. Algemeen)", async () => {
     await renderWerkblad();
     fireEvent.click(screen.getByTestId("werkblad-header-tab-3"));
     // 11.U Block 2: default-modus = Doorloop; switch naar Overzicht voor actionbar.
