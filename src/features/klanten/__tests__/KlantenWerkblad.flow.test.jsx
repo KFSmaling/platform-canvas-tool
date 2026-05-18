@@ -60,6 +60,7 @@ jest.mock("../services/klanten.service", () => ({
   listPatternSuggestionEvents:    jest.fn(),
   // Stap 11.H — intents
   listIntents:                    jest.fn(),
+  listIntentsWithLinks:            jest.fn(),
   createIntent:                   jest.fn(),
   updateIntent:                   jest.fn(),
   deleteIntent:                   jest.fn(),
@@ -121,6 +122,7 @@ beforeEach(() => {
   // wordt nu in KlantenWerkblad geladen voor RapportView)
   klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
   klantenService.listIntents.mockResolvedValue({ data: [], error: null });
+  klantenService.listIntentsWithLinks.mockResolvedValue({ data: [], links: [], error: null });
   klantenService.fetchUploadsStatus.mockResolvedValue({ data: { hasUploads: false, hasIndexedChunks: false, uploadCount: 0, indexedChunkCount: 0 }, error: null });
 });
 

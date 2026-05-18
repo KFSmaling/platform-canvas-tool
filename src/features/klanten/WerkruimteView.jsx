@@ -40,6 +40,7 @@ export default function WerkruimteView({
   reloadSuggestions,
   // Stap 11.H: intents single source of truth (pass-through via KlantenWerkblad)
   intents,
+  intentPainLinks = [],   // 11.U Block 2b
   intentsLoading,
   intentsError,
   reloadIntents,
@@ -124,6 +125,7 @@ export default function WerkruimteView({
             suggestionsError={suggestionsError}
             reloadSuggestions={reloadSuggestions}
             intents={intents}
+            intentPainLinks={intentPainLinks}
             intentsLoading={intentsLoading}
             intentsError={intentsError}
             reloadIntents={reloadIntents}

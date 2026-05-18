@@ -355,7 +355,18 @@ export async function deletePatternSuggestion(id) {
 export async function listIntents(canvasId) {
   if (!canvasId) return { data: null, error: new Error("canvasId is required") };
   const { data, error } = await call("GET", `/api/klanten/improvement_intents?canvas_id=${encodeURIComponent(canvasId)}`);
-  return { data: data?.intents ?? [], error };
+  return { data: data?.intents ?? [], error, links: data?.links ?? [] };
+}
+
+/**
+ * 11.U Block 2b: listIntentsWithLinks — variant van listIntents die expliciet
+ * {data: intents, links: [...]} retourneert voor consumenten die beide nodig
+ * hebben (DoorloopView). Tijdelijke API tot Block 3 useIntents-hook refactor.
+ */
+export async function listIntentsWithLinks(canvasId) {
+  if (!canvasId) return { data: null, links: [], error: new Error("canvasId is required") };
+  const { data, error } = await call("GET", `/api/klanten/improvement_intents?canvas_id=${encodeURIComponent(canvasId)}`);
+  return { data: data?.intents ?? [], links: data?.links ?? [], error };
 }
 
 export async function createIntent({ canvasId, title, intentMd, vanuit, sourceSuggestionId, sortOrder }) {

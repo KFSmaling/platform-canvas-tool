@@ -74,7 +74,24 @@ async function handleIntents(req, res) {
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) return res.status(500).json({ error: error.message });
-      return res.status(200).json({ intents: data });
+
+      // 11.U Block 2b: include intent_pain_point_links voor Doorloop-view
+      // (anders zou frontend een aparte endpoint-call moeten doen).
+      const intentIds = (data || []).map(i => i.id);
+      let links = [];
+      if (intentIds.length > 0) {
+        const { data: linkRows, error: linkErr } = await supabase
+          .from("cd_intent_pain_point_links")
+          .select("*")
+          .in("intent_id", intentIds);
+        if (linkErr) {
+          // Niet-fataal — leeg array fallback, log voor diagnostiek
+          console.error("[improvement_intents GET] links-fetch faalde:", linkErr.message);
+        } else {
+          links = linkRows || [];
+        }
+      }
+      return res.status(200).json({ intents: data, links });
     }
 
     if (req.method === "POST") {

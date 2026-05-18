@@ -65,6 +65,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
   // dezelfde data zonder eigen hook-instance.
   const {
     intents,
+    links: intentPainLinks,
     loading: intentsLoading,
     error:   intentsError,
     reload:  reloadIntents,
@@ -520,6 +521,7 @@ export default function KlantenWerkblad({ canvasId, onClose }) {
           suggestionsError={suggestionsError}
           reloadSuggestions={reloadSuggestions}
           intents={intents}
+          intentPainLinks={intentPainLinks || []}
           intentsLoading={intentsLoading}
           intentsError={intentsError}
           reloadIntents={reloadIntents}

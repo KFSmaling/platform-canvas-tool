@@ -28,6 +28,11 @@ jest.mock("../services/klanten.service", () => ({
   unmarkPatternSuggestion:         jest.fn(),
   restorePatternSuggestion:        jest.fn(),
   listIntents:                     jest.fn(),
+  listIntentsWithLinks:            jest.fn(),
+  createIntentPainPointLink:       jest.fn(),
+  deleteIntentPainPointLink:       jest.fn(),
+  restorePainPoint:                jest.fn(),
+  dismissPainPoint:                jest.fn(),
   createIntent:                    jest.fn(),
   updateIntent:                    jest.fn(),
   deleteIntent:                    jest.fn(),
@@ -83,7 +88,8 @@ beforeEach(() => {
   klantenService.listPainPoints.mockResolvedValue({ data: [], error: null });
   klantenService.listCouplingsForCanvas.mockResolvedValue({ data: [], error: null });
   klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
-  klantenService.listIntents.mockResolvedValue({ data: [], error: null });
+  klantenService.listIntents.mockResolvedValue({ data: [], links: [], error: null });
+  klantenService.listIntentsWithLinks.mockResolvedValue({ data: [], links: [], error: null });
   klantenService.fetchUploadsStatus.mockResolvedValue({
     data: { hasUploads: false, hasIndexedChunks: false, uploadCount: 0, indexedChunkCount: 0 },
     error: null,
@@ -102,21 +108,22 @@ async function renderAndOpenFase3() {
   return result;
 }
 
-describe("11.U Block 2 — VerbeteractiesView ModusToggle + Doorloop-placeholder", () => {
-  test("1. Default modus = doorloop → placeholder zichtbaar, geen actionbar", async () => {
+describe("11.U Block 2 — VerbeteractiesView ModusToggle + Doorloop (volledig in 2b)", () => {
+  test("1. Default modus = doorloop → DoorloopView (empty-state want geen pijnpunten), geen actionbar", async () => {
     await renderAndOpenFase3();
-    expect(screen.getByTestId("verbeteracties-doorloop-placeholder")).toBeInTheDocument();
-    expect(screen.getByTestId("verbeteracties-doorloop-naar-overzicht")).toBeInTheDocument();
+    // Block 2b: Doorloop-modus rendert DoorloopView (empty-state want geen pijnpunten in mock).
+    expect(screen.getByTestId("doorloop-empty")).toBeInTheDocument();
     // Overzicht-only content niet zichtbaar
     expect(screen.queryByTestId("verbeteracties-actionbar")).not.toBeInTheDocument();
     expect(screen.queryByTestId("verbeteracties-concept-list")).not.toBeInTheDocument();
   });
 
-  test("2. CTA 'Ga naar Overzicht' → switch + actionbar zichtbaar", async () => {
+  test("2. Toggle naar Overzicht → switch + actionbar zichtbaar", async () => {
     await renderAndOpenFase3();
-    const cta = screen.getByTestId("verbeteracties-doorloop-naar-overzicht");
-    await act(async () => { fireEvent.click(cta); });
-    expect(screen.queryByTestId("verbeteracties-doorloop-placeholder")).not.toBeInTheDocument();
+    const overzichtBtn = screen.getByTestId("verbeteracties-modus-toggle-option-overzicht");
+    await act(async () => { fireEvent.click(overzichtBtn); });
+    expect(screen.queryByTestId("doorloop-view")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("doorloop-empty")).not.toBeInTheDocument();
     expect(screen.getByTestId("verbeteracties-actionbar")).toBeInTheDocument();
     expect(screen.getByTestId("verbeteracties-concept-list")).toBeInTheDocument();
   });

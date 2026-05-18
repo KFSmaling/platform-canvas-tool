@@ -51,6 +51,7 @@ jest.mock("../services/klanten.service", () => ({
   restorePatternSuggestion:        jest.fn(),
   listPatternSuggestionEvents:     jest.fn(),
   listIntents:                     jest.fn(),
+  listIntentsWithLinks:            jest.fn(),
   createIntent:                    jest.fn(),
   updateIntent:                    jest.fn(),
   deleteIntent:                    jest.fn(),
@@ -144,6 +145,7 @@ beforeEach(() => {
   klantenService.listCouplingsForCanvas.mockResolvedValue({ data: [], error: null });
   klantenService.listPatternSuggestions.mockResolvedValue({ data: [], error: null });
   klantenService.listIntents.mockResolvedValue({ data: [], error: null });
+  klantenService.listIntentsWithLinks.mockResolvedValue({ data: [], links: [], error: null });
   klantenService.fetchUploadsStatus.mockResolvedValue({
     data: { hasUploads: false, hasIndexedChunks: false, uploadCount: 0, indexedChunkCount: 0 },
     error: null,

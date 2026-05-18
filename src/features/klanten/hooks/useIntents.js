@@ -19,6 +19,8 @@ export function useIntents(canvasId) {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [intents, setIntents] = useState(null);
+  // 11.U Block 2b: links komen mee in dezelfde GET-call (cd_intent_pain_point_links)
+  const [links, setLinks]     = useState([]);
   const [reloadKey, setReloadKey] = useState(0);
 
   const canvasIdRef = useRef(canvasId);
@@ -42,7 +44,8 @@ export function useIntents(canvasId) {
     // blijft staan tot nieuwe data binnen is.
 
     (async () => {
-      const { data, error: loadErr } = await klantenService.listIntents(activeCanvasId);
+      // 11.U Block 2b: listIntents geeft nu ook `links` mee (cd_intent_pain_point_links).
+      const { data, links: loadedLinks, error: loadErr } = await klantenService.listIntents(activeCanvasId);
 
       if (cancelled) return;
       if (activeCanvasId !== canvasIdRef.current) return;
@@ -54,11 +57,14 @@ export function useIntents(canvasId) {
       }
 
       setIntents(data || []);
+      // Block 2b: links komen mee als veld; oudere tests die alleen { data, error }
+      // mocken krijgen undefined → fallback op [].
+      setLinks(Array.isArray(loadedLinks) ? loadedLinks : []);
       setLoading(false);
     })();
 
     return () => { cancelled = true; };
   }, [canvasId, reloadKey]);
 
-  return { loading, error, intents, reload };
+  return { loading, error, intents, links, reload };
 }
